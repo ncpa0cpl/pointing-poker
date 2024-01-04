@@ -1,0 +1,5 @@
+.room-connection-form {
+    & > h2 {
+        margin-bottom: .8em;
+    }
+}

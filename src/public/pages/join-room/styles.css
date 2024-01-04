@@ -1,0 +1,8 @@
+.join-room-page {
+    & > .or-divider {
+        margin: 0 1.5em;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+}

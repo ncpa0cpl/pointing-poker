@@ -1,0 +1,21 @@
+{
+  "compilerOptions": {
+    "target": "es6",
+    "module": "ES2022",
+    "moduleResolution": "Node",
+    "jsx": "react-jsx",
+    "jsxImportSource": "@ncpa0cpl/vanilla-jsx",
+    "declaration": true,
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "downlevelIteration": true,
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUncheckedIndexedAccess": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true
+  }
+}

@@ -1,0 +1,14 @@
+[2024-01-22 11:39:40.947] [INFO]: "Server started at http://localhost:8080"
+[2024-01-22 11:40:09.933] [WARN]: {
+  "message": "Incoming request has resulted with an error.",
+  "errorMessage": "Room with id dgr not found.",
+  "errorCode": 404,
+  "errorStack": "Error: Room with id dgr not found.\n    at new _RequestError (/Users/owner/Documents/planning-poker-app/dist/esm/server/utilities/request-error.mjs:6:10)\n    at getRoom (/Users/owner/Documents/planning-poker-app/dist/esm/server/rooms/room-sevice.mjs:23:30)\n    at handleInitiate (/Users/owner/Documents/planning-poker-app/dist/esm/server/routes/room-ws/room-ws.route.mjs:137:37)\n    at message (/Users/owner/Documents/planning-poker-app/dist/esm/server/routes/room-ws/room-ws.route.mjs:71:47)\n    at message (/Users/owner/Documents/planning-poker-app/dist/esm/server/utilities/simple-server/websocket-handler.mjs:15:35)"
+}
+[2024-01-22 14:08:51.838] [INFO]: "Server started at http://localhost:8080"
+[2024-01-22 14:16:46.584] [WARN]: {
+  "message": "Incoming request has resulted with an error.",
+  "errorMessage": "Room with id 0iicm1fo not found.",
+  "errorCode": 404,
+  "errorStack": "Error: Room with id 0iicm1fo not found.\n    at new _RequestError (/Users/owner/Documents/planning-poker-app/dist/esm/server/utilities/request-error.mjs:6:10)\n    at getRoom (/Users/owner/Documents/planning-poker-app/dist/esm/server/rooms/room-sevice.mjs:23:30)\n    at handleInitiate (/Users/owner/Documents/planning-poker-app/dist/esm/server/routes/room-ws/room-ws.route.mjs:137:37)\n    at message (/Users/owner/Documents/planning-poker-app/dist/esm/server/routes/room-ws/room-ws.route.mjs:71:47)\n    at message (/Users/owner/Documents/planning-poker-app/dist/esm/server/utilities/simple-server/websocket-handler.mjs:15:35)"
+}

@@ -1,0 +1,421 @@
+import type { ServerWebSocket } from "bun";
+import { isTypedArray } from "util/types";
+import { createWsMsgParser } from "../../../shared/websockets-messages/parse-ws-message";
+import type {
+  AddRoundVoteIncomingMessage,
+  CancelLastRoundIncomingMessage,
+  ChangeRoomOwnerIncomingMessage,
+  CloseRoomConnectionIncomingMessage,
+  FinishLastRoundIncomingMessage,
+  PostMessageIncomingMessage,
+  RoomCreateNewRoundOutgoingMessage,
+  RoomOpenConnectionIncomingMessage,
+  RoomWSIncomingMessage,
+  SetRoomDefaultOptionsIncomingMessage,
+} from "../../../shared/websockets-messages/room-websocket-incoming-message-types";
+import {
+  DTRoomWSIncomingMessage,
+  IncomingMessageType,
+} from "../../../shared/websockets-messages/room-websocket-incoming-message-types";
+import type {
+  ErrorMessage,
+  MessageReceivedOutgoingMessage,
+  RoomConnectionInitiatedOutgoingMessage,
+} from "../../../shared/websockets-messages/room-websocket-outgoing-message-types";
+import { OutgoingMessageType } from "../../../shared/websockets-messages/room-websocket-outgoing-message-types";
+import { logger } from "../../app-logger";
+import { RoomService } from "../../rooms/room-sevice";
+import { RoundOption } from "../../rooms/round/option/round-option";
+import { RequestError } from "../../utilities/request-error";
+import type { HttpServer } from "../../utilities/simple-server/http-server";
+
+const parseMessage = createWsMsgParser(
+  DTRoomWSIncomingMessage,
+);
+
+class PingPong {
+  private timeout: NodeJS.Timeout | null = null;
+  private pingThrottle: NodeJS.Timeout | null = null;
+  private stopped = false;
+
+  public constructor(private readonly ws: ServerWebSocket<unknown>) {}
+
+  public ping() {
+    if (this.stopped) {
+      return;
+    }
+
+    // send ping after 60 seconds
+    this.pingThrottle = setTimeout(() => {
+      this.pingThrottle = null;
+
+      // wait for 10 seconds for the pong message
+      this.timeout = setTimeout(() => {
+        this.ws.close();
+      }, 10 * 1000);
+
+      this.ws.send(JSON.stringify({ type: OutgoingMessageType.PING }));
+    }, 60 * 1000);
+  }
+
+  public pong() {
+    if (this.stopped) {
+      return;
+    }
+
+    if (this.timeout) {
+      clearTimeout(this.timeout);
+      this.timeout = null;
+    }
+
+    this.ping();
+  }
+
+  public stop() {
+    this.stopped = true;
+
+    if (this.timeout) {
+      clearTimeout(this.timeout);
+      this.timeout = null;
+    }
+
+    if (this.pingThrottle) {
+      clearTimeout(this.pingThrottle);
+      this.pingThrottle = null;
+    }
+  }
+}
+
+class RoomWsHandler {
+  public static open(ws: ServerWebSocket<unknown>) {
+    return new RoomWsHandler(new PingPong(ws));
+  }
+
+  private onclosecb: (() => void) | undefined = undefined;
+  private readonly msgsReceived = new Set<string>();
+
+  public constructor(private pingPong: PingPong) {
+    this.pingPong.ping();
+  }
+
+  public close(ws: ServerWebSocket<unknown>) {
+    this.pingPong!.stop();
+    this.onclosecb?.();
+  }
+
+  public message(
+    ws: ServerWebSocket<unknown>,
+    message: string | Uint8Array,
+  ) {
+    let data: RoomWSIncomingMessage | undefined = undefined;
+    try {
+      data = parseMessage(message);
+      if (data.messageID) {
+        if (this.msgsReceived.has(data.messageID)) {
+          return;
+        }
+        this.msgsReceived.add(data.messageID);
+      }
+
+      switch (data.type) {
+        case IncomingMessageType.INITIATE:
+          this.onclosecb = this.handleInitiate(ws, data);
+          break;
+        case IncomingMessageType.ADD_ROUND_VOTE:
+          this.handleAddVote(ws, data);
+          break;
+        case IncomingMessageType.POST_MESSAGE:
+          this.handlePostMessage(ws, data);
+          break;
+        case IncomingMessageType.CANCEL_LAST_ROUND:
+          this.handleCancelLastRound(ws, data);
+          break;
+        case IncomingMessageType.CHANGE_OWNER:
+          this.handleChangeRoomOwner(ws, data);
+          break;
+        case IncomingMessageType.FINISH_LAST_ROUND:
+          this.handleFinishRound(ws, data);
+          break;
+        case IncomingMessageType.CREATE_NEW_ROUND:
+          this.handleCreateNewRound(ws, data);
+          break;
+        case IncomingMessageType.SET_DEFAULT_OPTIONS:
+          this.handleSetDefaultOptions(ws, data);
+          break;
+        case IncomingMessageType.CLOSE:
+          this.handleCloseRoomConnection(ws, data);
+          break;
+        case IncomingMessageType.PONG:
+          this.pingPong!.pong();
+          break;
+      }
+    } catch (e) {
+      logger.error({
+        message: "Unexpected error occurred in a websocket handler.",
+        error: e,
+        wsmessage: isTypedArray(message)
+          ? new TextDecoder().decode(message)
+          : message,
+      });
+      ws.send(
+        JSON.stringify(
+          <ErrorMessage> {
+            type: OutgoingMessageType.ERROR,
+            code: 500,
+            message: "Internal server error.",
+            causedBy: data?.messageID ?? "unknown",
+          },
+        ),
+      );
+    } finally {
+      if (data && data.messageID) {
+        ws.send(JSON.stringify(
+          <MessageReceivedOutgoingMessage> {
+            type: OutgoingMessageType.MESSAGE_RECEIVED,
+            messageID: data.messageID,
+          },
+        ));
+      }
+    }
+  }
+
+  private sendError(
+    ws: ServerWebSocket<unknown>,
+    msgData: RoomWSIncomingMessage,
+    err: RequestError,
+  ) {
+    ws.send(JSON.stringify(
+      <ErrorMessage> {
+        type: OutgoingMessageType.ERROR,
+        code: err.code,
+        message: err.message,
+        causedBy: msgData.messageID,
+      },
+    ));
+  }
+
+  private sendUnauthorizedError(
+    ws: ServerWebSocket<unknown>,
+    msgData: RoomWSIncomingMessage,
+    action: string,
+  ) {
+    ws.send(JSON.stringify(
+      <ErrorMessage> {
+        type: OutgoingMessageType.ERROR,
+        code: 401,
+        message:
+          `Unauthorized access. Only room owner can perform ${action} action.`,
+        causedBy: msgData.messageID,
+      },
+    ));
+  }
+
+  private handleInitiate(
+    ws: ServerWebSocket<unknown>,
+    data: RoomOpenConnectionIncomingMessage,
+  ) {
+    const room = RoomService.getRoom(data.roomID);
+
+    if (RequestError.is(room)) {
+      this.sendError(ws, data, room);
+      return undefined;
+    }
+
+    let connection = room.findUserConnection(data.userID);
+    if (!connection) {
+      connection = room.createConnection(
+        data.userID,
+        data.publicUserID,
+        data.username,
+      );
+    }
+
+    if (
+      room.isOwner(data.userID)
+      && connection.publicUserID !== room.ownerPublicID
+    ) {
+      room.setOwner(data.userID, connection.publicUserID, data.username);
+    }
+
+    const removeWs = connection.addWebSocket(ws);
+
+    const response: RoomConnectionInitiatedOutgoingMessage = {
+      type: OutgoingMessageType.INITIATED,
+      connectionID: connection.id,
+      room: room.toView(),
+      userPublicID: connection.publicUserID,
+    };
+
+    ws.send(JSON.stringify(response));
+
+    return removeWs;
+  }
+
+  private handleSetDefaultOptions(
+    ws: ServerWebSocket<unknown>,
+    data: SetRoomDefaultOptionsIncomingMessage,
+  ) {
+    const room = RoomService.getRoom(data.roomID);
+
+    if (RequestError.is(room)) {
+      return this.sendError(ws, data, room);
+    }
+
+    if (!room.isOwner(data.userID)) {
+      return this.sendUnauthorizedError(
+        ws,
+        data,
+        IncomingMessageType.SET_DEFAULT_OPTIONS,
+      );
+    }
+
+    room.setDefaultOptions(
+      data.options.map((option) => new RoundOption(option)),
+    );
+  }
+
+  private handleAddVote(
+    ws: ServerWebSocket<unknown>,
+    data: AddRoundVoteIncomingMessage,
+  ) {
+    const room = RoomService.getRoom(data.roomID);
+
+    if (RequestError.is(room)) {
+      return this.sendError(ws, data, room);
+    }
+
+    const userConnection = room.getUserConnection(data.userID);
+
+    if (RequestError.is(userConnection)) {
+      return this.sendError(ws, data, userConnection);
+    }
+
+    if (room.isActiveRound(data.roundID)) {
+      room.postUserVote(
+        data.userID,
+        userConnection.publicUserID,
+        data.optionRef,
+      );
+    }
+  }
+
+  private handlePostMessage(
+    ws: ServerWebSocket<unknown>,
+    data: PostMessageIncomingMessage,
+  ) {
+    const room = RoomService.getRoom(data.roomID);
+
+    if (RequestError.is(room)) {
+      return this.sendError(ws, data, room);
+    }
+
+    room.postMessage(data.userID, data.text);
+  }
+
+  private handleCancelLastRound(
+    ws: ServerWebSocket<unknown>,
+    data: CancelLastRoundIncomingMessage,
+  ) {
+    const room = RoomService.getRoom(data.roomID);
+
+    if (RequestError.is(room)) {
+      return this.sendError(ws, data, room);
+    }
+
+    if (!room.isOwner(data.userID)) {
+      return this.sendUnauthorizedError(
+        ws,
+        data,
+        IncomingMessageType.CANCEL_LAST_ROUND,
+      );
+    }
+
+    room.cancelLastRound(data.userID);
+  }
+
+  private handleCreateNewRound(
+    ws: ServerWebSocket<unknown>,
+    data: RoomCreateNewRoundOutgoingMessage,
+  ) {
+    const room = RoomService.getRoom(data.roomID);
+
+    if (RequestError.is(room)) {
+      return this.sendError(ws, data, room);
+    }
+
+    if (!room.isOwner(data.userID)) {
+      return this.sendUnauthorizedError(
+        ws,
+        data,
+        IncomingMessageType.CREATE_NEW_ROUND,
+      );
+    }
+
+    room.startNewRound(data.userID);
+  }
+
+  private handleChangeRoomOwner(
+    ws: ServerWebSocket<unknown>,
+    data: ChangeRoomOwnerIncomingMessage,
+  ) {
+    const room = RoomService.getRoom(data.roomID);
+
+    if (RequestError.is(room)) {
+      return this.sendError(ws, data, room);
+    }
+
+    if (!room.isOwner(data.userID)) {
+      return this.sendUnauthorizedError(
+        ws,
+        data,
+        IncomingMessageType.CHANGE_OWNER,
+      );
+    }
+
+    const user = room.getUserConnection(data.newOwnerID);
+
+    if (RequestError.is(user)) {
+      return this.sendError(ws, data, user);
+    }
+
+    room.setOwner(data.newOwnerID, user.publicUserID, user.username);
+  }
+
+  private handleFinishRound(
+    ws: ServerWebSocket<unknown>,
+    data: FinishLastRoundIncomingMessage,
+  ) {
+    const room = RoomService.getRoom(data.roomID);
+
+    if (RequestError.is(room)) {
+      return this.sendError(ws, data, room);
+    }
+
+    if (!room.isOwner(data.userID)) {
+      return this.sendUnauthorizedError(
+        ws,
+        data,
+        IncomingMessageType.FINISH_LAST_ROUND,
+      );
+    }
+
+    room.finishLastRound();
+  }
+
+  private handleCloseRoomConnection(
+    ws: ServerWebSocket<unknown>,
+    data: CloseRoomConnectionIncomingMessage,
+  ) {
+    const room = RoomService.getRoom(data.roomID);
+
+    if (RequestError.is(room)) {
+      return this.sendError(ws, data, room);
+    }
+
+    room.closeConnection(data.userID);
+  }
+}
+
+export function addRoomWsRoute(server: HttpServer) {
+  server.ws("/ws/room", (ws) => RoomWsHandler.open(ws));
+}
