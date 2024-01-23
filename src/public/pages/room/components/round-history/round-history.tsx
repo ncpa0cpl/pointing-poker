@@ -1,8 +1,9 @@
 import { Range } from "@ncpa0cpl/vanilla-jsx";
 import { Box, NavSidebar, Typography } from "adwavecss";
 import clsx from "clsx";
-import { UpsideDownScrollView } from "../../../components/upside-down-scrollview/upside-down-scrollview";
-import { PokerRoomService } from "../../../services/poker-room-service/poker-room-service";
+import { UpsideDownScrollView } from "../../../../components/upside-down-scrollview/upside-down-scrollview";
+import { PokerRoomService } from "../../../../services/poker-room-service/poker-room-service";
+import "./styles.css";
 
 export const RoundHistory = () => {
   const cround = PokerRoomService.currentRound;

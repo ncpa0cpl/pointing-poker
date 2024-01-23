@@ -1,0 +1,10 @@
+.vote-buttons-container {
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-top: 1em;
+
+    & .btn {
+        width: 2.5em;
+        margin-right: 0.5em;
+    }
+}

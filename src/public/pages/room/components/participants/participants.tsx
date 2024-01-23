@@ -1,8 +1,9 @@
 import { Case, deriveMany, Range, Switch } from "@ncpa0cpl/vanilla-jsx";
 import { Box } from "adwavecss";
 import { clsx } from "clsx";
-import { PokerRoomService } from "../../../services/poker-room-service/poker-room-service";
-import type { PokerRoomRound } from "../../../services/poker-room-service/types";
+import { PokerRoomService } from "../../../../services/poker-room-service/poker-room-service";
+import type { PokerRoomRound } from "../../../../services/poker-room-service/types";
+import "./styles.css";
 
 const getUserVote = (
   results: PokerRoomRound["results"],

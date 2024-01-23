@@ -1,6 +1,7 @@
 import { Box, Typography } from "adwavecss";
 import clsx from "clsx";
-import { PokerRoomService } from "../../../services/poker-room-service/poker-room-service";
+import { PokerRoomService } from "../../../../services/poker-room-service/poker-room-service";
+import "./styles.css";
 
 export const Statistics = () => {
   const round = PokerRoomService.currentRound;

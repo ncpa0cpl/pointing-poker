@@ -1,0 +1,8 @@
+.statistics-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr 1fr 1fr;
+    margin-left: 1em;
+    margin-top: 1em;
+    grid-gap: 0.2em;
+}

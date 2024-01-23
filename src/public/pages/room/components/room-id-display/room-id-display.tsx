@@ -1,4 +1,5 @@
-import { PokerRoomService } from "../../../services/poker-room-service/poker-room-service";
+import { PokerRoomService } from "../../../../services/poker-room-service/poker-room-service";
+import "./styles.css";
 
 export const RoomIDDisplay = () => {
   const copyRoomID = () => {

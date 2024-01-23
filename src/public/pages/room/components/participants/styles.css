@@ -1,0 +1,40 @@
+.participants {
+    margin-top: 1em;
+    flex-direction: column;
+    overflow-y: auto;
+
+    & .participant {
+        flex-grow: 1;
+        justify-content: space-between;
+        margin-bottom: 0.5em;
+
+        &.disconnected p {
+            opacity: 0.5;
+        }
+
+        & .badge {
+            padding: 0.2em 0.4em;
+            width: 3.25em;
+            border-radius: 20px;
+            margin-left: 0.5em;
+            text-align: center;
+            transition: background-color 0.3s ease-in-out;
+
+            &.awaiting-vote {
+                background-color: var(--clr-danger-400);
+            }
+
+            &.voted {
+                background-color: var(--clr-primary-400);
+            }
+
+            &.vote-result {
+                background-color: #32a04a;
+            }
+
+            &.own-vote-result {
+                background-color: #63636361;
+            }
+        }
+    }
+}

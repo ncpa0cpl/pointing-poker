@@ -4,12 +4,12 @@ import { Box } from "adwavecss";
 import { clsx } from "clsx";
 import { PokerRoomService } from "../../services/poker-room-service/poker-room-service";
 import { router } from "../routes";
-import { Chat } from "./components/chat";
-import { LeftBar } from "./components/left-bar";
-import { OwnerControls } from "./components/owner-controls";
-import { Participants } from "./components/participants";
-import { RoomIDDisplay } from "./components/room-id-display";
-import { VoteButtons } from "./components/vote-buttons";
+import { Chat } from "./components/chat/chat";
+import { LeftBar } from "./components/left-bar/left-bar";
+import { OwnerControls } from "./components/owner-controls/owner-controls";
+import { Participants } from "./components/participants/participants";
+import { RoomIDDisplay } from "./components/room-id-display/room-id-display";
+import { VoteButtons } from "./components/vote-buttons/vote-buttons";
 import "./styles.css";
 
 export const Room = (props: { roomID: ReadonlySignal<string> }) => {

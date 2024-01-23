@@ -1,0 +1,10 @@
+.room-controls {
+    & .btn {
+        height: fit-content;
+        place-self: center;
+    }
+
+    & .separator {
+        margin-right: 1em;
+    }
+}
