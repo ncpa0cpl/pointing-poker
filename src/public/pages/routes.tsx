@@ -33,6 +33,17 @@ export const router = new SimpleRouter({
   }),
 });
 
+declare global {
+  const approuter: typeof router;
+}
+
+Object.defineProperty(globalThis, "approuter", {
+  value: router,
+  writable: false,
+  configurable: false,
+  enumerable: false,
+});
+
 export const PageRouterRoutes = () => {
   return (
     <div class="box grow center">

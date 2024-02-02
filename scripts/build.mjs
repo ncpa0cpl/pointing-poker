@@ -3,6 +3,7 @@ import { spawn } from "child_process";
 import fs from "fs/promises";
 import path from "path";
 import { fileURLToPath, URL } from "url";
+import { buildIndexPage } from "./generate-index.mjs";
 
 const __dirname = fileURLToPath(new URL(".", import.meta.url));
 
@@ -17,10 +18,6 @@ async function main() {
     await fs.mkdir(p("dist/esm/public"), { recursive: true });
 
     await Promise.all([
-      fs.copyFile(
-        p("src/public/index.html"),
-        p("dist/esm/public/index.html"),
-      ),
       build({
         bundle: true,
         entrypoint: p("src/public/index.tsx"),
@@ -62,6 +59,11 @@ async function main() {
         },
       }),
     ]);
+    await buildIndexPage({
+      entrypointPath: p("dist/esm/public/index.mjs"),
+      htmlTemplatePath: p("src/public/index.html"),
+      outDir: p("dist/esm/public"),
+    });
   } catch (error) {
     console.error(error);
     process.exit(1);

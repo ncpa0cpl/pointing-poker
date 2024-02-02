@@ -1,6 +1,7 @@
 {
   "lineWidth": 80,
   "typescript": {
+  	"indentWidth": 2
   },
   "json": {
   },

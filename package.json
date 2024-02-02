@@ -8,6 +8,7 @@
     "@types/express": "^4.17.13",
     "@types/express-ws": "^3.0.4",
     "@types/http-status-codes": "^1.2.0",
+    "@types/jsdom": "^21.1.6",
     "@types/luxon": "^3.3.8",
     "@types/node": "^20.10.6",
     "@types/node-persist": "^3.1.8",
@@ -20,6 +21,7 @@
     "eslint": "^8.56.0",
     "git-hook-tasks": "ncpa0cpl/git-hook-tasks",
     "husky": "^8.0.3",
+    "jsdom": "^24.0.0",
     "typescript": "latest"
   },
   "name": "planning-poker",
@@ -60,6 +62,7 @@
     "express": "^4.18.2",
     "express-ws": "^5.0.2",
     "http-status-codes": "^2.3.0",
+    "jsdom-global": "^3.0.2",
     "luxon": "^3.4.4",
     "marked": "^11.1.1",
     "node-persist": "^3.1.0",
