@@ -3,3 +3,4 @@ coverage
 dist
 yarn-error.log
 .npmrc
+pointing_poker_server.log
