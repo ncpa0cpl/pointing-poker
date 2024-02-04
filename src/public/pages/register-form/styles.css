@@ -1,0 +1,27 @@
+.register-form {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  width: clamp(380px, 27em, 30vw);
+
+  & h1 {
+    text-align: center;
+    margin: 0.5em 0 2em;
+  }
+  & p {
+    text-align: center;
+    margin-bottom: 1.5em;
+    min-width: unset;
+  }
+  & input {
+    max-width: 55vw;
+  }
+  & a {
+    margin-top: 1.5em;
+    & button {
+      color: #2fa7fe;
+      text-decoration: underline;
+    }
+  }
+}

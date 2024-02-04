@@ -101,7 +101,7 @@ export class CompiledPath {
       }
 
       if (segment.isWildcard) {
-        wildcardValue = urlPart;
+        wildcardValue = parts.slice(i).join("/");
         break;
       }
 

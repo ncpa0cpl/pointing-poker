@@ -68,6 +68,10 @@ export class Context {
     return this.url.searchParams.getAll(name);
   }
 
+  public getPathWildcard(): string | null {
+    return this.wildcardValue;
+  }
+
   public send(response: Response): Context {
     this.responseData = response;
     return this;

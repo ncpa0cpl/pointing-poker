@@ -628,23 +628,18 @@ acorn@^8.9.0:
   resolved "https://registry.yarnpkg.com/acorn/-/acorn-8.11.3.tgz#71e0b14e13a4ec160724b38fb7b0f233b1b81d7a"
   integrity sha512-Y9rRfJG5jcKOE0CLisYbojUjIrIEE7AGMzA/Sm4BslANhbS+cDMpgBdcPT91oJ7OuJ9hYJBx59RjbhxVnrF8Xg==
 
-adwavecss@^0.0.4:
-  version "0.0.4"
-  resolved "https://registry.yarnpkg.com/adwavecss/-/adwavecss-0.0.4.tgz#92b8449c02f4e11a8fff2db02a99dbaa889b4f9e"
-  integrity sha512-6IAQhJSAvK3NN6GlIufACf7d7FRcip2TP49to/6jbH6BoNHEdhIUPHv8ZDXOnJf5vVxdeoGq09L7E5iMKuUsxQ==
+adwavecss@>0.0.4, adwavecss@^0.0.10:
+  version "0.0.10"
+  resolved "https://registry.yarnpkg.com/adwavecss/-/adwavecss-0.0.10.tgz#838652da027cfb873f61460154489080ee3dfba7"
+  integrity sha512-yTBggfHOPK3Da3F+PnGaUc1vHQ8c3a06zcvtTWI50pzPSUjCeSXM9QLiDx5F9/WxynqvMzOZ0AMEIPSho099fQ==
 
-adwavecss@^0.0.9:
-  version "0.0.9"
-  resolved "https://registry.yarnpkg.com/adwavecss/-/adwavecss-0.0.9.tgz#23970f8704ac889cfe951c8c66af577c44e26e1a"
-  integrity sha512-vQHGkvgz06quYVyU8JNemFv1tbe7AHBfbCHgxzXHKlrlvBFezZBbjwRvw5dPrby0WqS9vrC8X3fSyK+SC/UUQw==
-
-adwaveui@^0.0.2:
-  version "0.0.2"
-  resolved "https://registry.yarnpkg.com/adwaveui/-/adwaveui-0.0.2.tgz#8ec63113f689c1bb299ce73b26483de22f6410a7"
-  integrity sha512-cVhyfC7C5knozmANXd+f3zAc2O5d6A8vM/eISpwe0/hvhnfXjecQTI1NOt296Zz/W/zXDpJznBCrWpALoNnR1Q==
+adwaveui@^0.0.3:
+  version "0.0.3"
+  resolved "https://registry.yarnpkg.com/adwaveui/-/adwaveui-0.0.3.tgz#23ebe8914c3c752cf12ded76cbc1fee1b8303701"
+  integrity sha512-RjYmc0FDf9vHxUqHPVZxuAlMbQwaEE/2AcWDGqE26X3x255eWINZecjkEGrcbXVXXyRMMZfaN8ZVg2gh4GbUDA==
   dependencies:
-    adwavecss "^0.0.4"
-    jsxte "^3.1.6"
+    adwavecss ">0.0.4"
+    jsxte "^3.3.0"
     jsxte-wc "^1.1.5"
 
 agent-base@^7.0.2, agent-base@^7.1.0:
@@ -1585,7 +1580,7 @@ git-hook-tasks@ncpa0cpl/git-hook-tasks:
   dependencies:
     async-await-queue "^1.2.1"
     chalk "^4.0.0"
-    clify.js "git+https://github.com/ncpa0cpl/clify.js#0.0.5"
+    clify.js ncpa0cpl/clify.js#0.0.5
     dilswer "^1.2.0"
     node-os-walk "^1.0.0"
     strip-ansi "^6.0.1"
@@ -2034,10 +2029,10 @@ jsxte-wc@^1.1.5:
   resolved "https://registry.yarnpkg.com/jsxte-wc/-/jsxte-wc-1.1.5.tgz#799b71a6297d31d92c90dbad826fd5bdfebfc6ff"
   integrity sha512-YawsSCI2zvGQJH5zaoVo9F9zeAEug+7yabVJBkKvAA+ngvTvdLUm/Bgg7oPbz9ZIY1jqjGTn6+kL7igzHXdlaQ==
 
-jsxte@^3.1.6:
-  version "3.1.9"
-  resolved "https://registry.yarnpkg.com/jsxte/-/jsxte-3.1.9.tgz#7f383bccb1bef5784a8b7635fa1db0db7333a582"
-  integrity sha512-W8mSsyYkXjqsUZsGi8DyXEMjLlnJkFtCY8PTILhF124GTmteQk6zamBWA61zgX0ynKbJkfr+zbS6BZ+3vqbw3Q==
+jsxte@^3.3.0:
+  version "3.3.0"
+  resolved "https://registry.yarnpkg.com/jsxte/-/jsxte-3.3.0.tgz#d8e4639dd926d214421d67c155e14b285c4f50f1"
+  integrity sha512-ucIUALv8L5UXb87SRm2r1eR1wH7d/x9UV3lhonDNgwhcdEKhQaVUkAh0ATgGk8iFODUaEnYUnSvRdAKb2LICcA==
 
 levn@^0.4.1:
   version "0.4.1"

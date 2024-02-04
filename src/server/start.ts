@@ -24,10 +24,6 @@ deserializeClassInstancesFromPersistentStorage(Room).catch((e) => {
 
 const app = new HttpServer();
 
-app.get("/fail-test", async () => {
-  throw new Error("This is a test error.");
-});
-
 addRoutes(app);
 
 app.listen(port, {

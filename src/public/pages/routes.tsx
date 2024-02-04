@@ -2,7 +2,7 @@ import type { ReadonlySignal } from "@ncpa0cpl/vanilla-jsx";
 import { UserService } from "../services/user-service/user-service";
 import { route, SimpleRouter } from "../utilities/simple-router/simple-router";
 import { JoinRoom } from "./join-room/join-room";
-import { LoginForm } from "./login-form/login-form";
+import { RegisterPage } from "./register-form/register-form";
 import { Room } from "./room/room";
 
 export const AuthRoute = <RF extends (...args: any[]) => JSX.Element>(
@@ -23,7 +23,7 @@ export const router = new SimpleRouter({
     component: AuthRoute(JoinRoom),
   }),
   register: route({
-    component: () => <LoginForm />,
+    component: () => <RegisterPage />,
   }),
   room: route({
     param: "roomID",
