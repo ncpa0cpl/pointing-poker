@@ -867,9 +867,9 @@ chalk@^4.0.0, chalk@^4.1.2:
   optionalDependencies:
     fsevents "~2.3.2"
 
-"clify.js@git+https://github.com/ncpa0cpl/clify.js#0.0.5":
+clify.js@ncpa0cpl/clify.js#0.0.5:
   version "1.0.3"
-  resolved "git+https://github.com/ncpa0cpl/clify.js#63c08dd0ad286d9416f89a34da6014f204258b38"
+  resolved "https://codeload.github.com/ncpa0cpl/clify.js/tar.gz/63c08dd0ad286d9416f89a34da6014f204258b38"
   dependencies:
     chalk "^4.1.2"
 
@@ -1580,7 +1580,7 @@ git-hook-tasks@ncpa0cpl/git-hook-tasks:
   dependencies:
     async-await-queue "^1.2.1"
     chalk "^4.0.0"
-    clify.js ncpa0cpl/clify.js#0.0.5
+    clify.js "git+https://github.com/ncpa0cpl/clify.js#0.0.5"
     dilswer "^1.2.0"
     node-os-walk "^1.0.0"
     strip-ansi "^6.0.1"
