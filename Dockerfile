@@ -2,11 +2,11 @@ FROM oven/bun
 
 WORKDIR /usr/src/app
 
-COPY package*.json bun.lockb ./
-RUN bun install
-COPY . .
-
 ENV NODE_ENV production
 
-CMD [ "bun", "build:prod" ]
+COPY package*.json bun.lockb ./
+RUN bun install
+RUN bun build:prod
+COPY . .
+
 CMD [ "bun", "start" ]
