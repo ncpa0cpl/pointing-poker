@@ -40,23 +40,6 @@ async function main() {
         },
         watch,
         parsableExtensions: [".css"],
-      }),
-      build({
-        srcDir: p("src"),
-        outDir: p("dist"),
-        tsConfig: p("tsconfig.json"),
-        formats: ["esm"],
-        target: "es2022",
-        exclude: [/\/public\//],
-        preset: {
-          node: true,
-        },
-        decoratorsMetadata: true,
-        watch,
-        esbuildOptions: {
-          keepNames: true,
-          sourcemap: dev ? "inline" : undefined,
-        },
         onBuildComplete() {
           return runServer();
         },
@@ -104,7 +87,7 @@ function runServer() {
   if (serve) {
     try {
       console.log("Starting server...");
-      const proc = spawn("bun", [p("dist/esm/server/start.mjs"), "--debug"], {
+      const proc = spawn("bun", [p("src/server/start.ts"), "--debug"], {
         stdio: "inherit",
       });
 

@@ -1,11 +1,8 @@
 import path from "path";
-import { fileURLToPath } from "url";
+import { ROOT_DIR } from "../../root-dir";
 import type { HttpServer } from "../../utilities/simple-server/http-server";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-const pubDir = path.resolve(__dirname, "../../../public");
+const pubDir = path.resolve(ROOT_DIR, "./dist/esm/public");
 
 export function addSpaRoute(server: HttpServer) {
   server.get("/*", async (ctx) => {
