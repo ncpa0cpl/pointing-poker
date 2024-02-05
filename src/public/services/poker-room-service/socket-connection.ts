@@ -103,7 +103,9 @@ export class WsConnection {
 
   private createWs() {
     return new Promise<void>((resolve, reject) => {
-      this.#socket = new WebSocket(`ws://${location.host}/ws/room`);
+      const isSecure = location.protocol.startsWith("https");
+      const protocol = isSecure ? "wss" : "ws";
+      this.#socket = new WebSocket(`${protocol}://${location.host}/ws/room`);
 
       this.#socket.onopen = () => {
         this.#socket.onerror = null;
