@@ -1,5 +1,7 @@
 import { Card, Typography } from "adwavecss";
 import { clsx } from "clsx";
+import { PointingPokerDescription } from "../../components/pp-description/pp-description";
+import { RepoLink } from "../../components/repo-link/repo-link";
 import { UserService } from "../../services/user-service/user-service";
 import { router } from "../routes";
 import { RoomConnectionForm } from "./components/room-connection-form/room-connection-form";
@@ -15,11 +17,15 @@ export const JoinRoom = () => {
 
   return (
     <div class={clsx("join-room-page", "grow", Card.card)}>
-      <RoomCreateForm />
-      <div class="or-divider">
-        <p class={Typography.label}>or</p>
+      <PointingPokerDescription />
+      <div class="join-form">
+        <RoomCreateForm />
+        <div class="or-divider">
+          <p class={Typography.label}>or</p>
+        </div>
+        <RoomConnectionForm />
       </div>
-      <RoomConnectionForm />
+      <RepoLink />
     </div>
   );
 };

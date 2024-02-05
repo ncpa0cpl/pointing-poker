@@ -1,5 +1,8 @@
 .room-connection-form {
-    & > h2 {
-        margin-bottom: .8em;
-    }
+  & > h2 {
+    margin-bottom: 0.8em;
+  }
+  & input {
+    max-width: 50vw;
+  }
 }

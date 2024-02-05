@@ -1,0 +1,17 @@
+.pp-description {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  width: clamp(380px, 27em, 30vw);
+
+  & h1 {
+    text-align: center;
+    margin: 0.5em 0 1.5em;
+  }
+  & p {
+    text-align: center;
+    margin-bottom: 1.5em;
+    min-width: unset;
+  }
+}

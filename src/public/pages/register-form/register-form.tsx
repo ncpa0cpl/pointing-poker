@@ -1,6 +1,8 @@
 import { sig } from "@ncpa0cpl/vanilla-jsx";
-import { Button, Card, Input, Typography } from "adwavecss";
+import { Button, Card, Input } from "adwavecss";
 import { clsx } from "clsx";
+import { PointingPokerDescription } from "../../components/pp-description/pp-description";
+import { RepoLink } from "../../components/repo-link/repo-link";
 import { UserService } from "../../services/user-service/user-service";
 import { router } from "../routes";
 import "./styles.css";
@@ -28,11 +30,7 @@ export const RegisterPage = () => {
 
   return (
     <div class={clsx(Card.card, "register-form")}>
-      <h1 class={Typography.header}>Pointing Poker</h1>
-      <p class={Typography.subtitle}>
-        Pointing Poker is a tool that allows agile teams to estimate their work
-        effort via an online game. Enter your username below to get started.
-      </p>
+      <PointingPokerDescription />
       <form onsubmit={onSubmit}>
         <div class={Button.linked}>
           <input
@@ -46,15 +44,7 @@ export const RegisterPage = () => {
           <button class={Button.button} type="submit">Start Playing</button>
         </div>
       </form>
-      <a
-        href="https://github.com/ncpa0cpl/pointing-poker"
-        target="_blank"
-        rel="noopener noreferrer"
-      >
-        <button class={clsx(Button.button, Button.flat)}>
-          View Source Code on GitHub
-        </button>
-      </a>
+      <RepoLink />
     </div>
   );
 };

@@ -1,7 +1,7 @@
 .room-id-display {
-    margin: 1em;
+  margin: 1em 1em 1em 0px;
 }
 
 .room-id-display input {
-    width: 10em;
+  width: min(10em, 35vw);
 }

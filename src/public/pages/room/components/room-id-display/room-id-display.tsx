@@ -10,7 +10,7 @@ export const RoomIDDisplay = () => {
   };
 
   return (
-    <div class="linked box room-id-display">
+    <div class="linked flexbox room-id-display">
       <input
         class="input"
         disabled

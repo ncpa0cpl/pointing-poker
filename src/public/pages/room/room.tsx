@@ -13,20 +13,23 @@ import { VoteButtons } from "./components/vote-buttons/vote-buttons";
 import "./styles.css";
 
 export const Room = (props: { roomID: ReadonlySignal<string> }) => {
+  const handleExitRoom = () => {
+    PokerRoomService.disconnectFromRoom();
+    router.navigate("join");
+  };
+
   const room = (
     <div class={clsx(Box.box, "column")}>
       <button
         class="btn exit-room-btn"
-        onclick={() => {
-          router.navigate("join");
-        }}
+        onclick={handleExitRoom}
       >
         Exit Room
       </button>
       <div class="room-view">
         <LeftBar />
         <div class="column card voting-section">
-          <div>
+          <div class="voting-section-top-bar">
             <RoomIDDisplay />
             <OwnerControls />
           </div>

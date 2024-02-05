@@ -1,21 +1,32 @@
 :root {
-    --sidebox-width: max(24rem, 20vw);
+  --sidebox-width: clamp(20vw, 24rem, 80vw);
 }
 
 .room-view {
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    justify-content: center;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: center;
 
-    & > div {
-        margin: 0.6em;
-        height: 80vh;
-        max-height: 40em;
-    }
+  & > div {
+    margin: 0.6em;
+    min-height: max(80vh, 35em);
+  }
 
-    & .voting-section {
-        max-width: 40em;
-        min-width: 25vw;
+  & .voting-section {
+    max-width: 40em;
+    min-width: 25vw;
+  }
+}
+
+@media screen and (max-width: 780px) {
+  .voting-section-top-bar {
+    flex-direction: column;
+    & .room-id-display {
+      margin-right: 0px;
     }
+    & .separator {
+      display: none;
+    }
+  }
 }

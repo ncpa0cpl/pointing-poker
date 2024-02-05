@@ -1,11 +1,18 @@
 .round-history {
-    margin-top: 1em;
-    overflow-y: auto;
+  margin-top: 1em;
+  overflow-y: auto;
 
-    & .nav-sidebar {
-        & .prev-round-btn {
-            display: flex;
-            justify-content: space-between;
-        }
+  & .nav-sidebar {
+    & .prev-round-btn {
+      display: flex;
+      justify-content: space-between;
+      overflow: hidden;
     }
+  }
+}
+
+@media screen and (max-width: 480px) {
+  .round-history .nav-sidebar .prev-round-btn .subtitle {
+    display: none;
+  }
 }

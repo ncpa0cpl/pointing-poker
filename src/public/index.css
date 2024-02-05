@@ -98,3 +98,9 @@ h6 {
 #root > :is(.dark-theme, .light-theme) > * {
   animation: onload 0.7s;
 }
+
+@media screen and (max-width: 520px) {
+  .main-container > div {
+    padding-bottom: 4em;
+  }
+}

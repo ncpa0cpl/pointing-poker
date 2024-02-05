@@ -1,8 +1,31 @@
 .join-room-page {
-    & > .or-divider {
-        margin: 0 1.5em;
-        display: flex;
-        justify-content: center;
-        align-items: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  & .join-form {
+    margin: 0.5em 0;
+  }
+
+  & .or-divider {
+    margin: 0 1.5em;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+}
+
+@media screen and (max-width: 780px) {
+  .join-room-page {
+    & .join-form {
+      flex-direction: column;
+      align-items: center;
     }
+    & .or-divider {
+      margin: 1em 0;
+    }
+    & .room-connection-form h2 {
+      text-align: center;
+    }
+  }
 }
