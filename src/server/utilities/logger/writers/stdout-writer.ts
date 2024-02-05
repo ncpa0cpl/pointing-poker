@@ -1,4 +1,4 @@
-import type { LogType, LogWriter } from "../logger";
+import type { EnumVal, LogType, LogWriter } from "../logger";
 
 export class StdoutLogWriter implements LogWriter {
   private decoder = new TextDecoder();
@@ -12,7 +12,7 @@ export class StdoutLogWriter implements LogWriter {
   }
 
   public write(
-    type: LogType,
+    type: EnumVal<typeof LogType>,
     message: Uint8Array,
   ): true {
     console[type](this.decoder.decode(message));

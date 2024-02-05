@@ -3,6 +3,7 @@ import "reflect-metadata";
 import { logger } from "./app-logger";
 import { Room } from "./rooms/room/room";
 import { addRoutes } from "./routes/add-routes";
+import { LogMiddleware } from "./utilities/log-middleware";
 import { deserializeClassInstancesFromPersistentStorage } from "./utilities/persistent-objects/deserialize-class-instances-from-persistent-storage";
 import { HttpServer } from "./utilities/simple-server/http-server";
 
@@ -23,6 +24,7 @@ deserializeClassInstancesFromPersistentStorage(Room).catch((e) => {
 });
 
 const app = new HttpServer();
+app.onResponse(LogMiddleware());
 
 addRoutes(app);
 

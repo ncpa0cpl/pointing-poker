@@ -1,17 +1,33 @@
 import { DateTime } from "luxon";
 
 type MaybeAsync<T> = Promise<T> | T;
+export type EnumVal<T extends object> = Exclude<T[keyof T], Function | object>;
 
-export enum LogType {
-  Warning = "warn",
-  Error = "error",
-  Info = "info",
-  Debug = "debug",
+export class LogType {
+  public static readonly Warning = "warn";
+  public static readonly Error = "error";
+  public static readonly Info = "info";
+  public static readonly Debug = "debug";
+
+  public static fromString(type: string): EnumVal<typeof LogType> {
+    switch (type) {
+      case "warn":
+        return LogType.Warning;
+      case "error":
+        return LogType.Error;
+      case "info":
+        return LogType.Info;
+      case "debug":
+        return LogType.Debug;
+      default:
+        return LogType.Info;
+    }
+  }
 }
 
 export interface LogWriter {
   write(
-    type: LogType,
+    type: EnumVal<typeof LogType>,
     message: Uint8Array,
   ): MaybeAsync<true | Error>;
   start(): MaybeAsync<true | Error>;
@@ -35,7 +51,7 @@ export class Logger {
     });
   }
 
-  private createLogPreamble(type: LogType): string {
+  private createLogPreamble(type: EnumVal<typeof LogType>): string {
     const date = DateTime.now();
     const timestamp = date.toFormat("[yyyy-MM-dd HH:mm:ss.SSS]");
 
@@ -82,7 +98,7 @@ export class Logger {
     ).join(", ");
   }
 
-  private write(type: LogType, msg: Uint8Array) {
+  private write(type: EnumVal<typeof LogType>, msg: Uint8Array) {
     for (let i = 0; i < this.writers.length; i++) {
       const writer = this.writers[i]!;
       Promise.resolve(writer.write(type, msg)).catch((e) => {

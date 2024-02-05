@@ -8,12 +8,22 @@ import type { GetWsHandlers } from "./routes/websocket-route";
 import { WebsocketRoute } from "./routes/websocket-route";
 import { ServeHandler } from "./serve-handler";
 
+export type MaybePromise<T> = T | Promise<T>;
+
 export interface HttpServerOptions {
   onRouteError?(
     err: unknown,
     request: Request,
     route: Route,
   ): Response | Promise<Response>;
+}
+
+export interface RequestMiddleware {
+  (request: Request): MaybePromise<Response | Request | void>;
+}
+
+export interface ResponseMiddleware {
+  (response: Response, request: Request): MaybePromise<Response>;
 }
 
 export class HttpServer {
@@ -25,7 +35,17 @@ export class HttpServer {
     return server.router.findRoute(method, url);
   }
 
+  private readonly requestMiddleware: RequestMiddleware[] = [];
+  private readonly responseMiddleware: ResponseMiddleware[] = [];
   private readonly router = new Router();
+
+  public onRequest(middleware: RequestMiddleware) {
+    this.requestMiddleware.push(middleware);
+  }
+
+  public onResponse(middleware: ResponseMiddleware) {
+    this.responseMiddleware.push(middleware);
+  }
 
   public any(
     method: string,
@@ -156,7 +176,12 @@ export class HttpServer {
   }
 
   public listen(port: number, options: HttpServerOptions = {}) {
-    const serve = new ServeHandler(this, port);
+    const serve = new ServeHandler(
+      this,
+      this.requestMiddleware,
+      this.responseMiddleware,
+      port,
+    );
     serve.onRouteError = options.onRouteError;
     return Bun.serve(serve);
   }

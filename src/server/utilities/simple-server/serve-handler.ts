@@ -1,5 +1,9 @@
 import type { Server } from "bun";
-import type { HttpServerOptions } from "./http-server";
+import type {
+  HttpServerOptions,
+  RequestMiddleware,
+  ResponseMiddleware,
+} from "./http-server";
 import { HttpServer } from "./http-server";
 import { WsHandler } from "./websocket-handler";
 
@@ -8,6 +12,8 @@ export class ServeHandler {
 
   public constructor(
     private readonly server: HttpServer,
+    private readonly requestMiddleware: RequestMiddleware[],
+    private readonly responseMiddleware: ResponseMiddleware[],
     public readonly port: number = 8080,
   ) {
     this.fetch = this.fetch.bind(this);
@@ -26,7 +32,7 @@ export class ServeHandler {
 
   public websocket = new WsHandler(this.server, this);
 
-  public async fetch(
+  public async respond(
     request: Request,
     bunServer: Server,
   ): Promise<Response | undefined> {
@@ -52,5 +58,29 @@ export class ServeHandler {
         return this.internalErrorResp();
       }
     }
+  }
+
+  public async fetch(request: Request, bunServer: Server) {
+    for (let i = 0; i < this.requestMiddleware.length; i++) {
+      const middleware = this.requestMiddleware[i]!;
+      const result = await middleware(request);
+      if (result instanceof Response) {
+        return result;
+      }
+      if (result instanceof Request) {
+        request = result;
+      }
+    }
+
+    let response = await this.respond(request, bunServer);
+
+    if (response) {
+      for (let i = 0; i < this.responseMiddleware.length; i++) {
+        const middleware = this.responseMiddleware[i]!;
+        response = await middleware(response, request);
+      }
+    }
+
+    return response;
   }
 }
