@@ -1,3 +1,4 @@
+import type { ReadonlySignal } from "@ncpa0cpl/vanilla-jsx";
 import { sig } from "@ncpa0cpl/vanilla-jsx";
 import { Button, Card, Input } from "adwavecss";
 import { clsx } from "clsx";
@@ -7,7 +8,9 @@ import { UserService } from "../../services/user-service/user-service";
 import { router } from "../routes";
 import "./styles.css";
 
-export const RegisterPage = () => {
+export const RegisterPage = (
+  props: { qparams: ReadonlySignal<{ roomID?: string }> },
+) => {
   if (UserService.userExists().current()) {
     router.navigate("join");
   }
@@ -19,7 +22,13 @@ export const RegisterPage = () => {
 
     if (username.current()) {
       UserService.createNewUser(username.current());
-      router.navigate("join");
+
+      const { roomID } = props.qparams.current();
+      if (roomID) {
+        router.navigate("room", { roomID });
+      } else {
+        router.navigate("join");
+      }
     }
   };
 

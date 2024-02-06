@@ -2,32 +2,61 @@ import type { ReadonlySignal, Signal } from "@ncpa0cpl/vanilla-jsx";
 import { sig } from "@ncpa0cpl/vanilla-jsx";
 import clsx from "clsx";
 
-type AsString<T> = T extends string ? T : string;
-type IsLiteral<S extends string> = string extends S ? false : true;
+export type AsString<T> = T extends string ? T : string;
 
 export type RouteDefWithoutParams = {
-  param?: undefined;
+  params?: undefined;
   memoized?: boolean;
   default?: boolean;
   component: () => JSX.Element;
 };
-export type RouteDefWithParams<P extends string> = {
-  param: P;
-  memoized?: boolean;
-  default?: boolean;
-  component: (params: ReadonlySignal<Record<P, string>>) => JSX.Element;
+export type RouteDefWithParams<PNames extends string[], PDict extends object> =
+  {
+    params: PNames;
+    memoized?: boolean;
+    default?: boolean;
+    component: (
+      params: ReadonlySignal<PDict>,
+    ) => JSX.Element;
+  };
+
+export type ParamlessRoutes<R extends Record<string, any>> = {
+  [K in keyof R as R[K] extends RouteDefWithParams<any, any> ? never : K]: R[K];
+};
+export type ParamRoutes<R extends Record<string, any>> = {
+  [K in keyof R as R[K] extends RouteDefWithParams<any, any> ? K : never]: R[K];
 };
 
-export type RouteDef<P extends string = string> = IsLiteral<P> extends true
-  ? RouteDefWithParams<P>
-  : RouteDefWithoutParams;
+export type GetParamRoute<
+  R extends Record<string, any>,
+  RName extends string,
+> = R[RName] extends RouteDefWithParams<infer P, infer O>
+  ? RouteDefWithParams<P, O>
+  : never;
 
-type ParamlessRoutes<R extends Record<string, any>> = {
-  [K in keyof R as R[K] extends RouteDefWithParams<any> ? never : K]: R[K];
-};
-type ParamRoutes<R extends Record<string, any>> = {
-  [K in keyof R as R[K] extends RouteDefWithParams<any> ? K : never]: R[K];
-};
+export type ParamName<N extends string> = N extends `?${infer PN}` ? PN : N;
+
+export type ParamDict<
+  ParamNames extends string[],
+> =
+  & {
+    [
+      K in ParamNames[number] as K extends `?${string}` ? ParamName<K>
+        : never
+    ]?: string;
+  }
+  & {
+    [
+      K in ParamNames[number] as K extends `?${string}` ? never
+        : ParamName<K>
+    ]: string;
+  };
+
+export type ParamDictFor<
+  Routes extends Record<string, any>,
+  RName extends string,
+> = GetParamRoute<Routes, RName> extends RouteDefWithParams<any, infer O> ? O
+  : never;
 
 class Route {
   private element: JSX.Element | null = null;
@@ -35,7 +64,7 @@ class Route {
 
   public constructor(
     public readonly path: string,
-    public readonly def: RouteDefWithParams<any> | RouteDefWithoutParams,
+    public readonly def: RouteDefWithParams<any, any> | RouteDefWithoutParams,
   ) {}
 
   private updateParams(params: Record<string, string>) {
@@ -114,7 +143,7 @@ class UrlController {
 export class SimpleRouter<
   const ROUTES extends Record<
     string,
-    RouteDefWithParams<string> | RouteDefWithoutParams
+    RouteDefWithParams<string[], any> | RouteDefWithoutParams
   >,
 > {
   private readonly container = <div class={clsx("routerbox")} />;
@@ -187,9 +216,9 @@ export class SimpleRouter<
   ): void;
   public navigate<PATH extends keyof ParamRoutes<ROUTES>>(
     path: PATH,
-    params: Record<AsString<ROUTES[PATH]["param"]>, string>,
-  ): void;
-  public navigate(path: string, params?: any): void {
+    params: ParamDictFor<ROUTES, AsString<PATH>>,
+  ): ParamDictFor<ROUTES, AsString<PATH>>;
+  public navigate(path: string, params?: any): any {
     queueMicrotask(() => {
       this.updateContainer(path, params);
       this.url.push();
@@ -201,7 +230,7 @@ export class SimpleRouter<
   ): void;
   public replace<PATH extends keyof ParamRoutes<ROUTES>>(
     path: PATH,
-    params: Record<AsString<ROUTES[PATH]["param"]>, string>,
+    params: Record<AsString<ROUTES[PATH]["params"]>, string>,
   ): void;
   public replace(path: string, params?: any): void {
     queueMicrotask(() => {
@@ -228,7 +257,14 @@ export class SimpleRouter<
   }
 }
 
-export const route = <const P extends string>(
-  def: RouteDefWithParams<P> | RouteDefWithoutParams,
-): IsLiteral<P> extends true ? RouteDefWithParams<P> : RouteDefWithoutParams =>
-  def as any;
+export function route(def: RouteDefWithoutParams): RouteDefWithoutParams;
+export function route<
+  const P extends string[],
+>(
+  def: RouteDefWithParams<P, ParamDict<P>>,
+): RouteDefWithParams<P, ParamDict<P>>;
+export function route(
+  def: any,
+): any {
+  return def;
+}
