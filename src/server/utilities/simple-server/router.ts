@@ -1,4 +1,5 @@
 import type { Server } from "bun";
+import type { RouterResponse } from "./router-response";
 
 export interface Route {
   matches(method: string, url: string): boolean;
@@ -6,7 +7,7 @@ export interface Route {
     request: Request,
     bunServer: Server,
     url: URL,
-  ): Response | Promise<Response | undefined> | undefined;
+  ): RouterResponse | Promise<RouterResponse | undefined> | undefined;
   toView(): any;
 }
 

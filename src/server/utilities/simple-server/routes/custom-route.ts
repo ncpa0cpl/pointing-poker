@@ -2,6 +2,7 @@ import type { Server } from "bun";
 import { CompiledPath } from "../compiled-path";
 import { Context } from "../context";
 import type { Route } from "../router";
+import { RouterResponse } from "../router-response";
 
 export type RouteHandler = (ctx: Context) => Context | Promise<Context>;
 
@@ -31,11 +32,11 @@ export class CustomRoute implements Route {
     request: Request,
     bunServer: Server,
     url: URL,
-  ): Promise<Response | undefined> {
+  ): Promise<RouterResponse | undefined> {
     const parsedUrl = this.compiledPath.parse(url.pathname);
 
     if (parsedUrl instanceof Error) {
-      return new Response(
+      return RouterResponse.from(
         "Internal server error",
         { status: 500, statusText: "Internal server error" },
       );

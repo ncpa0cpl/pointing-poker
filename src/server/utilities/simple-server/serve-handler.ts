@@ -5,6 +5,7 @@ import type {
   ResponseMiddleware,
 } from "./http-server";
 import { HttpServer } from "./http-server";
+import { RouterResponse } from "./router-response";
 import { WsHandler } from "./websocket-handler";
 
 export class ServeHandler {
@@ -20,11 +21,14 @@ export class ServeHandler {
   }
 
   private notFoundResp() {
-    return new Response("Not Found", { status: 404, statusText: "Not Found" });
+    return RouterResponse.from("Not Found", {
+      status: 404,
+      statusText: "Not Found",
+    });
   }
 
   private internalErrorResp() {
-    return new Response("Internal Server Error", {
+    return RouterResponse.from("Internal Server Error", {
       status: 500,
       statusText: "Internal Server Error",
     });
@@ -35,7 +39,7 @@ export class ServeHandler {
   public async respond(
     request: Request,
     bunServer: Server,
-  ): Promise<Response | undefined> {
+  ): Promise<RouterResponse | undefined> {
     const url = new URL(request.url);
 
     const route = HttpServer.findRoute(

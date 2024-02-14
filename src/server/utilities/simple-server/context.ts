@@ -1,4 +1,6 @@
 import type { BunFile, Server } from "bun";
+import type { MaybePromise } from "./http-server";
+import { RouterResponse } from "./router-response";
 
 type ResponseData = {
   body: any;
@@ -15,17 +17,17 @@ const copyHeaders = (from: Headers, to: Headers) => {
 export class Context {
   public static createResponse(
     ctx: Context,
-  ): Response | undefined {
+  ): MaybePromise<RouterResponse | undefined> {
     if (ctx.dontSendResponse) {
       return;
     }
 
-    if (ctx.responseData instanceof Response) {
+    if (ctx.responseData instanceof RouterResponse) {
       copyHeaders(ctx.responseHeaders, ctx.responseData.headers);
       return ctx.responseData;
     }
 
-    return new Response(
+    return RouterResponse.from(
       ctx.responseData.body,
       {
         headers: ctx.responseHeaders,
@@ -35,7 +37,7 @@ export class Context {
     );
   }
 
-  private responseData: ResponseData | Response = {
+  private responseData: ResponseData | RouterResponse = {
     body: "Not Found",
     status: 404,
     statusText: "Not Found",
@@ -72,7 +74,7 @@ export class Context {
     return this.wildcardValue;
   }
 
-  public send(response: Response): Context {
+  public send(response: RouterResponse): Context {
     this.responseData = response;
     return this;
   }

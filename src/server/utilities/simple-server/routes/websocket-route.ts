@@ -1,6 +1,7 @@
 import type { Server, ServerWebSocket } from "bun";
 import { CompiledPath } from "../compiled-path";
 import type { Route } from "../router";
+import { RouterResponse } from "../router-response";
 
 export interface WsHandlers<T> {
   message(ws: ServerWebSocket<T>, message: string | Buffer): void;
@@ -34,14 +35,14 @@ export class WebsocketRoute<T> implements Route {
   public async handleRequest(
     request: Request,
     bunServer: Server,
-  ): Promise<Response | undefined> {
+  ): Promise<RouterResponse | undefined> {
     const ok = bunServer.upgrade(request, {
       data: { getHandlers: this.onOpen },
     });
     if (ok) {
       return;
     }
-    return new Response("Internal server error", {
+    return RouterResponse.from("Internal server error", {
       status: 500,
       statusText: "Internal server error",
     });

@@ -1,6 +1,7 @@
 import path from "path";
 import type { Route } from "./router";
 import { Router } from "./router";
+import type { RouterResponse } from "./router-response";
 import type { RouteHandler } from "./routes/custom-route";
 import { CustomRoute } from "./routes/custom-route";
 import { StaticFileRoute } from "./routes/static-file-route";
@@ -15,15 +16,15 @@ export interface HttpServerOptions {
     err: unknown,
     request: Request,
     route: Route,
-  ): Response | Promise<Response>;
+  ): RouterResponse | Promise<RouterResponse>;
 }
 
 export interface RequestMiddleware {
-  (request: Request): MaybePromise<Response | Request | void>;
+  (request: Request): MaybePromise<RouterResponse | Request | void>;
 }
 
 export interface ResponseMiddleware {
-  (response: Response, request: Request): MaybePromise<Response>;
+  (response: RouterResponse, request: Request): MaybePromise<RouterResponse>;
 }
 
 export class HttpServer {

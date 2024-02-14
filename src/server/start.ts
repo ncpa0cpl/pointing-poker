@@ -3,9 +3,12 @@ import "reflect-metadata";
 import { logger } from "./app-logger";
 import { Room } from "./rooms/room/room";
 import { addRoutes } from "./routes/add-routes";
-import { LogMiddleware } from "./utilities/log-middleware";
+import { CacheMiddleware } from "./utilities/middleware/cache-middleware";
+import { GzipMiddleware } from "./utilities/middleware/gzip-middleware";
+import { LogMiddleware } from "./utilities/middleware/log-middleware";
 import { deserializeClassInstancesFromPersistentStorage } from "./utilities/persistent-objects/deserialize-class-instances-from-persistent-storage";
 import { HttpServer } from "./utilities/simple-server/http-server";
+import { RouterResponse } from "./utilities/simple-server/router-response";
 
 Settings.throwOnInvalid = true;
 declare module "luxon" {
@@ -24,6 +27,8 @@ deserializeClassInstancesFromPersistentStorage(Room).catch((e) => {
 });
 
 const app = new HttpServer();
+app.onResponse(CacheMiddleware());
+app.onResponse(GzipMiddleware());
 app.onResponse(LogMiddleware());
 
 addRoutes(app);
@@ -36,7 +41,7 @@ app.listen(port, {
       request: req,
       route: route.toView(),
     });
-    return new Response("Internal server error", { status: 500 });
+    return RouterResponse.from("Internal server error", { status: 500 });
   },
 });
 

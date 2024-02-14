@@ -2,6 +2,7 @@ import type { Server } from "bun";
 import path from "node:path";
 import { CompiledPath } from "../compiled-path";
 import type { Route } from "../router";
+import { RouterResponse } from "../router-response";
 
 export class StaticFileRoute implements Route {
   private readonly compiledPath: CompiledPath;
@@ -29,10 +30,10 @@ export class StaticFileRoute implements Route {
     request: Request,
     bunServer: Server,
     url: URL,
-  ): Promise<Response | undefined> {
+  ): Promise<RouterResponse | undefined> {
     const result = this.compiledPath.parse(url.pathname);
     if (result instanceof Error || !result.wildcardValue) {
-      return new Response(
+      return RouterResponse.from(
         "Not Found",
         { status: 404, statusText: "Not Found" },
       );
@@ -46,7 +47,7 @@ export class StaticFileRoute implements Route {
     const filePath = path.resolve(this.dirPath, subpath);
     const file = Bun.file(filePath);
 
-    return new Response(file, { status: 200 });
+    return RouterResponse.from(file, { status: 200 });
   }
 
   public toView() {
