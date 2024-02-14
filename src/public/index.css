@@ -87,7 +87,7 @@ h6 {
   0% {
     opacity: 0;
   }
-  30% {
+  70% {
     opacity: 0;
   }
   100% {
@@ -96,7 +96,8 @@ h6 {
 }
 
 #root > :is(.dark-theme, .light-theme) > * {
-  animation: onload 0.7s;
+  opacity: 0;
+  animation: onload 0.7s ease-in-out forwards;
 }
 
 @media screen and (max-width: 520px) {
