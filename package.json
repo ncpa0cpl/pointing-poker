@@ -31,7 +31,7 @@
     "test:lint": "eslint .",
     "test:fmt": "dprint check",
     "test:tsc": "tsc --noEmit",
-    "start": "bun ./dist/esm/server/start.mjs",
+    "start": "bun ./src/server/start.ts",
     "start:dev": "NODE_ENV=development node ./scripts/build.mjs --watch --serve --dev",
     "watch": "NODE_ENV=development node ./scripts/build.mjs --watch",
     "build:dev": "NODE_ENV=development node ./scripts/build.mjs --dev",
