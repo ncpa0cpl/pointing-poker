@@ -1,6 +1,6 @@
 # Pointing Poker Web App
 
-Check it out on [https://ppoker-q9bt.onrender.com](https://ppoker-q9bt.onrender.com)
+Check it out on [https://camqiwa.fra.dom.my.id/join](https://camqiwa.fra.dom.my.id/join)
 
 ## Setup
 
