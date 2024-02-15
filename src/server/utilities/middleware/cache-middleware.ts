@@ -89,8 +89,12 @@ export const CacheMiddleware = (
 ): ResponseMiddleware => {
   const addCacheHeaders = addCacheHeadersFactory(config);
   return (resp, req) => {
+    if (req.method !== "GET") {
+      return resp;
+    }
+
     let etag = resp.headers.get("ETag");
-    if (etag == null) {
+    if (etag == null || etag === "") {
       const lastMod = resp.headers.get("Last-Modified");
       if (lastMod != null) {
         const hash = Bun.hash.crc32(lastMod).toString(16);
@@ -99,7 +103,7 @@ export const CacheMiddleware = (
       }
     }
 
-    if (req.headers.get("If-None-Match") === etag) {
+    if (!!etag && req.headers.get("If-None-Match") === etag) {
       return addCacheHeaders(
         new RouterResponse(Buffer.from(""), {
           status: 304,
