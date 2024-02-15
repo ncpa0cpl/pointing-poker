@@ -43,7 +43,9 @@ export const Room = (props: { roomID: ReadonlySignal<string> }) => {
 
   bindSignal(props.roomID, room, (_, roomID) => {
     if (PokerRoomService.roomID.current() !== roomID) {
-      PokerRoomService.connectToRoom(roomID);
+      PokerRoomService.connectToRoom(roomID).catch(() => {
+        router.navigate("notfound");
+      });
     }
   });
 

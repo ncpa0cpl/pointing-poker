@@ -1,0 +1,6 @@
+.room-not-found-page {
+  padding: 2em;
+  & button {
+    margin-top: 1.5em;
+  }
+}

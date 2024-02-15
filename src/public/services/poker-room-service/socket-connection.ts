@@ -21,6 +21,7 @@ type ConnectionParams = {
   connectionID?: string;
 };
 
+const noop = () => {};
 const parseMsg = createWsMsgParser(DTRoomWSOutgoingMessage);
 
 const RECONNECT_BACKOFFS = {
@@ -95,7 +96,7 @@ export class WsConnection {
   #attemptingConnection = false;
   #connectionParams: null | ConnectionParams = null;
   #eventEmitter = new EventTarget();
-  private onopen = () => {};
+  private onopen = noop;
 
   public constructor() {
     this.createWs().catch(() => {});
@@ -108,21 +109,22 @@ export class WsConnection {
       this.#socket = new WebSocket(`${protocol}://${location.host}/ws/room`);
 
       this.#socket.onopen = () => {
-        this.#socket.onerror = null;
+        this.#socket.onerror = (err) => {
+          console.error(err);
+        };
         this.#isOpened = true;
         this.#attemptingConnection = false;
         this.#socket.onclose = () => {
           this.#isOpened = false;
-
-          if (this.#connectionParams) {
-            this.tryReconnect();
-          }
+          this.disposeOfSocket();
+          this.tryReconnect();
         };
         resolve();
         this.onopen();
       };
 
       this.#socket.onerror = () => {
+        console.error();
         reject(
           new Error(
             "Connection could not be established.",
@@ -139,6 +141,18 @@ export class WsConnection {
     });
   }
 
+  private disposeOfSocket() {
+    try {
+      this.#socket.onclose = null;
+      this.#socket.onerror = null;
+      this.#socket.onopen = null;
+      this.#socket.onmessage = null;
+      this.#socket.close();
+    } catch {
+      //
+    }
+  }
+
   private tryReconnect() {
     // retry up to 5 times with a exponential backoff
     let nextBackoff: keyof typeof RECONNECT_BACKOFFS = RECONNECT_BACKOFFS[0];
@@ -149,7 +163,9 @@ export class WsConnection {
           nextBackoff = RECONNECT_BACKOFFS[nextBackoff];
           try {
             await this.createWs();
-            await this.openConnection(this.#connectionParams!);
+            if (this.#connectionParams) {
+              await this.openConnection(this.#connectionParams);
+            }
           } catch {
             retry();
           }
@@ -218,11 +234,13 @@ export class WsConnection {
 
           this.once(OutgoingMessageType.ERROR, (data): void => {
             this.#attemptingConnection = false;
+            this.#connectionParams = null;
             reject(new Error(data.message));
           });
 
           this.#socket.onerror = () => {
             this.#attemptingConnection = false;
+            this.#connectionParams = null;
             reject(
               new Error(
                 "Connection could not be established.",
@@ -234,7 +252,7 @@ export class WsConnection {
             type: IncomingMessageType.INITIATE,
             messageID: v4(),
             ...connectionParams,
-          }).catch(() => {});
+          });
         },
       );
 
@@ -249,6 +267,8 @@ export class WsConnection {
               resolve(data);
             } catch (err) {
               reject(err);
+            } finally {
+              this.onopen = noop;
             }
           };
         },

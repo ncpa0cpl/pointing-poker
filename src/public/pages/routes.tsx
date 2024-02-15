@@ -2,6 +2,7 @@ import { UserService } from "../services/user-service/user-service";
 import { route, SimpleRouter } from "../utilities/simple-router/simple-router";
 import { JoinRoom } from "./join-room/join-room";
 import { RegisterPage } from "./register-form/register-form";
+import { RoomNotFound } from "./room-not-found/room-not-found";
 import { Room } from "./room/room";
 
 export const router = new SimpleRouter({
@@ -27,6 +28,9 @@ export const router = new SimpleRouter({
       }
       return <Room roomID={params.derive(p => p.roomID)} />;
     },
+  }),
+  notfound: route({
+    component: RoomNotFound,
   }),
 });
 

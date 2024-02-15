@@ -20,7 +20,7 @@ export const RoomConnectionForm = (props: { disable: Signal<boolean> }) => {
       await PokerRoomService.connectToRoom(roomID);
       router.navigate("room", { roomID: roomID });
     } catch (e) {
-      // TODO: redirect to 404 page
+      router.navigate("notfound");
     } finally {
       disable.dispatch(false);
     }
