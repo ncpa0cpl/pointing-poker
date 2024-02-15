@@ -1,24 +1,35 @@
-import { sig } from "@ncpa0cpl/vanilla-jsx";
+import type { Signal } from "@ncpa0cpl/vanilla-jsx";
+import { Button } from "adwavecss";
+import { clsx } from "clsx";
 import { PokerRoomService } from "../../../../services/poker-room-service/poker-room-service";
 import { router } from "../../../routes";
 
-export const RoomCreateForm = () => {
-  const disableBtn = sig(false);
+export const RoomCreateForm = (props: { disable: Signal<boolean> }) => {
+  const disable = props.disable;
 
   const createRoom = async () => {
-    disableBtn.dispatch(true);
+    disable.dispatch(true);
     try {
       const roomID = await PokerRoomService.createRoom();
       await PokerRoomService.connectToRoom(roomID);
       router.navigate("room", { roomID: roomID });
     } finally {
-      disableBtn.dispatch(false);
+      disable.dispatch(false);
     }
   };
 
   return (
     <div class="grow">
-      <button class="btn" onclick={createRoom} disabled={disableBtn}>
+      <button
+        class={disable.derive(d =>
+          clsx({
+            [Button.button]: true,
+            [Button.disabled]: d,
+          })
+        )}
+        onclick={createRoom}
+        disabled={disable}
+      >
         Create a new Room
       </button>
     </div>

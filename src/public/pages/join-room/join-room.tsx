@@ -1,3 +1,4 @@
+import { sig } from "@ncpa0cpl/vanilla-jsx";
 import { Card, Typography } from "adwavecss";
 import { clsx } from "clsx";
 import { PointingPokerDescription } from "../../components/pp-description/pp-description";
@@ -10,20 +11,21 @@ import "./styles.css";
 
 export const JoinRoom = () => {
   const userExists = UserService.userExists();
+  const disableControls = sig(false);
 
   if (!userExists) {
-    router.navigate("register");
+    router.navigate("register", {});
   }
 
   return (
     <div class={clsx("join-room-page", "grow", Card.card)}>
       <PointingPokerDescription />
       <div class="join-form">
-        <RoomCreateForm />
+        <RoomCreateForm disable={disableControls} />
         <div class="or-divider">
           <p class={Typography.label}>or</p>
         </div>
-        <RoomConnectionForm />
+        <RoomConnectionForm disable={disableControls} />
       </div>
       <RepoLink />
     </div>

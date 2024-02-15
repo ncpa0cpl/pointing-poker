@@ -1,23 +1,45 @@
+import type { Signal } from "@ncpa0cpl/vanilla-jsx";
 import { sig } from "@ncpa0cpl/vanilla-jsx";
-import { Button } from "adwavecss";
+import { Button, Input } from "adwavecss";
+import { clsx } from "clsx";
 import { PokerRoomService } from "../../../../services/poker-room-service/poker-room-service";
 import { router } from "../../../routes";
 import "./styles.css";
 
-export const RoomConnectionForm = () => {
+export const RoomConnectionForm = (props: { disable: Signal<boolean> }) => {
   const inputValue = sig("");
-  const disableBtn = sig(false);
+  const disable = props.disable;
 
   const onConnect = async () => {
-    disableBtn.dispatch(true);
     const roomID = inputValue.current();
+
+    if (!roomID) return;
+
+    disable.dispatch(true);
     try {
       await PokerRoomService.connectToRoom(roomID);
       router.navigate("room", { roomID: roomID });
     } catch (e) {
       // TODO: redirect to 404 page
     } finally {
-      disableBtn.dispatch(false);
+      disable.dispatch(false);
+    }
+  };
+
+  const handleInput = (e: Event) => {
+    const target = e.target as HTMLInputElement;
+    inputValue.dispatch(target.value);
+  };
+
+  const handleKeyUp = (e: KeyboardEvent) => {
+    if (e.key === "Enter") {
+      const hasModifier = e.ctrlKey
+        || e.altKey
+        || e.metaKey
+        || e.shiftKey;
+      if (!hasModifier) {
+        onConnect();
+      }
     }
   };
 
@@ -26,14 +48,26 @@ export const RoomConnectionForm = () => {
       <h2 class="header">Join existing Room</h2>
       <div class={Button.linked}>
         <input
-          class="input"
+          class={disable.derive((d) =>
+            clsx({
+              [Input.input]: true,
+              [Input.disabled]: d,
+            })
+          )}
           placeholder="Room ID"
-          oninput={(e) => {
-            const target = e.target as HTMLInputElement;
-            inputValue.dispatch(target.value);
-          }}
+          oninput={handleInput}
+          onkeyup={handleKeyUp}
         />
-        <button class="btn" onclick={onConnect} disabled={disableBtn}>
+        <button
+          class={disable.derive(d =>
+            clsx({
+              [Button.button]: true,
+              [Button.disabled]: d,
+            })
+          )}
+          onclick={onConnect}
+          disabled={disable}
+        >
           Connect
         </button>
       </div>
