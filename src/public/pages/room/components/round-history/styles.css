@@ -3,6 +3,7 @@
   overflow-y: auto;
 
   & .nav-sidebar {
+    flex-grow: 1;
     & .prev-round-btn {
       display: flex;
       justify-content: space-between;

@@ -14,7 +14,7 @@ export const RoomIDDisplay = () => {
       <input
         class="input"
         disabled
-        value={PokerRoomService.roomID.derive(d => d ?? "")}
+        value={PokerRoomService.roomID.derive(d => d ?? "        ")}
       />
       <button class="btn" onclick={copyRoomID}>
         Copy

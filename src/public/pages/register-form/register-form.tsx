@@ -1,7 +1,6 @@
 import type { ReadonlySignal } from "@ncpa0cpl/vanilla-jsx";
 import { sig } from "@ncpa0cpl/vanilla-jsx";
 import { Button, Card, Input } from "adwavecss";
-import { clsx } from "clsx";
 import { PointingPokerDescription } from "../../components/pp-description/pp-description";
 import { RepoLink } from "../../components/repo-link/repo-link";
 import { UserService } from "../../services/user-service/user-service";
@@ -38,7 +37,7 @@ export const RegisterPage = (
   };
 
   return (
-    <div class={clsx(Card.card, "register-form")}>
+    <div class={[Card.card, "register-form"]}>
       <PointingPokerDescription />
       <form onsubmit={onSubmit}>
         <div class={Button.linked}>

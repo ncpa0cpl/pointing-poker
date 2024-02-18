@@ -1,7 +1,6 @@
 import type { Signal } from "@ncpa0cpl/vanilla-jsx";
 import { sig } from "@ncpa0cpl/vanilla-jsx";
 import { Button, Input } from "adwavecss";
-import { clsx } from "clsx";
 import { PokerRoomService } from "../../../../services/poker-room-service/poker-room-service";
 import { router } from "../../../routes";
 import "./styles.css";
@@ -48,23 +47,19 @@ export const RoomConnectionForm = (props: { disable: Signal<boolean> }) => {
       <h2 class="header">Join existing Room</h2>
       <div class={Button.linked}>
         <input
-          class={disable.derive((d) =>
-            clsx({
-              [Input.input]: true,
-              [Input.disabled]: d,
-            })
-          )}
+          class={{
+            [Input.input]: true,
+            [Input.disabled]: disable,
+          }}
           placeholder="Room ID"
           oninput={handleInput}
           onkeyup={handleKeyUp}
         />
         <button
-          class={disable.derive(d =>
-            clsx({
-              [Button.button]: true,
-              [Button.disabled]: d,
-            })
-          )}
+          class={{
+            [Input.input]: true,
+            [Input.disabled]: disable,
+          }}
           onclick={onConnect}
           disabled={disable}
         >

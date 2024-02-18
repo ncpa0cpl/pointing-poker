@@ -1,6 +1,5 @@
 import { sig } from "@ncpa0cpl/vanilla-jsx";
 import { Card, Typography } from "adwavecss";
-import { clsx } from "clsx";
 import { PointingPokerDescription } from "../../components/pp-description/pp-description";
 import { RepoLink } from "../../components/repo-link/repo-link";
 import { UserService } from "../../services/user-service/user-service";
@@ -18,7 +17,7 @@ export const JoinRoom = () => {
   }
 
   return (
-    <div class={clsx("join-room-page", "grow", Card.card)}>
+    <div class={["join-room-page", "grow", Card.card]}>
       <PointingPokerDescription />
       <div class="join-form">
         <RoomCreateForm disable={disableControls} />

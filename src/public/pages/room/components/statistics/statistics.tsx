@@ -1,5 +1,4 @@
 import { Box, Typography } from "adwavecss";
-import clsx from "clsx";
 import { PokerRoomService } from "../../../../services/poker-room-service/poker-room-service";
 import "./styles.css";
 
@@ -13,7 +12,7 @@ export const Statistics = () => {
   );
 
   return (
-    <div class={clsx(Box.box, Box.bg2, "column")}>
+    <div class={[Box.box, Box.bg2, "column"]}>
       <h2 class={Typography.header}>
         Statistics
       </h2>

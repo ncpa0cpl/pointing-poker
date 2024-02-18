@@ -1,5 +1,4 @@
 import { Button } from "adwavecss";
-import clsx from "clsx";
 import "./styles.css";
 
 export const RepoLink = () => {
@@ -11,7 +10,7 @@ export const RepoLink = () => {
         target="_blank"
         rel="noopener noreferrer"
       >
-        <button class={clsx(Button.button, Button.flat)}>
+        <button class={Button.className({ flat: true })}>
           View Source Code on GitHub
         </button>
       </a>

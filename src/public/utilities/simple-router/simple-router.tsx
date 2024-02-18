@@ -1,6 +1,5 @@
 import type { ReadonlySignal, Signal } from "@ncpa0cpl/vanilla-jsx";
 import { sig } from "@ncpa0cpl/vanilla-jsx";
-import clsx from "clsx";
 
 export type AsString<T> = T extends string ? T : string;
 
@@ -146,7 +145,7 @@ export class SimpleRouter<
     RouteDefWithParams<string[], any> | RouteDefWithoutParams
   >,
 > {
-  private readonly container = <div class={clsx("routerbox")} />;
+  private readonly container = <div class={"routerbox"} />;
   private currentRoute: Route | null = null;
   private readonly routes: Route[];
   private readonly url = new UrlController();

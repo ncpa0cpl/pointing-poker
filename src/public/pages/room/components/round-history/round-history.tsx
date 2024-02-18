@@ -1,51 +1,82 @@
-import { Range } from "@ncpa0cpl/vanilla-jsx";
+import type { ReadonlySignal } from "@ncpa0cpl/vanilla-jsx";
+import { If, Range } from "@ncpa0cpl/vanilla-jsx";
 import { Box, NavSidebar, Typography } from "adwavecss";
-import clsx from "clsx";
 import { UpsideDownScrollView } from "../../../../components/upside-down-scrollview/upside-down-scrollview";
 import { PokerRoomService } from "../../../../services/poker-room-service/poker-room-service";
+import type { PokerRoomRound } from "../../../../services/poker-room-service/types";
 import "./styles.css";
 
-export const RoundHistory = () => {
+type PokerRoomRoundWithId = PokerRoomRound & { idx: number };
+
+export const RoundHistory = (
+  props: { isSkeleton: ReadonlySignal<boolean> },
+) => {
   const cround = PokerRoomService.currentRound;
-  const allRounds = PokerRoomService.rounds.derive((rounds) =>
+  const allRounds = PokerRoomService.rounds.derive((
+    rounds,
+  ): PokerRoomRoundWithId[] =>
     rounds.map((r, idx) => ({ ...r, idx: idx + 1 }))
   );
+
+  const renderRoundBtn = (round: PokerRoomRoundWithId) => (
+    <button
+      onclick={() => {
+        const lastRoundIdx = -1
+          + PokerRoomService.rounds.current().length;
+        if (
+          round.idx - 1 === lastRoundIdx
+        ) {
+          PokerRoomService.selectedRound.dispatch("");
+        } else {
+          PokerRoomService.selectedRound.dispatch(round.id);
+        }
+      }}
+      class={{
+        "prev-round-btn": true,
+        [NavSidebar.button]: true,
+        [NavSidebar.active]: cround.derive(cr => cr?.id === round.id),
+      }}
+    >
+      <p class={Typography.text}>Round {round.idx}</p>
+      <p class={Typography.subtitle}>
+        {round.finalResult
+          ? `Mod: ${round.finalResult.mode} | Med: ${round.finalResult.median} | Avg: ${round.finalResult?.mean}`
+          : ""}
+      </p>
+    </button>
+  );
+
   return (
-    <div class={clsx(Box.box, Box.bg2, "round-history", "column")}>
+    <div class={[Box.box, Box.bg2, "round-history", "column"]}>
       <h2 class={Typography.header}>Previous Rounds</h2>
       <UpsideDownScrollView dep={allRounds}>
-        <Range
-          data={allRounds}
-          into={<div class={NavSidebar.navSidebar} />}
-        >
-          {round => (
-            <button
-              onclick={() => {
-                const lastRoundIdx = -1
-                  + PokerRoomService.rounds.current().length;
-                if (
-                  round.idx - 1 === lastRoundIdx
-                ) {
-                  PokerRoomService.selectedRound.dispatch("");
-                } else {
-                  PokerRoomService.selectedRound.dispatch(round.id);
-                }
-              }}
-              class={cround.derive(cr =>
-                clsx(NavSidebar.button, "prev-round-btn", {
-                  [NavSidebar.active]: cr?.id === round.id,
-                })
-              )}
-            >
-              <p class={Typography.text}>Round {round.idx}</p>
-              <p class={Typography.subtitle}>
-                {round.finalResult
-                  ? `Mod: ${round.finalResult.mode} | Med: ${round.finalResult.median} | Avg: ${round.finalResult?.mean}`
-                  : ""}
-              </p>
-            </button>
-          )}
-        </Range>
+        <If
+          condition={props.isSkeleton}
+          then={() => {
+            return (
+              <div class={NavSidebar.navSidebar}>
+                {renderRoundBtn({
+                  id: "",
+                  idx: 1,
+                  hasResults: false,
+                  results: [],
+                  isInProgress: true,
+                  options: [],
+                })}
+              </div>
+            );
+          }}
+          else={() => {
+            return (
+              <Range
+                data={allRounds}
+                into={<div class={NavSidebar.navSidebar} />}
+              >
+                {renderRoundBtn}
+              </Range>
+            );
+          }}
+        />
       </UpsideDownScrollView>
     </div>
   );

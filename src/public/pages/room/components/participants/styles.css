@@ -4,6 +4,7 @@
   overflow-y: auto;
 
   & .participant {
+    align-items: center;
     flex-grow: 1;
     justify-content: space-between;
     margin-bottom: 0.5em;
@@ -12,36 +13,49 @@
       opacity: 0.5;
     }
 
-    &.text {
-      max-width: calc(100% - 5em);
+    & p.username {
+      height: min-content;
+    }
+
+    & .text {
+      max-width: 100%;
       min-width: 0;
       overflow: hidden;
       text-wrap: nowrap;
+      flex-grow: 1;
     }
 
     & .badge {
-      padding: 0.2em 0.4em;
       width: 3.25em;
-      border-radius: 20px;
       margin-left: 0.5em;
-      text-align: center;
-      transition: background-color 0.3s ease-in-out;
 
-      &.awaiting-vote {
-        background-color: var(--clr-danger-400);
-      }
+      & p {
+        padding: 0.2em 0.4em;
+        border-radius: 20px;
+        text-align: center;
+        transition: background-color 0.3s ease-in-out;
+        margin: unset;
 
-      &.voted {
-        background-color: var(--clr-primary-400);
-      }
+        &.awaiting-vote {
+          background-color: var(--clr-danger-400);
+        }
 
-      &.vote-result {
-        background-color: #32a04a;
-      }
+        &.voted {
+          background-color: var(--clr-primary-400);
+        }
 
-      &.own-vote-result {
-        background-color: #63636361;
+        &.vote-result {
+          background-color: #32a04a;
+        }
+
+        &.own-vote-result {
+          background-color: #63636361;
+        }
       }
     }
   }
+}
+
+.skeleton .participant .badge p {
+  background-color: rgba(136, 136, 136, 0.3215686275) !important;
 }

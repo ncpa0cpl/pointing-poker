@@ -1,35 +1,39 @@
 import {
-  bindSignal,
+  $component,
   type ReadonlySignal,
   type Signal,
 } from "@ncpa0cpl/vanilla-jsx";
 import { Box } from "adwavecss";
-import { clsx } from "clsx";
 import "./styles.css";
 
-export const UpsideDownScrollView = (
-  props: JSX.PropsWithChildren<
-    {
-      into?: keyof JSX.IntrinsicElements;
-      class?: string;
-      dep: ReadonlySignal<any> | Signal<any>;
-    }
-  >,
+type UpsideDownScrollViewProps = JSX.PropsWithChildren<
+  {
+    into?: keyof JSX.IntrinsicElements;
+    class?: string;
+    dep: ReadonlySignal<any> | Signal<any>;
+  }
+>;
+
+export const UpsideDownScrollView = $component<UpsideDownScrollViewProps>((
+  props,
+  api,
 ) => {
   const { children, dep, into: Into = "div" } = props;
 
-  const elem = (
-    <Into class={clsx(props.class, "scrollview", Box.box)}>{children}</Into>
-  );
-
-  bindSignal(dep, elem, (elem) => {
+  api.onChange(() => {
     setTimeout(() => {
       elem.scrollTo({
         top: elem.scrollHeight,
         behavior: "smooth",
       });
     }, 50);
-  });
+  }, [dep]);
+
+  const elem = (
+    <Into class={[props.class, "scrollview", Box.box]}>
+      {children}
+    </Into>
+  );
 
   return elem;
-};
+});

@@ -1,6 +1,5 @@
 import { Case, deriveMany, Range, Switch } from "@ncpa0cpl/vanilla-jsx";
 import { Box } from "adwavecss";
-import { clsx } from "clsx";
 import { PokerRoomService } from "../../../../services/poker-room-service/poker-room-service";
 import type { PokerRoomRound } from "../../../../services/poker-room-service/types";
 import "./styles.css";
@@ -18,7 +17,7 @@ export const Participants = () => {
   return (
     <Range
       data={PokerRoomService.participants}
-      into={<div class={clsx("participants", Box.box, Box.bg2)} />}
+      into={<div class={["participants", Box.box, Box.bg2]} />}
     >
       {participant => {
         const badgeType = deriveMany(
@@ -57,34 +56,38 @@ export const Participants = () => {
 
         return (
           <div
-            class={clsx("participant", "center-y", {
-              disconnected: !participant.isActive,
-            })}
+            class={{
+              "participant": true,
+              "center-y": true,
+              "disconnected": !participant.isActive,
+            }}
           >
             <p
-              class={clsx("participant", "text", {
-                inactive: !participant.isActive,
-              })}
+              class={{
+                "username": true,
+                "text": true,
+                "inactive": !participant.isActive,
+              }}
             >
               {participant.username}
             </p>
-            <Switch value={badgeType}>
+            <Switch value={badgeType} into={<div class="badge" />}>
               <Case match="awaiting-vote">
-                {() => <p class="badge awaiting-vote text">...</p>}
+                {() => <p class="awaiting-vote text">...</p>}
               </Case>
               <Case match="voted">
-                {() => <p class="badge voted text">Voted</p>}
+                {() => <p class="voted text">Voted</p>}
               </Case>
               <Case match="vote-result">
                 {() => (
-                  <p class="badge vote-result text">
+                  <p class="vote-result text">
                     {userVote()}
                   </p>
                 )}
               </Case>
               <Case match="own-vote-result">
                 {() => (
-                  <p class="badge own-vote-result text">
+                  <p class="own-vote-result text">
                     {userVote()}
                   </p>
                 )}

@@ -1,7 +1,6 @@
-import { bindSignal } from "@ncpa0cpl/vanilla-jsx";
+import { $component } from "@ncpa0cpl/vanilla-jsx";
 import type { ReadonlySignal } from "@ncpa0cpl/vanilla-jsx/dist/types/signals/signal";
-import { Box } from "adwavecss";
-import { clsx } from "clsx";
+import { Box, Skeleton } from "adwavecss";
 import { PokerRoomService } from "../../services/poker-room-service/poker-room-service";
 import { router } from "../routes";
 import { Chat } from "./components/chat/chat";
@@ -12,42 +11,55 @@ import { RoomIDDisplay } from "./components/room-id-display/room-id-display";
 import { VoteButtons } from "./components/vote-buttons/vote-buttons";
 import "./styles.css";
 
-export const Room = (props: { roomID: ReadonlySignal<string> }) => {
-  const handleExitRoom = () => {
-    PokerRoomService.disconnectFromRoom();
-    router.navigate("join");
-  };
-
-  const room = (
-    <div class={clsx(Box.box, "column")}>
-      <button
-        class="btn exit-room-btn"
-        onclick={handleExitRoom}
-      >
-        Exit Room
-      </button>
-      <div class="room-view">
-        <LeftBar />
-        <div class="column card voting-section">
-          <div class="voting-section-top-bar">
-            <RoomIDDisplay />
-            <OwnerControls />
-          </div>
-          <VoteButtons />
-          <Participants />
-        </div>
-        <Chat />
-      </div>
-    </div>
-  );
-
-  bindSignal(props.roomID, room, (_, roomID) => {
-    if (PokerRoomService.roomID.current() !== roomID) {
-      PokerRoomService.connectToRoom(roomID).catch(() => {
-        router.navigate("notfound");
-      });
-    }
-  });
-
-  return room;
+type RoomProps = {
+  roomID: ReadonlySignal<string>;
 };
+
+export const Room = $component<RoomProps>(
+  (props, api) => {
+    const handleExitRoom = () => {
+      PokerRoomService.disconnectFromRoom();
+      router.navigate("join");
+    };
+
+    api.onChange(() => {
+      const roomID = props.roomID.current();
+      if (PokerRoomService.roomID.current() !== roomID) {
+        PokerRoomService.connectToRoom(roomID).catch(() => {
+          router.navigate("notfound");
+        });
+      }
+    }, [props.roomID]);
+
+    const isSkeleton = PokerRoomService.connected.derive((c) => !c);
+
+    return (
+      <div
+        class={{
+          "column": true,
+          [Box.box]: true,
+          [Skeleton.skeleton]: isSkeleton,
+        }}
+      >
+        <button
+          class="btn exit-room-btn"
+          onclick={handleExitRoom}
+        >
+          Exit Room
+        </button>
+        <div class="room-view">
+          <LeftBar isSkeleton={isSkeleton} />
+          <div class="column card voting-section room-view-card">
+            <div class="voting-section-top-bar">
+              <RoomIDDisplay />
+              <OwnerControls />
+            </div>
+            <VoteButtons isSkeleton={isSkeleton} />
+            <Participants />
+          </div>
+          <Chat />
+        </div>
+      </div>
+    );
+  },
+);

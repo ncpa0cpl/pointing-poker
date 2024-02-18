@@ -1,6 +1,5 @@
 import type { Signal } from "@ncpa0cpl/vanilla-jsx";
 import { Button } from "adwavecss";
-import { clsx } from "clsx";
 import { PokerRoomService } from "../../../../services/poker-room-service/poker-room-service";
 import { router } from "../../../routes";
 
@@ -11,8 +10,8 @@ export const RoomCreateForm = (props: { disable: Signal<boolean> }) => {
     disable.dispatch(true);
     try {
       const roomID = await PokerRoomService.createRoom();
-      await PokerRoomService.connectToRoom(roomID);
       router.navigate("room", { roomID: roomID });
+      await PokerRoomService.connectToRoom(roomID);
     } finally {
       disable.dispatch(false);
     }
@@ -21,12 +20,10 @@ export const RoomCreateForm = (props: { disable: Signal<boolean> }) => {
   return (
     <div class="grow">
       <button
-        class={disable.derive(d =>
-          clsx({
-            [Button.button]: true,
-            [Button.disabled]: d,
-          })
-        )}
+        class={{
+          [Button.button]: true,
+          [Button.disabled]: disable,
+        }}
         onclick={createRoom}
         disabled={disable}
       >

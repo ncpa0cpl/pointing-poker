@@ -1,14 +1,14 @@
+import type { ReadonlySignal } from "@ncpa0cpl/vanilla-jsx";
 import { Card } from "adwavecss";
-import clsx from "clsx";
 import { RoundHistory } from "../round-history/round-history";
 import { Statistics } from "../statistics/statistics";
 import "./styles.css";
 
-export const LeftBar = () => {
+export const LeftBar = (props: { isSkeleton: ReadonlySignal<boolean> }) => {
   return (
-    <div class={clsx(Card.card, "room-left-bar", "column")}>
+    <div class={[Card.card, "room-left-bar", "column", "room-view-card"]}>
       <Statistics />
-      <RoundHistory />
+      <RoundHistory isSkeleton={props.isSkeleton} />
     </div>
   );
 };

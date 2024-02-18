@@ -1,6 +1,5 @@
 import { deriveMany, If, sig } from "@ncpa0cpl/vanilla-jsx";
 import { Button } from "adwavecss";
-import clsx from "clsx";
 import { PokerRoomService } from "../../../../services/poker-room-service/poker-room-service";
 import "./styles.css";
 
@@ -50,18 +49,20 @@ export const OwnerControls = () => {
           <div class="separator vertical" />
           <div class="linked">
             <button
-              class={btnDisable.derive(d =>
-                clsx(Button.button, { [Button.disabled]: d })
-              )}
+              class={{
+                [Button.button]: true,
+                [Button.disabled]: btnDisable,
+              }}
               disabled={btnDisable}
               onclick={endRound}
             >
               Show Results
             </button>
             <button
-              class={btnDisable.derive(d =>
-                clsx(Button.button, { [Button.disabled]: d })
-              )}
+              class={{
+                [Button.button]: true,
+                [Button.disabled]: btnDisable,
+              }}
               disabled={btnDisable}
               onclick={startNextRound}
             >

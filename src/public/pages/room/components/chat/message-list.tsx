@@ -1,6 +1,5 @@
 import { Range } from "@ncpa0cpl/vanilla-jsx";
 import { Box } from "adwavecss";
-import { clsx } from "clsx";
 import { DateTime } from "luxon";
 import { UpsideDownScrollView } from "../../../../components/upside-down-scrollview/upside-down-scrollview";
 import { PokerRoomService } from "../../../../services/poker-room-service/poker-room-service";
@@ -14,7 +13,7 @@ export const MessageList = () => {
     <UpsideDownScrollView dep={PokerRoomService.chatMessages}>
       <Range
         data={PokerRoomService.chatMessages}
-        into={<div class={clsx("chat-messages", Box.box, Box.bg2)} />}
+        into={<div class={["chat-messages", Box.className({ bg: 2 })]} />}
       >
         {msg => (
           <div class="chat-message">

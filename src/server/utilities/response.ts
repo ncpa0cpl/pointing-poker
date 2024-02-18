@@ -1,5 +1,6 @@
 import type { StatusCodes } from "http-status-codes";
 import { getReasonPhrase } from "http-status-codes";
+import { RouterResponse } from "./simple-server/router-response";
 
 export function createResponse(status: StatusCodes, message?: string) {
   const statusText = message;
@@ -7,7 +8,7 @@ export function createResponse(status: StatusCodes, message?: string) {
     message = getReasonPhrase(status);
   }
 
-  const response = new Response(undefined, {
+  const response = new RouterResponse(Buffer.from(""), {
     status,
     statusText,
   });

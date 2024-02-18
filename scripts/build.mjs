@@ -69,7 +69,7 @@ function AxiosImportReplacerPlugin() {
           kind: "import-statement",
           resolveDir: args.resolveDir,
           importer: args.importer,
-          pluginData: { v: "lol" },
+          pluginData: {},
         });
 
         return {

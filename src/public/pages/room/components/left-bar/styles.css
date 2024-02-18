@@ -1,4 +1,4 @@
 .room-left-bar {
-    width: var(--sidebox-width);
-    height: 400px;
+  width: var(--room-view-card-width);
+  height: 400px;
 }

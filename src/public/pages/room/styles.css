@@ -1,5 +1,5 @@
 :root {
-  --sidebox-width: clamp(20vw, 24rem, 80vw);
+  --room-view-card-width: clamp(20vw, 30rem, 80vw);
 }
 
 .room-view {
@@ -8,9 +8,17 @@
   flex-wrap: wrap;
   justify-content: center;
 
-  & > div {
+  & .room-view-card {
     margin: 0.6em;
-    min-height: max(80vh, 35em);
+    height: max(80vh, 35em);
+
+    &:not(.voting-section) {
+      width: var(--room-view-card-width);
+    }
+
+    &.voting-section {
+      width: calc(var(--room-view-card-width) * 1.25);
+    }
   }
 
   & .voting-section {

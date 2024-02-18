@@ -30,6 +30,7 @@ type ClientChatMessage = {
 
 export class PokerRoomService {
   static #roomID = sig<string | null>(null);
+  static #connected = sig(false);
   static #roomOwner = sig<Participant>({
     publicID: "",
     username: "",
@@ -61,6 +62,10 @@ export class PokerRoomService {
 
   public static get roomID(): ReadonlySignal<string | null> {
     return PokerRoomService.#roomID;
+  }
+
+  public static get connected(): ReadonlySignal<boolean> {
+    return PokerRoomService.#connected;
   }
 
   public static get roomOwner(): ReadonlySignal<Participant> {
@@ -212,43 +217,49 @@ export class PokerRoomService {
     });
   }
 
-  public static async connectToRoom(roomID: string) {
+  public static connectToRoom(roomID: string) {
+    this.#roomID.dispatch(roomID);
+    this.#connected.dispatch(false);
     const user = UserService.user.current();
 
-    const data = await this.#connection.openConnection({
+    return this.#connection.openConnection({
       roomID,
       userID: user.id,
       publicUserID: user.publicID,
       username: user.name,
+    }).then((data) => {
+      this.#connected.dispatch(true);
+      this.#participants.dispatch(data.room.participants);
+      this.#rounds.dispatch(data.room.rounds);
+      this.#publicUserID.dispatch(data.userPublicID);
+      this.#options.dispatch(data.room.defaultOptions);
+      this.#roomOwner.dispatch({
+        publicID: data.room.ownerPublicID,
+        username: data.room.ownerName,
+        isActive: true,
+      });
+      this.#chatMessages.dispatch(
+        data.room.chatMessages.map(msg => sig(this.mapChatMsg(msg))),
+      );
+    }).catch((err) => {
+      this.#roomID.dispatch(null);
+      throw err;
     });
-
-    this.#participants.dispatch(data.room.participants);
-    this.#rounds.dispatch(data.room.rounds);
-    this.#publicUserID.dispatch(data.userPublicID);
-    this.#options.dispatch(data.room.defaultOptions);
-    this.#roomID.dispatch(roomID);
-    this.#roomOwner.dispatch({
-      publicID: data.room.ownerPublicID,
-      username: data.room.ownerName,
-      isActive: true,
-    });
-    this.#chatMessages.dispatch(
-      data.room.chatMessages.map(msg => sig(this.mapChatMsg(msg))),
-    );
   }
 
   public static disconnectFromRoom() {
-    this.#connection.closeRoomConnection();
-    this.#participants.dispatch([]);
-    this.#rounds.dispatch([]);
-    this.#publicUserID.dispatch(null);
-    this.#options.dispatch([]);
+    this.#connected.dispatch(false);
     this.#roomID.dispatch(null);
     this.#roomOwner.dispatch({
       publicID: "",
       username: "",
       isActive: false,
     });
+    this.#connection.closeRoomConnection();
+    this.#participants.dispatch([]);
+    this.#rounds.dispatch([]);
+    this.#publicUserID.dispatch(null);
+    this.#options.dispatch([]);
     this.#chatMessages.dispatch([]);
   }
 
