@@ -1,5 +1,7 @@
 import { build } from "@ncpa0cpl/nodepack";
 import { spawn } from "child_process";
+import crc32 from "crc-32";
+import fsSync from "fs";
 import fs from "fs/promises";
 import path from "path";
 import { fileURLToPath, URL } from "url";
@@ -45,15 +47,38 @@ async function main() {
         },
       }),
     ]);
+    const stylesheet = await hashFileName(p("dist/esm/public/index.css"));
+    const script = await hashFileName(p("dist/esm/public/index.mjs"));
+
     await buildIndexPage({
-      entrypointPath: p("dist/esm/public/index.mjs"),
+      entrypointPath: script,
       htmlTemplatePath: p("src/public/index.html"),
       outDir: p("dist/esm/public"),
+      scriptFilename: path.basename(script),
+      stylesheetFilename: path.basename(stylesheet),
     });
   } catch (error) {
     console.error(error);
     process.exit(1);
   }
+}
+
+/**
+ * @param {string} file
+ */
+async function hashFileName(file) {
+  const fileContent = await fs.readFile(file);
+  const hash = crc32.buf(fileContent).toString(16);
+
+  const basename = path.basename(file, path.extname(file));
+  const hashedName = `${basename}_${hash}${path.extname(file)}`;
+  const newFilePath = path.join(path.dirname(file), hashedName);
+  if (fsSync.existsSync(newFilePath)) {
+    await fs.unlink(newFilePath);
+  }
+  await fs.rename(file, newFilePath);
+
+  return newFilePath;
 }
 
 function AxiosImportReplacerPlugin() {

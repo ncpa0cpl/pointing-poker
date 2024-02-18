@@ -20,7 +20,20 @@ function addMissingGlobals() {
   globalThis.URL = window.URL;
 }
 
-export async function generateIndexPage(entrypointPath, htmlTemplatePath) {
+/**
+ * @param {string} entrypointPath filepath of the JavaScript application
+ * @param {string} htmlTemplatePath filepath of the HTML template
+ * @param {{
+ *  stylesheetFilename: string;
+ *  scriptFilename: string;
+ * }} data
+ * @returns
+ */
+export async function generateIndexPage(
+  entrypointPath,
+  htmlTemplatePath,
+  data,
+) {
   globalizeJSDOM(null, {
     url: "http://localhost",
   });
@@ -40,7 +53,10 @@ export async function generateIndexPage(entrypointPath, htmlTemplatePath) {
   const template = await fs.promises.readFile(htmlTemplatePath, "utf8");
 
   const html = root.innerHTML;
-  return template.replace("%CONTENT%", html);
+  return template
+    .replace("%CONTENT%", html)
+    .replace("%SCRIPT%", data.scriptFilename)
+    .replace("%STYLESHEET%", data.stylesheetFilename);
 }
 
 /**
@@ -48,12 +64,18 @@ export async function generateIndexPage(entrypointPath, htmlTemplatePath) {
  *  entrypointPath: string;
  *  htmlTemplatePath: string;
  *  outDir: string;
+ *  stylesheetFilename: string;
+ *  scriptFilename: string;
  * }} params
  */
 export async function buildIndexPage(params) {
   const indexPage = await generateIndexPage(
     params.entrypointPath,
     params.htmlTemplatePath,
+    {
+      scriptFilename: params.scriptFilename,
+      stylesheetFilename: params.stylesheetFilename,
+    },
   );
   await fs
     .promises.writeFile(`${params.outDir}/index.html`, indexPage);

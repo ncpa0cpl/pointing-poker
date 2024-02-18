@@ -27,7 +27,10 @@ deserializeClassInstancesFromPersistentStorage(Room).catch((e) => {
 });
 
 const app = new HttpServer();
-app.onResponse(CacheMiddleware());
+app.onResponse(CacheMiddleware({
+  maxAge: 24 * 60 * 60,
+  mustRevalidate: true,
+}));
 app.onResponse(GzipMiddleware());
 app.onResponse(LogMiddleware());
 
