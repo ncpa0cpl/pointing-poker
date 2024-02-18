@@ -18,8 +18,9 @@ type RoomProps = {
 export const Room = $component<RoomProps>(
   (props, api) => {
     const handleExitRoom = () => {
-      PokerRoomService.disconnectFromRoom();
-      router.navigate("join");
+      router.navigate("join").then(() => {
+        PokerRoomService.disconnectFromRoom();
+      });
     };
 
     api.onChange(() => {

@@ -1,6 +1,19 @@
 import type { ReadonlySignal, Signal } from "@ncpa0cpl/vanilla-jsx";
 import { sig } from "@ncpa0cpl/vanilla-jsx";
 
+declare global {
+  interface ViewTransition {
+    finished: Promise<void>;
+    ready: Promise<void>;
+    updateCallbackDone: Promise<void>;
+    skipTransition(): void;
+  }
+
+  interface Document {
+    startViewTransition?(cb: () => void): ViewTransition;
+  }
+}
+
 export type AsString<T> = T extends string ? T : string;
 
 export type RouteDefWithoutParams = {
@@ -57,6 +70,10 @@ export type ParamDictFor<
 > = GetParamRoute<Routes, RName> extends RouteDefWithParams<any, infer O> ? O
   : never;
 
+type Resolvable<T> = {
+  then(cb: (val: T) => any): unknown;
+};
+
 class Route {
   private element: JSX.Element | null = null;
   private params: Signal<Record<string, any>> = sig({});
@@ -106,12 +123,21 @@ class Route {
 
 class UrlController {
   private current = new URL(window.location.href);
+  private history: Array<[string, object]> = [];
 
   public push() {
+    this.history.push([
+      this.current.href,
+      Object.fromEntries(this.current.searchParams.entries()),
+    ]);
     window.history.pushState({}, "", this.current);
   }
 
   public replace() {
+    this.history.splice(this.history.length - 1, 1, [
+      this.current.href,
+      Object.fromEntries(this.current.searchParams.entries()),
+    ]);
     window.history.replaceState({}, "", this.current);
   }
 
@@ -137,6 +163,14 @@ class UrlController {
   public getParams() {
     return Object.fromEntries(this.current.searchParams.entries());
   }
+
+  public getPrevious() {
+    return this.history.at(-2);
+  }
+}
+
+export interface RouterOptions {
+  enableTransition: boolean;
 }
 
 export class SimpleRouter<
@@ -149,6 +183,10 @@ export class SimpleRouter<
   private currentRoute: Route | null = null;
   private readonly routes: Route[];
   private readonly url = new UrlController();
+  private options: RouterOptions = {
+    enableTransition: true,
+  };
+  private currentTransition: ViewTransition | null = null;
 
   public constructor(
     routes: ROUTES,
@@ -179,6 +217,30 @@ export class SimpleRouter<
     });
   }
 
+  private withTransition<R>(changeDom: () => R): Resolvable<R> {
+    if (!document.startViewTransition || !this.options.enableTransition) {
+      return {
+        then(cb) {
+          return cb(changeDom());
+        },
+      };
+    }
+
+    if (this.currentTransition) {
+      this.currentTransition.skipTransition();
+    }
+
+    let result: R;
+    const transistion = document.startViewTransition(() => {
+      result = changeDom();
+    });
+
+    return transistion.finished.then(() => {
+      this.currentTransition = null;
+      return result;
+    });
+  }
+
   private findRoute(path: string): Route | undefined {
     const r = this.routes.find((route) => route.matches(path));
     if (r) {
@@ -187,7 +249,7 @@ export class SimpleRouter<
     return this.routes.find((route) => route.def.default);
   }
 
-  public updateContainer(path: string, params?: any): void {
+  public updateContainer(path: string, params?: any): Resolvable<void> {
     const newRoute = this.findRoute(path);
 
     if (!newRoute) {
@@ -199,48 +261,72 @@ export class SimpleRouter<
       this.url.setParams(
         this.currentRoute.getCurrentParams(),
       );
-      return;
+
+      return {
+        then(cb) {
+          return cb();
+        },
+      };
     }
 
-    this.currentRoute?.detach();
+    return this.withTransition(() => {
+      this.currentRoute?.detach();
 
-    const elem = newRoute.render(params);
-    this.url.setPath(newRoute.path, newRoute.getCurrentParams());
-    this.container.appendChild(elem);
-    this.currentRoute = newRoute;
+      const elem = newRoute.render(params);
+      this.url.setPath(newRoute.path, newRoute.getCurrentParams());
+      this.container.appendChild(elem);
+      this.currentRoute = newRoute;
+    });
   }
 
   public navigate<PATH extends keyof ParamlessRoutes<ROUTES>>(
     path: PATH,
-  ): void;
+  ): Promise<void>;
   public navigate<PATH extends keyof ParamRoutes<ROUTES>>(
     path: PATH,
     params: ParamDictFor<ROUTES, AsString<PATH>>,
-  ): ParamDictFor<ROUTES, AsString<PATH>>;
-  public navigate(path: string, params?: any): any {
-    queueMicrotask(() => {
-      this.updateContainer(path, params);
-      this.url.push();
+  ): Promise<void>;
+  public navigate(path: string, params?: any): Promise<void> {
+    return new Promise((resolve) => {
+      queueMicrotask(() => {
+        this.updateContainer(path, params).then(() => {
+          this.url.push();
+          resolve();
+        });
+      });
     });
   }
 
   public replace<PATH extends keyof ParamlessRoutes<ROUTES>>(
     path: PATH,
-  ): void;
+  ): Promise<void>;
   public replace<PATH extends keyof ParamRoutes<ROUTES>>(
     path: PATH,
     params: Record<AsString<ROUTES[PATH]["params"]>, string>,
-  ): void;
-  public replace(path: string, params?: any): void {
-    queueMicrotask(() => {
-      this.updateContainer(path, params);
-      this.url.replace();
+  ): Promise<void>;
+  public replace(path: string, params?: any): Promise<void> {
+    return new Promise((resolve) => {
+      queueMicrotask(() => {
+        this.updateContainer(path, params).then(() => {
+          this.url.replace();
+          resolve();
+        });
+      });
     });
   }
 
-  public goBack() {
-    queueMicrotask(() => {
-      window.history.back();
+  public goBack(): Promise<void> {
+    return new Promise((resolve) => {
+      queueMicrotask(() => {
+        const prev = this.url.getPrevious();
+        if (prev) {
+          const [url, params] = prev;
+          this.updateContainer(url, params).then(() => {
+            this.url.replace();
+            resolve();
+          });
+        }
+      });
     });
   }
 
@@ -253,6 +339,10 @@ export class SimpleRouter<
 
   public Out() {
     return this.container;
+  }
+
+  public setOptions(options: RouterOptions) {
+    this.options = options;
   }
 }
 
