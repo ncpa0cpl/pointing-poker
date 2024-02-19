@@ -1,4 +1,5 @@
 import path from "path";
+import type { Context } from "./context";
 import type { Route } from "./router";
 import { Router } from "./router";
 import type { RouterResponse } from "./router-response";
@@ -166,12 +167,17 @@ export class HttpServer {
     );
   }
 
-  public static(urlPath: string, dirPath: string) {
+  public static(
+    urlPath: string,
+    dirPath: string,
+    beforeSend?: (ctx: Context) => Context,
+  ) {
     this.router.addRoute(
       new StaticFileRoute(
         "GET",
         path.join(urlPath, "/*subpath"),
         dirPath,
+        beforeSend,
       ),
     );
   }

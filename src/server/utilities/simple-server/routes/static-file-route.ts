@@ -1,6 +1,7 @@
 import type { Server } from "bun";
 import path from "node:path";
 import { CompiledPath } from "../compiled-path";
+import { Context } from "../context";
 import type { Route } from "../router";
 import { RouterResponse } from "../router-response";
 
@@ -11,6 +12,7 @@ export class StaticFileRoute implements Route {
     public readonly method: string,
     public readonly path: string,
     public readonly dirPath: string,
+    public readonly beforeSend: (ctx: Context) => Context = (ctx) => ctx,
   ) {
     this.compiledPath = new CompiledPath(path);
   }
@@ -47,7 +49,11 @@ export class StaticFileRoute implements Route {
     const filePath = path.resolve(this.dirPath, subpath);
     const file = Bun.file(filePath);
 
-    return RouterResponse.from(file, { status: 200 });
+    let ctx = new Context(request, bunServer, url, {}, result.wildcardValue);
+    ctx.sendFile(200, file);
+    ctx = this.beforeSend(ctx);
+
+    return Context.createResponse(ctx);
   }
 
   public toView() {

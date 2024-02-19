@@ -1,4 +1,6 @@
 import type { BunFile, Server } from "bun";
+import type { CacheConfig } from "./headers/generate-cache-control-header";
+import { generateCacheControlHeader } from "./headers/generate-cache-control-header";
 import type { MaybePromise } from "./http-server";
 import { RouterResponse } from "./router-response";
 
@@ -139,6 +141,11 @@ export class Context {
 
   public setHeader(name: string, value: string): Context {
     this.responseHeaders.set(name, value);
+    return this;
+  }
+
+  public setCacheControl(options: CacheConfig): Context {
+    this.setHeader("Cache-Control", generateCacheControlHeader(options));
     return this;
   }
 }

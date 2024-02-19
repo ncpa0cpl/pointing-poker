@@ -14,11 +14,17 @@ const gzip = (data: Buffer): Promise<Buffer> => {
   });
 };
 
-export const GzipMiddleware = (): ResponseMiddleware => (resp) => {
+const isGzipAcceptable = (req: Request): boolean => {
+  const acceptEncoding = req.headers.get("Accept-Encoding");
+  return acceptEncoding != null && acceptEncoding.includes("gzip");
+};
+
+export const GzipMiddleware = (): ResponseMiddleware => (resp, req) => {
   if (
     resp.status < 200
     || resp.status >= 300
     || resp.headers.get("Content-Encoding") != null
+    || !isGzipAcceptable(req)
   ) {
     return resp;
   }

@@ -39,6 +39,7 @@ async function main() {
           loader: {
             ".svg": "file",
           },
+          publicPath: "/public",
         },
         watch,
         parsableExtensions: [".css"],
