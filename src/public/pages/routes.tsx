@@ -7,6 +7,7 @@ import { Room } from "./room/room";
 
 export const router = new SimpleRouter({
   join: route({
+    title: "Join Room - Pointing Poker",
     default: true,
     memoized: true,
     component: () => {
@@ -17,6 +18,7 @@ export const router = new SimpleRouter({
     },
   }),
   register: route({
+    title: "Register - Pointing Poker",
     params: ["?roomID"],
     component: (params) => <RegisterPage qparams={params} />,
   }),
@@ -30,6 +32,7 @@ export const router = new SimpleRouter({
     },
   }),
   notfound: route({
+    title: "Room Not Found - Pointing Poker",
     component: RoomNotFound,
   }),
 });

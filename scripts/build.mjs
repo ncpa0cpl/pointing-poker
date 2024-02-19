@@ -44,20 +44,25 @@ async function main() {
         watch,
         parsableExtensions: [".css"],
         onBuildComplete() {
+          (async () => {
+            const stylesheet = await hashFileName(
+              p("dist/esm/public/index.css"),
+            );
+            const script = await hashFileName(p("dist/esm/public/index.mjs"));
+
+            await buildIndexPage({
+              entrypointPath: script,
+              htmlTemplatePath: p("src/public/index.html"),
+              outDir: p("dist/esm/public"),
+              scriptFilename: path.basename(script),
+              stylesheetFilename: path.basename(stylesheet),
+            });
+          })();
+
           return runServer();
         },
       }),
     ]);
-    const stylesheet = await hashFileName(p("dist/esm/public/index.css"));
-    const script = await hashFileName(p("dist/esm/public/index.mjs"));
-
-    await buildIndexPage({
-      entrypointPath: script,
-      htmlTemplatePath: p("src/public/index.html"),
-      outDir: p("dist/esm/public"),
-      scriptFilename: path.basename(script),
-      stylesheetFilename: path.basename(stylesheet),
-    });
   } catch (error) {
     console.error(error);
     process.exit(1);

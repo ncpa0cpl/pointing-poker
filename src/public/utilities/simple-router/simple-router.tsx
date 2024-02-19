@@ -17,6 +17,7 @@ declare global {
 export type AsString<T> = T extends string ? T : string;
 
 export type RouteDefWithoutParams = {
+  title?: string;
   params?: undefined;
   memoized?: boolean;
   default?: boolean;
@@ -24,6 +25,7 @@ export type RouteDefWithoutParams = {
 };
 export type RouteDefWithParams<PNames extends string[], PDict extends object> =
   {
+    title?: string;
     params: PNames;
     memoized?: boolean;
     default?: boolean;
@@ -123,20 +125,22 @@ class Route {
 
 class UrlController {
   private current = new URL(window.location.href);
-  private history: Array<[string, object]> = [];
+  private history: Array<[url: string, params: object, title: string]> = [];
 
-  public push() {
+  public push(title: string) {
     this.history.push([
       this.current.href,
       Object.fromEntries(this.current.searchParams.entries()),
+      title,
     ]);
     window.history.pushState({}, "", this.current);
   }
 
-  public replace() {
+  public replace(title: string) {
     this.history.splice(this.history.length - 1, 1, [
       this.current.href,
       Object.fromEntries(this.current.searchParams.entries()),
+      title,
     ]);
     window.history.replaceState({}, "", this.current);
   }
@@ -179,6 +183,7 @@ export class SimpleRouter<
     RouteDefWithParams<string[], any> | RouteDefWithoutParams
   >,
 > {
+  private readonly titleElem: HTMLTitleElement;
   private readonly container = <div class={"routerbox"} />;
   private currentRoute: Route | null = null;
   private readonly routes: Route[];
@@ -191,6 +196,14 @@ export class SimpleRouter<
   public constructor(
     routes: ROUTES,
   ) {
+    const titleElem = document.head.getElementsByTagName("title")[0];
+    if (titleElem) {
+      this.titleElem = titleElem as HTMLTitleElement;
+    } else {
+      this.titleElem = <title></title> as any;
+      document.head.appendChild(this.titleElem);
+    }
+
     this.routes = Object.entries(routes).map(([path, def]) => {
       return new Route(path, def);
     });
@@ -249,6 +262,10 @@ export class SimpleRouter<
     return this.routes.find((route) => route.def.default);
   }
 
+  private getCurrentTitle() {
+    return this.titleElem.innerText;
+  }
+
   public updateContainer(path: string, params?: any): Resolvable<void> {
     const newRoute = this.findRoute(path);
 
@@ -276,6 +293,10 @@ export class SimpleRouter<
       this.url.setPath(newRoute.path, newRoute.getCurrentParams());
       this.container.appendChild(elem);
       this.currentRoute = newRoute;
+
+      if (newRoute.def.title) {
+        this.setTitle(newRoute.def.title);
+      }
     });
   }
 
@@ -290,7 +311,7 @@ export class SimpleRouter<
     return new Promise((resolve) => {
       queueMicrotask(() => {
         this.updateContainer(path, params).then(() => {
-          this.url.push();
+          this.url.push(this.getCurrentTitle());
           resolve();
         });
       });
@@ -308,7 +329,7 @@ export class SimpleRouter<
     return new Promise((resolve) => {
       queueMicrotask(() => {
         this.updateContainer(path, params).then(() => {
-          this.url.replace();
+          this.url.replace(this.getCurrentTitle());
           resolve();
         });
       });
@@ -320,9 +341,10 @@ export class SimpleRouter<
       queueMicrotask(() => {
         const prev = this.url.getPrevious();
         if (prev) {
-          const [url, params] = prev;
+          const [url, params, title] = prev;
           this.updateContainer(url, params).then(() => {
-            this.url.replace();
+            this.setTitle(title);
+            this.url.replace(title);
             resolve();
           });
         }
@@ -343,6 +365,13 @@ export class SimpleRouter<
 
   public setOptions(options: RouterOptions) {
     this.options = options;
+  }
+
+  /**
+   * Sets the title of the current page.
+   */
+  public setTitle(title: string) {
+    this.titleElem.innerText = title;
   }
 }
 

@@ -23,6 +23,10 @@ export const Room = $component<RoomProps>(
       });
     };
 
+    api.onMount(() => {
+      router.setTitle(`Room ${props.roomID.current()} - Pointing Poker`);
+    });
+
     api.onChange(() => {
       const roomID = props.roomID.current();
       if (PokerRoomService.roomID.current() !== roomID) {
