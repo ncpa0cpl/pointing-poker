@@ -1,5 +1,5 @@
 :root {
-  --room-view-card-width: clamp(20vw, 30rem, 80vw);
+  --room-view-card-width: clamp(20vw, 26rem, 80vw);
 }
 
 .room-view {
