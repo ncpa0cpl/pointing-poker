@@ -57,8 +57,8 @@ export const RoomConnectionForm = (props: { disable: Signal<boolean> }) => {
         />
         <button
           class={{
-            [Input.input]: true,
-            [Input.disabled]: disable,
+            [Button.button]: true,
+            [Button.disabled]: disable,
           }}
           onclick={onConnect}
           disabled={disable}
