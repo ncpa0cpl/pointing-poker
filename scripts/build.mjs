@@ -60,18 +60,22 @@ async function main() {
 }
 
 async function postBuild() {
-  const stylesheet = await hashFileName(
-    p("dist/esm/public/index.css"),
-  );
-  const script = await hashFileName(p("dist/esm/public/index.mjs"));
+  try {
+    const stylesheet = await hashFileName(
+      p("dist/esm/public/index.css"),
+    );
+    const script = await hashFileName(p("dist/esm/public/index.mjs"));
 
-  await buildIndexPage({
-    entrypointPath: script,
-    htmlTemplatePath: p("src/public/index.html"),
-    outDir: p("dist/esm/public"),
-    scriptFilename: path.basename(script),
-    stylesheetFilename: path.basename(stylesheet),
-  });
+    await buildIndexPage({
+      entrypointPath: script,
+      htmlTemplatePath: p("src/public/index.html"),
+      outDir: p("dist/esm/public"),
+      scriptFilename: path.basename(script),
+      stylesheetFilename: path.basename(stylesheet),
+    });
+  } catch (error) {
+    console.error(error);
+  }
 }
 
 /**

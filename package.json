@@ -42,7 +42,7 @@
     "uuid": "^9.0.1"
   },
   "devDependencies": {
-    "@ncpa0cpl/nodepack": "2.3.1",
+    "@ncpa0cpl/nodepack": "2.3.3",
     "@types/bun": "^1.0.1",
     "@types/escape-html": "^1.0.4",
     "@types/http-status-codes": "^1.2.0",

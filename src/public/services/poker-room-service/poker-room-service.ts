@@ -218,9 +218,10 @@ export class PokerRoomService {
   }
 
   public static connectToRoom(roomID: string) {
+    const user = UserService.user.current();
+
     this.#roomID.dispatch(roomID);
     this.#connected.dispatch(false);
-    const user = UserService.user.current();
 
     return this.#connection.openConnection({
       roomID,

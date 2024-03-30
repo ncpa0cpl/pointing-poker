@@ -1,5 +1,6 @@
 import type { ReadonlySignal, Signal } from "@ncpa0cpl/vanilla-jsx";
 import { sig } from "@ncpa0cpl/vanilla-jsx";
+import { Immediate, type Resolvable } from "../resolvable";
 
 declare global {
   interface ViewTransition {
@@ -71,10 +72,6 @@ export type ParamDictFor<
   RName extends string,
 > = GetParamRoute<Routes, RName> extends RouteDefWithParams<any, infer O> ? O
   : never;
-
-type Resolvable<T> = {
-  then(cb: (val: T) => any): unknown;
-};
 
 class Route {
   private element: JSX.Element | null = null;
@@ -232,11 +229,9 @@ export class SimpleRouter<
 
   private withTransition<R>(changeDom: () => R): Resolvable<R> {
     if (!document.startViewTransition || !this.options.enableTransition) {
-      return {
-        then(cb) {
-          return cb(changeDom());
-        },
-      };
+      return new Immediate(() => {
+        return changeDom();
+      });
     }
 
     if (this.currentTransition) {
@@ -279,11 +274,7 @@ export class SimpleRouter<
         this.currentRoute.getCurrentParams(),
       );
 
-      return {
-        then(cb) {
-          return cb();
-        },
-      };
+      return new Immediate(() => {});
     }
 
     return this.withTransition(() => {

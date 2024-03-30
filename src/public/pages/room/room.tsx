@@ -2,6 +2,7 @@ import { $component } from "@ncpa0cpl/vanilla-jsx";
 import type { ReadonlySignal } from "@ncpa0cpl/vanilla-jsx/dist/types/signals/signal";
 import { Box, Skeleton } from "adwavecss";
 import { PokerRoomService } from "../../services/poker-room-service/poker-room-service";
+import { UserService } from "../../services/user-service/user-service";
 import { router } from "../routes";
 import { Chat } from "./components/chat/chat";
 import { LeftBar } from "./components/left-bar/left-bar";
@@ -28,6 +29,10 @@ export const Room = $component<RoomProps>(
     });
 
     api.onChange(() => {
+      if (!UserService.userExists().current()) {
+        return;
+      }
+
       const roomID = props.roomID.current();
       if (PokerRoomService.roomID.current() !== roomID) {
         PokerRoomService.connectToRoom(roomID).catch(() => {

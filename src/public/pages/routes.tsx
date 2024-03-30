@@ -43,8 +43,8 @@ declare global {
 
 Object.defineProperty(globalThis, "approuter", {
   value: router,
-  writable: false,
-  configurable: false,
+  writable: true,
+  configurable: true,
   enumerable: false,
 });
 
