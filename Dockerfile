@@ -1,3 +1,6 @@
+FROM oven/bun:alpine
+
+# update and install node (needed for build step)
 RUN apk add nodejs npm
 
 WORKDIR /usr/src/app
