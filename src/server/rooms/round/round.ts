@@ -97,7 +97,7 @@ export class Round {
     if (sortedVotes.length % 2 === 0) {
       const med1 = sortedVotes[sortedVotes.length / 2 - 1]!;
       const med2 = sortedVotes[sortedVotes.length / 2]!;
-      return ((med1 + med2) / 2).toFixed(0);
+      return ((med1 + med2) / 2).toFixed(2);
     } else {
       const med = sortedVotes[(sortedVotes.length - 1) / 2]!;
       return med.toFixed(0);

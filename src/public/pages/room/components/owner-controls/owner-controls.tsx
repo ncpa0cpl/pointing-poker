@@ -4,7 +4,21 @@ import { PokerRoomService } from "../../../../services/poker-room-service/poker-
 import "./styles.css";
 
 export const OwnerControls = () => {
-  const btnDisable = sig(false);
+  const disableAll = sig(false);
+  const disableShowResults = deriveMany(
+    disableAll,
+    PokerRoomService.currentRound,
+    (disableAll, round) => {
+      return disableAll || round?.finalResult != null;
+    },
+  );
+  const disableNextRound = deriveMany(
+    disableAll,
+    PokerRoomService.currentRound,
+    (disableAll, round) => {
+      return disableAll || round?.finalResult == null;
+    },
+  );
 
   const isOwner = deriveMany(
     PokerRoomService.publicUserID,
@@ -15,27 +29,27 @@ export const OwnerControls = () => {
   );
 
   const endRound = () => {
-    if (!btnDisable.current()) {
-      btnDisable.dispatch(true);
+    if (!disableAll.current()) {
+      disableAll.dispatch(true);
       PokerRoomService.showResults().catch(e => {
         PokerRoomService.showSystemChatMsg(
           "ERROR: Unable to show results, due to connection issues.",
         );
       }).finally(() => {
-        btnDisable.dispatch(false);
+        disableAll.dispatch(false);
       });
     }
   };
 
   const startNextRound = () => {
-    if (!btnDisable.current()) {
-      btnDisable.dispatch(true);
+    if (!disableAll.current()) {
+      disableAll.dispatch(true);
       PokerRoomService.startNextRound().catch(e => {
         PokerRoomService.showSystemChatMsg(
           "ERROR: Unable to start the next round, due to connection issues.",
         );
       }).finally(() => {
-        btnDisable.dispatch(false);
+        disableAll.dispatch(false);
       });
     }
   };
@@ -51,9 +65,9 @@ export const OwnerControls = () => {
             <button
               class={{
                 [Button.button]: true,
-                [Button.disabled]: btnDisable,
+                [Button.disabled]: disableShowResults,
               }}
-              disabled={btnDisable}
+              disabled={disableShowResults}
               onclick={endRound}
             >
               Show Results
@@ -61,9 +75,9 @@ export const OwnerControls = () => {
             <button
               class={{
                 [Button.button]: true,
-                [Button.disabled]: btnDisable,
+                [Button.disabled]: disableNextRound,
               }}
-              disabled={btnDisable}
+              disabled={disableNextRound}
               onclick={startNextRound}
             >
               Start Next Round

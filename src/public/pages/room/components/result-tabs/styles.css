@@ -1,0 +1,16 @@
+.result-tabs {
+    display: flex;
+    flex-direction: column;
+
+    & .results-tab-contents {
+        & .vjsx-switch-container {
+            width: 100%;
+            display: flex;
+        }
+    }
+
+    & .result-tabs-switch-btns {
+        place-self: center;
+        margin-bottom: 1em;
+    }
+}

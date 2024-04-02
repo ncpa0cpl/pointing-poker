@@ -1,61 +1,68 @@
 .participants {
-  margin-top: 1em;
-  flex-direction: column;
-  overflow-y: auto;
+    margin-top: 1em;
+    flex-direction: column;
+    overflow-y: auto;
 
-  & .participant {
-    align-items: center;
-    flex-grow: 1;
-    justify-content: space-between;
-    margin-bottom: 0.5em;
+    & .participant {
+        align-items: center;
+        flex-grow: 1;
+        justify-content: space-between;
+        margin-bottom: 0.1em;
+        border-radius: var(--border-radius);
+        padding: 0.2em 0.3em;
 
-    &.disconnected p {
-      opacity: 0.5;
-    }
-
-    & p.username {
-      height: min-content;
-    }
-
-    & .text {
-      max-width: 100%;
-      min-width: 0;
-      overflow: hidden;
-      text-wrap: nowrap;
-      flex-grow: 1;
-    }
-
-    & .badge {
-      width: 3.25em;
-      margin-left: 0.5em;
-
-      & p {
-        padding: 0.2em 0.4em;
-        border-radius: 20px;
-        text-align: center;
-        transition: background-color 0.3s ease-in-out;
-        margin: unset;
-
-        &.awaiting-vote {
-          background-color: var(--clr-danger-400);
+        &.highlight {
+            background-color: #9696964d;
         }
 
-        &.voted {
-          background-color: var(--clr-primary-400);
+        &.disconnected p {
+            opacity: 0.5;
         }
 
-        &.vote-result {
-          background-color: #32a04a;
+        & p.username {
+            height: min-content;
         }
 
-        &.own-vote-result {
-          background-color: #63636361;
+        & .text {
+            max-width: 100%;
+            min-width: 0;
+            overflow: hidden;
+            text-wrap: nowrap;
+            flex-grow: 1;
         }
-      }
+
+        & .badge {
+            width: 4em;
+            margin-left: 0.5em;
+            user-select: none;
+
+            & p {
+                padding: 0.2em 0.4em;
+                border-radius: 20px;
+                text-align: center;
+                transition: background-color 0.3s ease-in-out;
+                margin: unset;
+
+                &.awaiting-vote {
+                    background-color: var(--clr-danger-400);
+                }
+
+                &.voted {
+                    background-color: var(--clr-primary-400);
+                }
+
+                &.vote-result {
+                    background-color: #32a04a;
+                }
+
+                &.own-vote-result {
+                    background-color: #63636361;
+                }
+            }
+        }
     }
-  }
 }
 
 .skeleton .participant .badge p {
-  background-color: rgba(136, 136, 136, 0.3215686275) !important;
+    background-color: rgba(136, 136, 136, 0.3215686275) !important;
 }

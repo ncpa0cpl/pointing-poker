@@ -2,6 +2,7 @@ import { Case, deriveMany, Range, Switch } from "@ncpa0cpl/vanilla-jsx";
 import { Box } from "adwavecss";
 import { PokerRoomService } from "../../../../services/poker-room-service/poker-room-service";
 import type { PokerRoomRound } from "../../../../services/poker-room-service/types";
+import { VoteHighlights } from "../../vote-higlights";
 import "./styles.css";
 
 const getUserVote = (
@@ -60,6 +61,7 @@ export const Participants = () => {
               "participant": true,
               "center-y": true,
               "disconnected": !participant.isActive,
+              "highlight": VoteHighlights.derive(h => h.includes(participant.publicID)),
             }}
           >
             <p
@@ -73,7 +75,7 @@ export const Participants = () => {
             </p>
             <Switch value={badgeType} into={<div class="badge" />}>
               <Case match="awaiting-vote">
-                {() => <p class="awaiting-vote text">...</p>}
+                {() => <p class="awaiting-vote text">…</p>}
               </Case>
               <Case match="voted">
                 {() => <p class="voted text">Voted</p>}

@@ -28,7 +28,81 @@ type ClientChatMessage = {
   sentAt: DateTime;
 };
 
+// @ts-expect-error
+window.stubVotes = () => {
+  PokerRoomService.stubVotes();
+};
+
 export class PokerRoomService {
+  public static stubVotes() {
+    PokerRoomService.#rounds.dispatch([
+      {
+        id: "01",
+        hasResults: true,
+        isInProgress: false,
+        options: PokerRoomService.options.current(),
+        results: [
+          {
+            publicUserID: "u1",
+            username: "User 1",
+            vote: "5",
+          },
+          {
+            publicUserID: "u2",
+            username: "User 2",
+            vote: "3",
+          },
+          {
+            publicUserID: "u3",
+            username: "User 3",
+            vote: "5",
+          },
+          {
+            publicUserID: "u4",
+            username: "User 4",
+            vote: "5",
+          },
+          {
+            publicUserID: "u5",
+            username: "User 5",
+            vote: "3",
+          },
+          {
+            publicUserID: "u6",
+            username: "User 6",
+            vote: "2",
+          },
+          {
+            publicUserID: "u7",
+            username: "User 7",
+            vote: "5",
+          },
+          {
+            publicUserID: "u8",
+            username: "User 8",
+            vote: "8",
+          },
+          {
+            publicUserID: "u9",
+            username: "User 9",
+            vote: "3",
+          },
+          {
+            publicUserID: "u10",
+            username: "User 10",
+            vote: "5",
+          },
+        ],
+        finalResult: {
+          mean: "5",
+          median: "5",
+          mode: "5",
+          votes: 8,
+        },
+      },
+    ]);
+  }
+
   static #roomID = sig<string | null>(null);
   static #connected = sig(false);
   static #roomOwner = sig<Participant>({
