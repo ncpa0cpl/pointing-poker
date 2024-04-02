@@ -1,6 +1,6 @@
 # Pointing Poker Web App
 
-Check it out on [https://camqiwa.fra.dom.my.id/join](https://camqiwa.fra.dom.my.id/join)
+Check it out [in here](https://camqiwa.ams.dom.my.id)
 
 ## Setup
 
