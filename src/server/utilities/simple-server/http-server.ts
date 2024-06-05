@@ -13,6 +13,7 @@ import { ServeHandler } from "./serve-handler";
 export type MaybePromise<T> = T | Promise<T>;
 
 export interface HttpServerOptions {
+  forceHttps?: boolean;
   onRouteError?(
     err: unknown,
     request: Request,
@@ -187,9 +188,9 @@ export class HttpServer {
       this,
       this.requestMiddleware,
       this.responseMiddleware,
+      options,
       port,
     );
-    serve.onRouteError = options.onRouteError;
     return Bun.serve(serve);
   }
 }

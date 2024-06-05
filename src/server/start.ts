@@ -18,6 +18,7 @@ declare module "luxon" {
 }
 
 const port = Number(process.env.PORT) || 8080;
+const isDev = process.env.NODE_ENV === "development";
 
 deserializeClassInstancesFromPersistentStorage(Room).catch((e) => {
   logger.error({
@@ -34,6 +35,7 @@ app.onResponse(LogMiddleware());
 addRoutes(app);
 
 app.listen(port, {
+  forceHttps: !isDev,
   onRouteError(err, req, route) {
     logger.error({
       message: "Unexpected error occurred.",

@@ -9,15 +9,20 @@ import { RouterResponse } from "./router-response";
 import { WsHandler } from "./websocket-handler";
 
 export class ServeHandler {
-  public onRouteError: HttpServerOptions["onRouteError"] | undefined;
+  private onRouteError: HttpServerOptions["onRouteError"] | undefined;
 
   public constructor(
     private readonly server: HttpServer,
     private readonly requestMiddleware: RequestMiddleware[],
     private readonly responseMiddleware: ResponseMiddleware[],
+    private readonly options: HttpServerOptions,
     public readonly port: number = 8080,
   ) {
     this.fetch = this.fetch.bind(this);
+
+    if (options.onRouteError) {
+      this.onRouteError = options.onRouteError;
+    }
   }
 
   private notFoundResp() {
@@ -31,6 +36,36 @@ export class ServeHandler {
     return RouterResponse.from("Internal Server Error", {
       status: 500,
       statusText: "Internal Server Error",
+    });
+  }
+
+  private isHttps(request: Request): boolean {
+    const url = new URL(request.url);
+    if (url.protocol === "https:") {
+      return true;
+    }
+    
+    const forwardProto = request.headers.get("x-forwarded-proto");
+    if (forwardProto === "https") {
+      return true;
+    }
+
+    const forwarded = request.headers.get("forwarded");
+    if (forwarded?.includes("proto=https")) {
+      return true;
+    }
+
+    return false;
+  }
+
+  private redirectToHttps(request: Request) {
+    const url = new URL(request.url);
+    url.protocol = "https:";
+    return new Response(null, {
+      status: 308,
+      headers: {
+        Location: url.toString(),
+      },
     });
   }
 
@@ -65,6 +100,10 @@ export class ServeHandler {
   }
 
   public async fetch(request: Request, bunServer: Server) {
+    if (this.options.forceHttps && !this.isHttps(request)) {
+      return this.redirectToHttps(request);
+    }
+
     for (let i = 0; i < this.requestMiddleware.length; i++) {
       const middleware = this.requestMiddleware[i]!;
       const result = await middleware(request);
