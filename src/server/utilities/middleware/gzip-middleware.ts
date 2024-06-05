@@ -36,7 +36,7 @@ export const GzipMiddleware = (): ResponseMiddleware => (resp, req) => {
       headers: resp.headers,
       status: resp.status,
       statusText: resp.statusText,
-    });
+    }, resp);
 
     newResp.headers.set("Content-Encoding", "gzip");
 

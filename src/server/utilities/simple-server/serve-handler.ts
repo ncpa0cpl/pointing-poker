@@ -44,7 +44,7 @@ export class ServeHandler {
     if (url.protocol === "https:") {
       return true;
     }
-    
+
     const forwardProto = request.headers.get("x-forwarded-proto");
     if (forwardProto === "https") {
       return true;
@@ -58,15 +58,16 @@ export class ServeHandler {
     return false;
   }
 
-  private redirectToHttps(request: Request) {
+  private async redirectToHttps(request: Request) {
     const url = new URL(request.url);
     url.protocol = "https:";
-    return RouterResponse.from("redirecting", {
+    const Location = url.toString();
+    const response = await RouterResponse.from("redirecting", {
       status: 308,
-      headers: {
-        Location: url.toString(),
-      },
+      headers: { Location },
     });
+    response.setLogData("redirect_to", Location);
+    return response;
   }
 
   public websocket = new WsHandler(this.server, this);

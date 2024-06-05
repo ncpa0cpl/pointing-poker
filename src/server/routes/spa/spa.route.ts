@@ -36,7 +36,7 @@ export function addSpaRoute(server: HttpServer) {
         noStore: true,
       });
 
-      ctx.logValue("filelocation", filepath);
+      ctx.logValue("file_location", filepath);
       return ctx.sendFile(200, indexFile);
     }
 

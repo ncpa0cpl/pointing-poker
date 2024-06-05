@@ -24,19 +24,21 @@ export class Context {
       return;
     }
 
+    let response: Promise<RouterResponse>;
+
     if (ctx.responseData instanceof RouterResponse) {
       copyHeaders(ctx.responseHeaders, ctx.responseData.headers);
-      return ctx.responseData;
+      response = Promise.resolve(ctx.responseData);
+    } else {
+      response = RouterResponse.from(
+        ctx.responseData.body,
+        {
+          headers: ctx.responseHeaders,
+          status: ctx.responseData.status,
+          statusText: ctx.responseData.statusText,
+        },
+      );
     }
-
-    const response = RouterResponse.from(
-      ctx.responseData.body,
-      {
-        headers: ctx.responseHeaders,
-        status: ctx.responseData.status,
-        statusText: ctx.responseData.statusText,
-      },
-    );
 
     const logs = Object.entries(ctx.logData);
     if (ctx.sendType || logs.length > 0) {
@@ -46,7 +48,7 @@ export class Context {
           r.setLogData(key, value);
         }
         if (ctx.sendType) {
-          r.setLogData("respondedWith", ctx.sendType);
+          r.setLogData("responded_with", ctx.sendType);
         }
         return r;
       });
@@ -135,7 +137,7 @@ export class Context {
 
   public sendFile(
     code: number,
-    data: Uint8Array | Blob | ReadableStream | BunFile
+    data: Uint8Array | Blob | ReadableStream | BunFile,
   ): Context {
     this.responseHeaders.delete("Content-Type");
     this.responseData = {

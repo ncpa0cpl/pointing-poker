@@ -1,6 +1,6 @@
 import {
-  type CacheConfig,
   generateCacheControlHeader,
+  type CacheConfig,
 } from "../simple-server/headers/generate-cache-control-header";
 import type { ResponseMiddleware } from "../simple-server/http-server";
 import { RouterResponse } from "../simple-server/router-response";
@@ -50,7 +50,7 @@ export const CacheMiddleware = (
         new RouterResponse(Buffer.from(""), {
           status: 304,
           headers: resp.headers,
-        }),
+        }, resp),
       );
     }
 

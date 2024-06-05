@@ -30,12 +30,12 @@ export function LogResponseMiddleware(): ResponseMiddleware {
       ...resp.getLogData(),
       url: req.url,
       protocol: getProtocol(req),
-      forwardProtocol: getForwardProtocol(req),
+      forward_protocol: getForwardProtocol(req),
       method: req.method,
       status: resp.status,
-      contentLength: resp.getBuffer().byteLength,
-      isgzipped: resp.headers.get("Content-Encoding") === "gzip",
-      lastModified: resp.headers.get("Last-Modified"),
+      content_length: resp.getBuffer().byteLength,
+      is_gzipped: resp.headers.get("Content-Encoding") === "gzip",
+      last_modified: resp.headers.get("Last-Modified"),
     };
     queueMicrotask(() => {
       logger.info(`Sending response with status ${status}.`, info);
