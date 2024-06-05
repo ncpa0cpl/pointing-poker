@@ -36,6 +36,7 @@ async function main() {
           keepNames: true,
           plugins: [AxiosImportReplacerPlugin()],
           sourcemap: dev ? "inline" : undefined,
+          minify: !dev,
           loader: {
             ".svg": "file",
           },
