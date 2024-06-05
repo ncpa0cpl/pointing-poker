@@ -1,4 +1,5 @@
-import { Case, deriveMany, Range, Switch } from "@ncpa0cpl/vanilla-jsx";
+import { Case, Range, Switch } from "@ncpa0cpl/vanilla-jsx";
+import { sig } from "@ncpa0cpl/vanilla-jsx/signals";
 import { Box } from "adwavecss";
 import { PokerRoomService } from "../../../../services/poker-room-service/poker-room-service";
 import type { PokerRoomRound } from "../../../../services/poker-room-service/types";
@@ -21,7 +22,7 @@ export const Participants = () => {
       into={<div class={["participants", Box.box, Box.bg2]} />}
     >
       {participant => {
-        const badgeType = deriveMany(
+        const badgeType = sig.derive(
           PokerRoomService.currentRound,
           PokerRoomService.publicUserID,
           (r, currentUserPubID) => {

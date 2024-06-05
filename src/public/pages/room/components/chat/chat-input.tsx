@@ -1,4 +1,4 @@
-import { sig } from "@ncpa0cpl/vanilla-jsx";
+import { sig } from "@ncpa0cpl/vanilla-jsx/signals";
 import { Button } from "adwavecss";
 import { PokerRoomService } from "../../../../services/poker-room-service/poker-room-service";
 

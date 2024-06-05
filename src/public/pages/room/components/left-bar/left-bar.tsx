@@ -1,4 +1,4 @@
-import type { ReadonlySignal } from "@ncpa0cpl/vanilla-jsx";
+import type { ReadonlySignal } from "@ncpa0cpl/vanilla-jsx/signals";
 import { Card } from "adwavecss";
 import { ResultTabs } from "../result-tabs/result-tabs";
 import { RoundHistory } from "../round-history/round-history";

@@ -1,5 +1,5 @@
-import type { ReadonlySignal, Signal } from "@ncpa0cpl/vanilla-jsx";
-import { deriveMany, sig } from "@ncpa0cpl/vanilla-jsx";
+import type { ReadonlySignal, Signal } from "@ncpa0cpl/vanilla-jsx/signals";
+import { sig } from "@ncpa0cpl/vanilla-jsx/signals";
 import axios from "axios";
 import { DateTime } from "luxon";
 import { marked } from "marked";
@@ -118,7 +118,7 @@ export class PokerRoomService {
   static #connection = new WsConnection();
 
   public static selectedRound = sig("");
-  static #currentRound = deriveMany(
+  static #currentRound = sig.derive(
     this.#rounds,
     this.selectedRound,
     (rounds, selected) => {
@@ -165,7 +165,6 @@ export class PokerRoomService {
   public static get chatMessages(): ReadonlySignal<
     ReadonlySignal<ClientChatMessage>[]
   > {
-    // @ts-expect-error
     return PokerRoomService.#chatMessages;
   }
 

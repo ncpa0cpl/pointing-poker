@@ -27,9 +27,9 @@
     "email": ""
   },
   "dependencies": {
-    "@ncpa0cpl/vanilla-jsx": "^0.0.1-alpha.11",
-    "adwavecss": "^0.0.12",
-    "adwaveui": "^0.0.3",
+    "@ncpa0cpl/vanilla-jsx": "^0.0.1-alpha.20",
+    "adwavecss": "^0.0.13",
+    "adwaveui": "^0.0.6",
     "axios": "^1.6.4",
     "dilswer": "^2.1.1",
     "escape-html": "^1.0.3",

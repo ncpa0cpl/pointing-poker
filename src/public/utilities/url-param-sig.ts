@@ -1,5 +1,5 @@
-import type { Signal } from "@ncpa0cpl/vanilla-jsx";
-import { sig } from "@ncpa0cpl/vanilla-jsx";
+import type { Signal } from "@ncpa0cpl/vanilla-jsx/signals";
+import { sig } from "@ncpa0cpl/vanilla-jsx/signals";
 
 export const urlParamSig = <T>(
   paramName: string,

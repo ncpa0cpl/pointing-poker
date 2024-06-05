@@ -1,5 +1,5 @@
-import type { ReadonlySignal } from "@ncpa0cpl/vanilla-jsx";
 import { If, Range } from "@ncpa0cpl/vanilla-jsx";
+import type { ReadonlySignal } from "@ncpa0cpl/vanilla-jsx/signals";
 import { Box, NavSidebar, Typography } from "adwavecss";
 import { UpsideDownScrollView } from "../../../../components/upside-down-scrollview/upside-down-scrollview";
 import { PokerRoomService } from "../../../../services/poker-room-service/poker-room-service";

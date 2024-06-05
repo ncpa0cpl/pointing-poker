@@ -15,6 +15,10 @@ function addMissingGlobals() {
     send() {}
   };
 
+  globalThis.DOMParser = class {
+    parseFromString() {}
+  }
+
   // window.history.pushState = function() {};
 
   globalThis.URL = window.URL;

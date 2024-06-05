@@ -1,5 +1,5 @@
-import type { ReadonlySignal } from "@ncpa0cpl/vanilla-jsx";
-import { sig } from "@ncpa0cpl/vanilla-jsx";
+import type { ReadonlySignal } from "@ncpa0cpl/vanilla-jsx/signals";
+import { sig } from "@ncpa0cpl/vanilla-jsx/signals";
 import { v4 } from "uuid";
 
 export type User = {

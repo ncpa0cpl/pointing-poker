@@ -18,19 +18,17 @@ export const MessageList = () => {
         {msg => (
           <div class="chat-message">
             {msg.derive(m => {
-              return (
-                <>
-                  <p class="text timestamp">
-                    {formatTime(m.sentAt)}
-                  </p>
-                  <span class="message-text text" unsafeHTML>
-                    <span class="username">
-                      {m.username ? m.username + ": " : ""}
-                    </span>
-                    {m.text.trim()}
+              return [
+                <p class="text timestamp">
+                  {formatTime(m.sentAt)}
+                </p>,
+                <span class="message-text text" unsafeHTML>
+                  <span class="username">
+                    {m.username ? m.username + ": " : ""}
                   </span>
-                </>
-              );
+                  {m.text.trim()}
+                </span>,
+              ];
             })}
           </div>
         )}

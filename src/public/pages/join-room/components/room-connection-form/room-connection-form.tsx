@@ -1,5 +1,5 @@
-import type { Signal } from "@ncpa0cpl/vanilla-jsx";
-import { sig } from "@ncpa0cpl/vanilla-jsx";
+import type { Signal } from "@ncpa0cpl/vanilla-jsx/signals";
+import { sig } from "@ncpa0cpl/vanilla-jsx/signals";
 import { Button, Input } from "adwavecss";
 import { PokerRoomService } from "../../../../services/poker-room-service/poker-room-service";
 import { router } from "../../../routes";

@@ -1,18 +1,19 @@
-import { deriveMany, If, sig } from "@ncpa0cpl/vanilla-jsx";
+import { If } from "@ncpa0cpl/vanilla-jsx";
+import { sig } from "@ncpa0cpl/vanilla-jsx/signals";
 import { Button } from "adwavecss";
 import { PokerRoomService } from "../../../../services/poker-room-service/poker-room-service";
 import "./styles.css";
 
 export const OwnerControls = () => {
   const disableAll = sig(false);
-  const disableShowResults = deriveMany(
+  const disableShowResults = sig.derive(
     disableAll,
     PokerRoomService.currentRound,
     (disableAll, round) => {
       return disableAll || round?.finalResult != null;
     },
   );
-  const disableNextRound = deriveMany(
+  const disableNextRound = sig.derive(
     disableAll,
     PokerRoomService.currentRound,
     (disableAll, round) => {
@@ -20,7 +21,7 @@ export const OwnerControls = () => {
     },
   );
 
-  const isOwner = deriveMany(
+  const isOwner = sig.derive(
     PokerRoomService.publicUserID,
     PokerRoomService.roomOwner,
     (userID, owner) => {

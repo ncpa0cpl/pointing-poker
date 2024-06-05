@@ -1,4 +1,4 @@
-import { sig } from "@ncpa0cpl/vanilla-jsx";
+import { sig } from "@ncpa0cpl/vanilla-jsx/signals";
 import { Card, Typography } from "adwavecss";
 import { PointingPokerDescription } from "../../components/pp-description/pp-description";
 import { RepoLink } from "../../components/repo-link/repo-link";

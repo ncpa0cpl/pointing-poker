@@ -1,5 +1,5 @@
-import type { ReadonlySignal } from "@ncpa0cpl/vanilla-jsx";
 import { If, Range } from "@ncpa0cpl/vanilla-jsx";
+import type { ReadonlySignal } from "@ncpa0cpl/vanilla-jsx/signals";
 import { Button } from "adwavecss";
 import { PokerRoomService } from "../../../../services/poker-room-service/poker-room-service";
 import "./styles.css";
