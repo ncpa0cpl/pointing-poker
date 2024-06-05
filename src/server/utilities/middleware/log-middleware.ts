@@ -3,7 +3,24 @@ import type { RequestMiddleware, ResponseMiddleware } from "../simple-server/htt
 
 function getProtocol(req: Request): string {
   const url = new URL(req.url);
-  return url.protocol;
+  return url.protocol.replace(":", "");
+}
+
+function getForwardProtocol(req: Request): string {
+  const forwarderProto = req.headers.get("X-Forwarded-Proto");
+  if (forwarderProto != null) {
+    return forwarderProto;
+  }
+  const forwarded = req.headers.get("Forwarded");
+  const protoIdx = forwarded?.indexOf("proto=");
+  if (protoIdx != null && protoIdx === -1) {
+    let endIdx = forwarded!.indexOf(";", protoIdx);
+    if (endIdx === -1) {
+      endIdx = forwarded!.length;
+    }
+    return forwarded!.substring(protoIdx + 6, endIdx);
+  }
+  return "";
 }
 
 export function LogResponseMiddleware(): ResponseMiddleware {
@@ -13,6 +30,7 @@ export function LogResponseMiddleware(): ResponseMiddleware {
       ...resp.getLogData(),
       url: req.url,
       protocol: getProtocol(req),
+      forwardProtocol: getForwardProtocol(req),
       method: req.method,
       status: resp.status,
       contentLength: resp.getBuffer().byteLength,

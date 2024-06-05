@@ -61,7 +61,7 @@ export class ServeHandler {
   private redirectToHttps(request: Request) {
     const url = new URL(request.url);
     url.protocol = "https:";
-    return new Response(null, {
+    return RouterResponse.from("redirecting", {
       status: 308,
       headers: {
         Location: url.toString(),
@@ -100,10 +100,6 @@ export class ServeHandler {
   }
 
   public async fetch(request: Request, bunServer: Server) {
-    if (this.options.forceHttps && !this.isHttps(request)) {
-      return this.redirectToHttps(request);
-    }
-
     for (let i = 0; i < this.requestMiddleware.length; i++) {
       const middleware = this.requestMiddleware[i]!;
       const result = await middleware(request);
@@ -115,7 +111,12 @@ export class ServeHandler {
       }
     }
 
-    let response = await this.respond(request, bunServer);
+    let response: RouterResponse | undefined;
+    if (this.options.forceHttps && !this.isHttps(request)) {
+      response = await this.redirectToHttps(request);
+    } else {
+      response = await this.respond(request, bunServer);
+    }
 
     if (response) {
       for (let i = 0; i < this.responseMiddleware.length; i++) {
