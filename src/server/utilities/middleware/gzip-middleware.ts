@@ -1,4 +1,5 @@
 import zlib from "zlib";
+import { logger } from "../../app-logger";
 import type { ResponseMiddleware } from "../simple-server/http-server";
 import { RouterResponse } from "../simple-server/router-response";
 
@@ -40,5 +41,8 @@ export const GzipMiddleware = (): ResponseMiddleware => (resp, req) => {
     newResp.headers.set("Content-Encoding", "gzip");
 
     return newResp;
+  }).catch(err => {
+    logger.error("GZip compression failed", err);
+    return resp;
   });
 };
