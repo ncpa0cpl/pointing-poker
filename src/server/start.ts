@@ -5,7 +5,7 @@ import { Room } from "./rooms/room/room";
 import { addRoutes } from "./routes/add-routes";
 import { CacheMiddleware } from "./utilities/middleware/cache-middleware";
 import { GzipMiddleware } from "./utilities/middleware/gzip-middleware";
-import { LogMiddleware } from "./utilities/middleware/log-middleware";
+import { LogRequestMiddleware, LogResponseMiddleware } from "./utilities/middleware/log-middleware";
 import { deserializeClassInstancesFromPersistentStorage } from "./utilities/persistent-objects/deserialize-class-instances-from-persistent-storage";
 import { HttpServer } from "./utilities/simple-server/http-server";
 import { RouterResponse } from "./utilities/simple-server/router-response";
@@ -28,9 +28,10 @@ deserializeClassInstancesFromPersistentStorage(Room).catch((e) => {
 });
 
 const app = new HttpServer();
+app.onRequest(LogRequestMiddleware());
 app.onResponse(CacheMiddleware());
 app.onResponse(GzipMiddleware());
-app.onResponse(LogMiddleware());
+app.onResponse(LogResponseMiddleware());
 
 addRoutes(app);
 

@@ -51,6 +51,7 @@ export class StaticFileRoute implements Route {
 
     let ctx = new Context(request, bunServer, url, {}, result.wildcardValue);
     ctx.sendFile(200, file);
+    ctx.logValue("filelocation", filePath);
     ctx = this.beforeSend(ctx);
 
     return Context.createResponse(ctx);

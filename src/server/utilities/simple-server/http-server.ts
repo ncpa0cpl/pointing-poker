@@ -13,6 +13,7 @@ import { ServeHandler } from "./serve-handler";
 export type MaybePromise<T> = T | Promise<T>;
 
 export interface HttpServerOptions {
+  mode?: "development" | "production";
   forceHttps?: boolean;
   onRouteError?(
     err: unknown,
@@ -191,6 +192,13 @@ export class HttpServer {
       options,
       port,
     );
-    return Bun.serve(serve);
+    return Bun.serve({
+      fetch(...args) {
+        return serve.fetch(...args);
+      },
+      websocket: serve.websocket,
+      port: serve.port,
+      development: options.mode === "development",
+    });
   }
 }

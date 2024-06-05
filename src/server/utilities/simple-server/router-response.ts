@@ -36,8 +36,18 @@ export class RouterResponse extends Response {
     return new RouterResponse(buffer, init);
   }
 
+  private logData: Record<string, string> = {};
+
   public constructor(private _arrBuff: Buffer, init?: ResponseInit) {
     super(_arrBuff, init);
+  }
+
+  public setLogData(key: string, data: string): void {
+    this.logData[key] = data;
+  }
+
+  public getLogData(): Record<string, string> {
+    return this.logData;
   }
 
   public getBuffer(): Buffer {

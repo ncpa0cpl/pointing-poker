@@ -27,14 +27,16 @@ export function addSpaRoute(server: HttpServer) {
     const wildcard = ctx.getPathWildcard();
 
     if (!wildcard || isSpaRoute(wildcard)) {
+      const filepath = path.join(pubDir, "index.html");
       const indexFile = Bun.file(
-        path.join(pubDir, "index.html"),
+        filepath,
       );
 
       ctx.setCacheControl({
         noStore: true,
       });
 
+      ctx.logValue("filelocation", filepath);
       return ctx.sendFile(200, indexFile);
     }
 

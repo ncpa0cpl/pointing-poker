@@ -14,6 +14,7 @@ export function addCreateRoomRoute(server: HttpServer) {
     }
 
     const room = RoomService.createRoom(body.userID, body.username);
+    ctx.logValue("createdroom", room.id);
     return ctx.sendJson(200, { roomID: room.id });
   });
 }
