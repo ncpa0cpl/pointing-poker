@@ -3,22 +3,22 @@ import { Card, Typography } from "adwavecss";
 import { PointingPokerDescription } from "../../components/pp-description/pp-description";
 import { RepoLink } from "../../components/repo-link/repo-link";
 import { UserService } from "../../services/user-service/user-service";
-import { router } from "../routes";
 import { RoomConnectionForm } from "./components/room-connection-form/room-connection-form";
 import { RoomCreateForm } from "./components/room-create-form/room-create-form";
 import "./styles.css";
+import { Router } from "../routes";
 
 export const JoinRoom = () => {
   const userExists = UserService.userExists();
   const disableControls = sig(false);
 
   if (!userExists) {
-    router.navigate("register", {});
+    Router.nav.register.$open();
   }
 
   return (
-    <div class={["join-room-page", "grow", Card.card]}>
-      <PointingPokerDescription />
+    <div class={["join-room-page", Card.card]}>
+      <PointingPokerDescription endMsg="Create new room or join an existing one below." />
       <div class="join-form">
         <RoomCreateForm disable={disableControls} />
         <div class="or-divider">

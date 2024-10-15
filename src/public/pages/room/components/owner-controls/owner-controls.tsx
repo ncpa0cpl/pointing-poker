@@ -15,9 +15,11 @@ export const OwnerControls = () => {
   );
   const disableNextRound = sig.derive(
     disableAll,
+    PokerRoomService.rounds,
     PokerRoomService.currentRound,
-    (disableAll, round) => {
-      return disableAll || round?.finalResult == null;
+    (disableAll, allRounds, selectedRound) => {
+      return disableAll || selectedRound?.finalResult == null
+        || allRounds.at(-1)?.id !== selectedRound.id;
     },
   );
 
@@ -61,11 +63,10 @@ export const OwnerControls = () => {
 
   return (
     <If
-      into={<div class="room-controls" />}
+      into={<div class="room-controls center-h" />}
       condition={isOwner}
       then={() => (
         <>
-          <div class="separator vertical" />
           <div class="linked">
             <button
               class={{

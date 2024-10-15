@@ -1,11 +1,11 @@
 .room-id-display {
-  margin: 1em 1em 1em 0px;
+    margin: 1em 1em 1em 0px;
 
-  & input {
-    width: 6em;
-  }
+    & input {
+        flex: 1;
+    }
 
-  & button {
-    min-width: 4em;
-  }
+    & button {
+        min-width: 4em;
+    }
 }

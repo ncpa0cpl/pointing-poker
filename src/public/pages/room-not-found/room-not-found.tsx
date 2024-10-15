@@ -1,10 +1,10 @@
 import { Button, Card, Typography } from "adwavecss";
-import { router } from "../routes";
 import "./styles.css";
+import { Router } from "../routes";
 
 export const RoomNotFound = () => {
   const handleJoinOtherRoomClick = () => {
-    router.navigate("join");
+    Router.nav.join.$open();
   };
 
   return (
@@ -12,7 +12,10 @@ export const RoomNotFound = () => {
       <h2 class={Typography.label}>
         Room with the specified ID could not be found.
       </h2>
-      <button class={Button.button} onclick={handleJoinOtherRoomClick}>
+      <button
+        class={[Button.button, Button.primary]}
+        onclick={handleJoinOtherRoomClick}
+      >
         Join other Room
       </button>
     </div>

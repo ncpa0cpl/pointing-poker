@@ -49,23 +49,25 @@ export type GetParamRoute<R extends Record<string, any>, RName extends string> =
 
 export type ParamName<N extends string> = N extends `?${infer PN}` ? PN : N;
 
-export type ParamDict<ParamNames extends string[]> = {
-  [K in ParamNames[number] as K extends `?${string}`
-    ? ParamName<K>
-    : never]?: string;
-} & {
-  [K in ParamNames[number] as K extends `?${string}`
-    ? never
-    : ParamName<K>]: string;
-};
+export type ParamDict<ParamNames extends string[]> =
+  & {
+    [
+      K in ParamNames[number] as K extends `?${string}` ? ParamName<K>
+        : never
+    ]?: string;
+  }
+  & {
+    [
+      K in ParamNames[number] as K extends `?${string}` ? never
+        : ParamName<K>
+    ]: string;
+  };
 
 export type ParamDictFor<
   Routes extends Record<string, any>,
   RName extends string,
-> =
-  GetParamRoute<Routes, RName> extends RouteDefWithParams<any, infer O>
-    ? O
-    : never;
+> = GetParamRoute<Routes, RName> extends RouteDefWithParams<any, infer O> ? O
+  : never;
 
 class Route {
   private element: JSX.Element | null = null;
@@ -175,7 +177,7 @@ export class SimpleRouter<
   >,
 > {
   private readonly titleElem: HTMLTitleElement;
-  private readonly container = (<div class={"routerbox"} />);
+  private readonly container = <div class={"routerbox"} />;
   private currentRoute: Route | null = null;
   private readonly routes: Route[];
   private readonly url = new UrlController();
@@ -189,7 +191,7 @@ export class SimpleRouter<
     if (titleElem) {
       this.titleElem = titleElem as HTMLTitleElement;
     } else {
-      this.titleElem = (<title></title>) as any;
+      this.titleElem = <title></title> as any;
       document.head.appendChild(this.titleElem);
     }
 

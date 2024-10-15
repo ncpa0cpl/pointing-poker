@@ -1,6 +1,6 @@
 import {
-  generateCacheControlHeader,
   type CacheConfig,
+  generateCacheControlHeader,
 } from "../simple-server/headers/generate-cache-control-header";
 import type { ResponseMiddleware } from "../simple-server/http-server";
 import { RouterResponse } from "../simple-server/router-response";

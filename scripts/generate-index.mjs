@@ -17,7 +17,7 @@ function addMissingGlobals() {
 
   globalThis.DOMParser = class {
     parseFromString() {}
-  }
+  };
 
   // window.history.pushState = function() {};
 
@@ -47,11 +47,11 @@ export async function generateIndexPage(
   document.body.appendChild(root);
   await import(`file://${entrypointPath}`);
   while (true) {
-    const currentPath = approuter.current().path;
-    if (currentPath === "register") {
+    const currentPath = AppRouter.current().path;
+    if (currentPath === "/register") {
       break;
     }
-    await new Promise(resolve => setTimeout(resolve, 100));
+    await new Promise((resolve) => setTimeout(resolve, 100));
   }
 
   const template = await fs.promises.readFile(htmlTemplatePath, "utf8");
@@ -81,6 +81,5 @@ export async function buildIndexPage(params) {
       stylesheetFilename: params.stylesheetFilename,
     },
   );
-  await fs
-    .promises.writeFile(`${params.outDir}/index.html`, indexPage);
+  await fs.promises.writeFile(`${params.outDir}/index.html`, indexPage);
 }

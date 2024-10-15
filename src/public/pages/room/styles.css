@@ -1,40 +1,47 @@
 :root {
-  --room-view-card-width: clamp(20vw, 22rem, 80vw);
+    --room-view-card-width: max(26vw, 22em);
+}
+
+.exit-room-btn {
+    margin: 0.6em;
+    width: 7em;
 }
 
 .room-view {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  justify-content: center;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    justify-content: center;
 
-  & .room-view-card {
-    margin: 0.6em;
-    height: max(80vh, 35em);
+    & .room-view-card {
+        margin: 0.6em;
+        height: max(86vh, 35em);
 
-    &:not(.voting-section) {
-      width: var(--room-view-card-width);
+        &:not(.voting-section) {
+            width: var(--room-view-card-width);
+        }
+
+        &.voting-section {
+            width: calc(var(--room-view-card-width) * 1.25);
+        }
     }
 
-    &.voting-section {
-      width: calc(var(--room-view-card-width) * 1.25);
+    & .voting-section {
+        max-width: 40em;
+        min-width: 25vw;
     }
-  }
-
-  & .voting-section {
-    max-width: 40em;
-    min-width: 25vw;
-  }
 }
 
 @media screen and (max-width: 780px) {
-  .voting-section-top-bar {
-    flex-direction: column;
-    & .room-id-display {
-      margin-right: 0px;
+    .voting-section-top-bar {
+        flex-direction: column;
+
+        & .room-id-display {
+            margin-right: 0px;
+        }
+
+        & .separator {
+            display: none;
+        }
     }
-    & .separator {
-      display: none;
-    }
-  }
 }

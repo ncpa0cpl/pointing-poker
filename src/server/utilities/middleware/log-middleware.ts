@@ -1,5 +1,8 @@
 import { logger } from "../../app-logger";
-import type { RequestMiddleware, ResponseMiddleware } from "../simple-server/http-server";
+import type {
+  RequestMiddleware,
+  ResponseMiddleware,
+} from "../simple-server/http-server";
 
 function getProtocol(req: Request): string {
   const url = new URL(req.url);

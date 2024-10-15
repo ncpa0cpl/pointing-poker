@@ -3,7 +3,6 @@ import type { ReadonlySignal } from "@ncpa0cpl/vanilla-jsx/dist/types/signals/si
 import { Box, Skeleton } from "adwavecss";
 import { PokerRoomService } from "../../services/poker-room-service/poker-room-service";
 import { UserService } from "../../services/user-service/user-service";
-import { router } from "../routes";
 import { Chat } from "./components/chat/chat";
 import { LeftBar } from "./components/left-bar/left-bar";
 import { OwnerControls } from "./components/owner-controls/owner-controls";
@@ -11,6 +10,7 @@ import { Participants } from "./components/participants/participants";
 import { RoomIDDisplay } from "./components/room-id-display/room-id-display";
 import { VoteButtons } from "./components/vote-buttons/vote-buttons";
 import "./styles.css";
+import { Router } from "../routes";
 
 type RoomProps = {
   roomID: ReadonlySignal<string>;
@@ -18,13 +18,13 @@ type RoomProps = {
 
 export const Room = $component<RoomProps>((props, api) => {
   const handleExitRoom = () => {
-    router.navigate("join").then(() => {
+    Router.nav.join.$open().then(() => {
       PokerRoomService.disconnectFromRoom();
     });
   };
 
   api.onMount(() => {
-    router.setTitle(`Room ${props.roomID.get()} - Pointing Poker`);
+    Router.setTitle(`Room ${props.roomID.get()} - Pointing Poker`);
   });
 
   api.onChange(() => {
@@ -35,7 +35,7 @@ export const Room = $component<RoomProps>((props, api) => {
     const roomID = props.roomID.get();
     if (PokerRoomService.roomID.get() !== roomID) {
       PokerRoomService.connectToRoom(roomID).catch(() => {
-        router.navigate("notfound");
+        Router.nav.notfound.$open();
       });
     }
   }, [props.roomID]);
@@ -56,7 +56,7 @@ export const Room = $component<RoomProps>((props, api) => {
       <div class="room-view">
         <LeftBar isSkeleton={isSkeleton} />
         <div class="column card voting-section room-view-card">
-          <div class="voting-section-top-bar">
+          <div class="voting-section-top-bar column">
             <RoomIDDisplay />
             <OwnerControls />
           </div>

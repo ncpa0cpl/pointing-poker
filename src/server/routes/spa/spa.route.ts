@@ -9,6 +9,7 @@ const SPA_ROUTES = [
   "/notfound",
   "/register",
   "/room",
+  "/error",
 ];
 
 const isSpaRoute = (path: string) => {

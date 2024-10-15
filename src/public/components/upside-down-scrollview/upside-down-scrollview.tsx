@@ -1,6 +1,4 @@
-import {
-  $component,
-} from "@ncpa0cpl/vanilla-jsx";
+import { $component } from "@ncpa0cpl/vanilla-jsx";
 import type { ReadonlySignal, Signal } from "@ncpa0cpl/vanilla-jsx/signals";
 import { Box } from "adwavecss";
 import "./styles.css";

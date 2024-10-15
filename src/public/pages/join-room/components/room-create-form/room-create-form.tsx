@@ -1,7 +1,7 @@
 import type { Signal } from "@ncpa0cpl/vanilla-jsx/signals";
 import { Button } from "adwavecss";
 import { PokerRoomService } from "../../../../services/poker-room-service/poker-room-service";
-import { router } from "../../../routes";
+import { Router } from "../../../routes";
 
 export const RoomCreateForm = (props: { disable: Signal<boolean> }) => {
   const disable = props.disable;
@@ -10,8 +10,12 @@ export const RoomCreateForm = (props: { disable: Signal<boolean> }) => {
     disable.dispatch(true);
     try {
       const roomID = await PokerRoomService.createRoom();
-      router.navigate("room", { roomID: roomID });
       await PokerRoomService.connectToRoom(roomID);
+      await Router.nav.room.$open({
+        roomID: roomID,
+      });
+    } catch (err) {
+      Router.nav.error.$open();
     } finally {
       disable.dispatch(false);
     }

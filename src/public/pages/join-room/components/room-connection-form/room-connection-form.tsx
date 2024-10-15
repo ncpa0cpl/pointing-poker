@@ -2,8 +2,8 @@ import type { Signal } from "@ncpa0cpl/vanilla-jsx/signals";
 import { sig } from "@ncpa0cpl/vanilla-jsx/signals";
 import { Button, Input } from "adwavecss";
 import { PokerRoomService } from "../../../../services/poker-room-service/poker-room-service";
-import { router } from "../../../routes";
 import "./styles.css";
+import { Router } from "../../../routes";
 
 export const RoomConnectionForm = (props: { disable: Signal<boolean> }) => {
   const inputValue = sig("");
@@ -17,9 +17,11 @@ export const RoomConnectionForm = (props: { disable: Signal<boolean> }) => {
     disable.dispatch(true);
     try {
       await PokerRoomService.connectToRoom(roomID);
-      router.navigate("room", { roomID: roomID });
+      Router.nav.room.$open({
+        roomID,
+      });
     } catch (e) {
-      router.navigate("notfound");
+      Router.nav.notfound.$open();
     } finally {
       disable.dispatch(false);
     }

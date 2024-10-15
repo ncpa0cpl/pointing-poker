@@ -43,7 +43,7 @@ export const RoundHistory = (props: {
   );
 
   return (
-    <div class={[Box.box, Box.bg2, "round-history", "column"]}>
+    <div class={[Box.box, Box.bg4, "round-history", "column"]}>
       <h2 class={Typography.header}>Previous Rounds</h2>
       <UpsideDownScrollView dep={allRounds}>
         <If

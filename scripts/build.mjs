@@ -62,11 +62,10 @@ async function main() {
 
 async function postBuild() {
   try {
-    const stylesheet = await hashFileName(
-      p("dist/esm/public/index.css"),
-    );
+    const stylesheet = await hashFileName(p("dist/esm/public/index.css"));
     const script = await hashFileName(p("dist/esm/public/index.mjs"));
 
+    console.log("Building index page...");
     await buildIndexPage({
       entrypointPath: script,
       htmlTemplatePath: p("src/public/index.html"),
@@ -74,6 +73,7 @@ async function postBuild() {
       scriptFilename: path.basename(script),
       stylesheetFilename: path.basename(stylesheet),
     });
+    console.log("Index page built.");
   } catch (error) {
     console.error(error);
   }
@@ -101,7 +101,7 @@ function AxiosImportReplacerPlugin() {
   return {
     name: "axios-import-replacer",
     setup(build) {
-      build.onResolve({ filter: /axios/ }, async args => {
+      build.onResolve({ filter: /axios/ }, async (args) => {
         if (args.pluginData) {
           return;
         }
@@ -114,10 +114,7 @@ function AxiosImportReplacerPlugin() {
         });
 
         return {
-          path: path.join(
-            path.dirname(r.path),
-            "dist/browser/axios.cjs",
-          ),
+          path: path.join(path.dirname(r.path), "dist/browser/axios.cjs"),
         };
       });
     },

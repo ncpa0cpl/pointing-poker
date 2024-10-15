@@ -1,7 +1,8 @@
 a.repo-link {
-  margin-top: 1.5em;
-  & button {
-    color: #2fa7fe;
-    text-decoration: underline;
-  }
+    margin-top: 1.5em;
+
+    & button {
+        color: #2fa7fe;
+        text-decoration: underline;
+    }
 }

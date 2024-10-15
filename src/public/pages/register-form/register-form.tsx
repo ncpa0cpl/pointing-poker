@@ -4,14 +4,14 @@ import { Button, Card, Input } from "adwavecss";
 import { PointingPokerDescription } from "../../components/pp-description/pp-description";
 import { RepoLink } from "../../components/repo-link/repo-link";
 import { UserService } from "../../services/user-service/user-service";
-import { router } from "../routes";
 import "./styles.css";
+import { Router } from "../routes";
 
 export const RegisterPage = (props: {
   qparams: ReadonlySignal<{ roomID?: string }>;
 }) => {
   if (UserService.userExists().get()) {
-    router.navigate("join");
+    Router.nav.join.$open();
   }
 
   const username = sig("");
@@ -24,9 +24,11 @@ export const RegisterPage = (props: {
 
       const { roomID } = props.qparams.get();
       if (roomID) {
-        router.navigate("room", { roomID });
+        Router.nav.room.$open({
+          roomID,
+        });
       } else {
-        router.navigate("join");
+        Router.nav.join.$open();
       }
     }
   };
@@ -38,7 +40,7 @@ export const RegisterPage = (props: {
 
   return (
     <div class={[Card.card, "register-form"]}>
-      <PointingPokerDescription />
+      <PointingPokerDescription endMsg="Enter your username below to get started." />
       <form onsubmit={onSubmit}>
         <div class={Button.linked}>
           <input

@@ -12,7 +12,7 @@ export const Statistics = () => {
   );
 
   return (
-    <div class={[Box.box, Box.bg2, "column", "statistics"]}>
+    <div class={[Box.box, Box.bg4, "column", "statistics"]}>
       <h2 class={Typography.header}>
         Statistics
       </h2>

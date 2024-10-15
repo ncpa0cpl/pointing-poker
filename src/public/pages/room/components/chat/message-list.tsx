@@ -13,7 +13,7 @@ export const MessageList = () => {
     <UpsideDownScrollView dep={PokerRoomService.chatMessages}>
       <Range
         data={PokerRoomService.chatMessages}
-        into={<div class={["chat-messages", Box.className({ bg: 2 })]} />}
+        into={<div class={["chat-messages", Box.className({ bg: 4 })]} />}
       >
         {msg => (
           <div class="chat-message">

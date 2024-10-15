@@ -196,10 +196,10 @@ export class PokerRoomService {
 
     const isMsgSame = (a: ClientChatMessage, b: ClientChatMessage) => {
       return (
-        a.publicUserID === b.publicUserID &&
-        a.username === b.username &&
-        a.text === b.text &&
-        a.sentAt.toMillis() === b.sentAt.toMillis()
+        a.publicUserID === b.publicUserID
+        && a.username === b.username
+        && a.text === b.text
+        && a.sentAt.toMillis() === b.sentAt.toMillis()
       );
     };
 
@@ -376,8 +376,8 @@ export class PokerRoomService {
   public static postChatMessage(text: string) {
     if (text.startsWith("/help")) {
       this.showSystemChatMsg(`Available commands:
-                        <br />/transfer <username>
-                        <br />/vote <value>`);
+                        <br />/transfer {username}
+                        <br />/vote {value}`);
     }
 
     const roomID = this.roomID.get();

@@ -1,57 +1,72 @@
+import { router } from "@ncpa0cpl/vrouter";
 import { UserService } from "../services/user-service/user-service";
-import { route, SimpleRouter } from "../utilities/simple-router/simple-router";
+import { ErrorPage } from "./error/error";
 import { JoinRoom } from "./join-room/join-room";
 import { RegisterPage } from "./register-form/register-form";
 import { RoomNotFound } from "./room-not-found/room-not-found";
 import { Room } from "./room/room";
 
-export const router = new SimpleRouter({
-  join: route({
-    title: "Join Room - Pointing Poker",
-    default: true,
-    memoized: true,
-    component: () => {
-      if (UserService.userExists().get() === false) {
-        router.navigate("register", {});
-      }
-      return <JoinRoom />;
-    },
-  }),
-  register: route({
-    title: "Register - Pointing Poker",
-    params: ["?roomID"],
-    component: (params) => <RegisterPage qparams={params} />,
-  }),
-  room: route({
-    params: ["roomID"],
-    component: (params) => {
-      if (UserService.userExists().get() === false) {
-        router.navigate("register", { roomID: params.get().roomID });
-      }
-      return <Room roomID={params.derive((p) => p.roomID)} />;
-    },
-  }),
-  notfound: route({
-    title: "Room Not Found - Pointing Poker",
-    component: RoomNotFound,
-  }),
+export const Router = router({
+  paramNames: [],
+  component(ctx) {
+    return <div class="box grow center-h">{ctx.out()}</div>;
+  },
+  subroutes(define) {
+    return {
+      join: define({
+        paramNames: [],
+        title: "Join Room - Pointing Poker",
+        default: true,
+        memo: true,
+        component: () => {
+          if (UserService.userExists().get() === false) {
+            Router.nav.register.$open();
+          }
+          return <JoinRoom />;
+        },
+      }),
+      register: define({
+        title: "Register - Pointing Poker",
+        paramNames: ["roomID"],
+        component: (ctx) => <RegisterPage qparams={ctx.params} />,
+      }),
+      room: define({
+        paramNames: ["roomID"],
+        component: (ctx) => {
+          const params = ctx.params;
+          if (UserService.userExists().get() === false) {
+            Router.nav.register.$open({
+              roomID: params.get().roomID,
+            });
+          }
+          return <Room roomID={params.derive((p) => p.roomID)} />;
+        },
+      }),
+      error: define({
+        paramNames: [],
+        title: "Error",
+        component: ErrorPage,
+      }),
+      notfound: define({
+        paramNames: [],
+        title: "Room Not Found - Pointing Poker",
+        component: RoomNotFound,
+      }),
+    };
+  },
 });
 
 declare global {
-  const approuter: typeof router;
+  const AppRouter: typeof Router;
 }
 
-Object.defineProperty(globalThis, "approuter", {
-  value: router,
+Object.defineProperty(globalThis, "AppRouter", {
+  value: Router,
   writable: true,
   configurable: true,
   enumerable: false,
 });
 
 export const PageRouterRoutes = () => {
-  return (
-    <div class="box grow center">
-      <router.Out />
-    </div>
-  );
+  return Router.rootElement();
 };

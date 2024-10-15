@@ -19,7 +19,7 @@ export const Participants = () => {
   return (
     <Range
       data={PokerRoomService.participants}
-      into={<div class={["participants", Box.box, Box.bg2]} />}
+      into={<div class={["participants", Box.box, Box.bg4]} />}
     >
       {participant => {
         const badgeType = sig.derive(
@@ -62,7 +62,9 @@ export const Participants = () => {
               "participant": true,
               "center-y": true,
               "disconnected": !participant.isActive,
-              "highlight": VoteHighlights.derive(h => h.includes(participant.publicID)),
+              "highlight": VoteHighlights.derive(h =>
+                h.includes(participant.publicID)
+              ),
             }}
           >
             <p
