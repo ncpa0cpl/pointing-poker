@@ -8,24 +8,20 @@ import "./styles.css";
 
 type PokerRoomRoundWithId = PokerRoomRound & { idx: number };
 
-export const RoundHistory = (
-  props: { isSkeleton: ReadonlySignal<boolean> },
-) => {
+export const RoundHistory = (props: {
+  isSkeleton: ReadonlySignal<boolean>;
+}) => {
   const cround = PokerRoomService.currentRound;
-  const allRounds = PokerRoomService.rounds.derive((
-    rounds,
-  ): PokerRoomRoundWithId[] =>
-    rounds.map((r, idx) => ({ ...r, idx: idx + 1 }))
+  const allRounds = PokerRoomService.rounds.derive(
+    (rounds): PokerRoomRoundWithId[] =>
+      rounds.map((r, idx) => ({ ...r, idx: idx + 1 })),
   );
 
   const renderRoundBtn = (round: PokerRoomRoundWithId) => (
     <button
       onclick={() => {
-        const lastRoundIdx = -1
-          + PokerRoomService.rounds.current().length;
-        if (
-          round.idx - 1 === lastRoundIdx
-        ) {
+        const lastRoundIdx = -1 + PokerRoomService.rounds.get().length;
+        if (round.idx - 1 === lastRoundIdx) {
           PokerRoomService.selectedRound.dispatch("");
         } else {
           PokerRoomService.selectedRound.dispatch(round.id);
@@ -34,7 +30,7 @@ export const RoundHistory = (
       class={{
         "prev-round-btn": true,
         [NavSidebar.button]: true,
-        [NavSidebar.active]: cround.derive(cr => cr?.id === round.id),
+        [NavSidebar.active]: cround.derive((cr) => cr?.id === round.id),
       }}
     >
       <p class={Typography.text}>Round {round.idx}</p>

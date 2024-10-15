@@ -3,7 +3,7 @@ import "./styles.css";
 
 export const RoomIDDisplay = () => {
   const copyRoomID = () => {
-    const roomID = PokerRoomService.roomID.current();
+    const roomID = PokerRoomService.roomID.get();
     if (roomID) {
       navigator.clipboard.writeText(roomID);
     }
@@ -14,7 +14,7 @@ export const RoomIDDisplay = () => {
       <input
         class="input"
         disabled
-        value={PokerRoomService.roomID.derive(d => d ?? "        ")}
+        value={PokerRoomService.roomID.derive((d) => d ?? "        ")}
       />
       <button class="btn" onclick={copyRoomID}>
         Copy

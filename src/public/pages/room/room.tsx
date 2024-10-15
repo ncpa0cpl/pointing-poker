@@ -16,60 +16,55 @@ type RoomProps = {
   roomID: ReadonlySignal<string>;
 };
 
-export const Room = $component<RoomProps>(
-  (props, api) => {
-    const handleExitRoom = () => {
-      router.navigate("join").then(() => {
-        PokerRoomService.disconnectFromRoom();
-      });
-    };
-
-    api.onMount(() => {
-      router.setTitle(`Room ${props.roomID.current()} - Pointing Poker`);
+export const Room = $component<RoomProps>((props, api) => {
+  const handleExitRoom = () => {
+    router.navigate("join").then(() => {
+      PokerRoomService.disconnectFromRoom();
     });
+  };
 
-    api.onChange(() => {
-      if (!UserService.userExists().current()) {
-        return;
-      }
+  api.onMount(() => {
+    router.setTitle(`Room ${props.roomID.get()} - Pointing Poker`);
+  });
 
-      const roomID = props.roomID.current();
-      if (PokerRoomService.roomID.current() !== roomID) {
-        PokerRoomService.connectToRoom(roomID).catch(() => {
-          router.navigate("notfound");
-        });
-      }
-    }, [props.roomID]);
+  api.onChange(() => {
+    if (!UserService.userExists().get()) {
+      return;
+    }
 
-    const isSkeleton = PokerRoomService.connected.derive((c) => !c);
+    const roomID = props.roomID.get();
+    if (PokerRoomService.roomID.get() !== roomID) {
+      PokerRoomService.connectToRoom(roomID).catch(() => {
+        router.navigate("notfound");
+      });
+    }
+  }, [props.roomID]);
 
-    return (
-      <div
-        class={{
-          "column": true,
-          [Box.box]: true,
-          [Skeleton.skeleton]: isSkeleton,
-        }}
-      >
-        <button
-          class="btn exit-room-btn"
-          onclick={handleExitRoom}
-        >
-          Exit Room
-        </button>
-        <div class="room-view">
-          <LeftBar isSkeleton={isSkeleton} />
-          <div class="column card voting-section room-view-card">
-            <div class="voting-section-top-bar">
-              <RoomIDDisplay />
-              <OwnerControls />
-            </div>
-            <VoteButtons isSkeleton={isSkeleton} />
-            <Participants />
+  const isSkeleton = PokerRoomService.connected.derive((c) => !c);
+
+  return (
+    <div
+      class={{
+        column: true,
+        [Box.box]: true,
+        [Skeleton.skeleton]: isSkeleton,
+      }}
+    >
+      <button class="btn exit-room-btn" onclick={handleExitRoom}>
+        Exit Room
+      </button>
+      <div class="room-view">
+        <LeftBar isSkeleton={isSkeleton} />
+        <div class="column card voting-section room-view-card">
+          <div class="voting-section-top-bar">
+            <RoomIDDisplay />
+            <OwnerControls />
           </div>
-          <Chat />
+          <VoteButtons isSkeleton={isSkeleton} />
+          <Participants />
         </div>
+        <Chat />
       </div>
-    );
-  },
-);
+    </div>
+  );
+});

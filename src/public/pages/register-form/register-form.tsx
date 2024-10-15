@@ -7,10 +7,10 @@ import { UserService } from "../../services/user-service/user-service";
 import { router } from "../routes";
 import "./styles.css";
 
-export const RegisterPage = (
-  props: { qparams: ReadonlySignal<{ roomID?: string }> },
-) => {
-  if (UserService.userExists().current()) {
+export const RegisterPage = (props: {
+  qparams: ReadonlySignal<{ roomID?: string }>;
+}) => {
+  if (UserService.userExists().get()) {
     router.navigate("join");
   }
 
@@ -19,10 +19,10 @@ export const RegisterPage = (
   const onSubmit = (e: Event) => {
     e.preventDefault();
 
-    if (username.current()) {
-      UserService.createNewUser(username.current());
+    if (username.get()) {
+      UserService.createNewUser(username.get());
 
-      const { roomID } = props.qparams.current();
+      const { roomID } = props.qparams.get();
       if (roomID) {
         router.navigate("room", { roomID });
       } else {
@@ -49,7 +49,9 @@ export const RegisterPage = (
             oninput={onInput}
             placeholder={"Enter your username"}
           />
-          <button class={Button.button} type="submit">Start Playing</button>
+          <button class={Button.button} type="submit">
+            Start Playing
+          </button>
         </div>
       </form>
       <RepoLink />

@@ -14,7 +14,7 @@ export class UserService {
   static #user = sig<User | null>(null);
 
   public static get user(): ReadonlySignal<User> {
-    if (!UserService.#user.current()) {
+    if (!UserService.#user.get()) {
       throw new Error("User does not exist.");
     }
     return UserService.#user as any;

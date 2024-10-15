@@ -24,16 +24,16 @@ export type RouteDefWithoutParams = {
   default?: boolean;
   component: () => JSX.Element;
 };
-export type RouteDefWithParams<PNames extends string[], PDict extends object> =
-  {
-    title?: string;
-    params: PNames;
-    memoized?: boolean;
-    default?: boolean;
-    component: (
-      params: ReadonlySignal<PDict>,
-    ) => JSX.Element;
-  };
+export type RouteDefWithParams<
+  PNames extends string[],
+  PDict extends object,
+> = {
+  title?: string;
+  params: PNames;
+  memoized?: boolean;
+  default?: boolean;
+  component: (params: ReadonlySignal<PDict>) => JSX.Element;
+};
 
 export type ParamlessRoutes<R extends Record<string, any>> = {
   [K in keyof R as R[K] extends RouteDefWithParams<any, any> ? never : K]: R[K];
@@ -42,36 +42,30 @@ export type ParamRoutes<R extends Record<string, any>> = {
   [K in keyof R as R[K] extends RouteDefWithParams<any, any> ? K : never]: R[K];
 };
 
-export type GetParamRoute<
-  R extends Record<string, any>,
-  RName extends string,
-> = R[RName] extends RouteDefWithParams<infer P, infer O>
-  ? RouteDefWithParams<P, O>
-  : never;
+export type GetParamRoute<R extends Record<string, any>, RName extends string> =
+  R[RName] extends RouteDefWithParams<infer P, infer O>
+    ? RouteDefWithParams<P, O>
+    : never;
 
 export type ParamName<N extends string> = N extends `?${infer PN}` ? PN : N;
 
-export type ParamDict<
-  ParamNames extends string[],
-> =
-  & {
-    [
-      K in ParamNames[number] as K extends `?${string}` ? ParamName<K>
-        : never
-    ]?: string;
-  }
-  & {
-    [
-      K in ParamNames[number] as K extends `?${string}` ? never
-        : ParamName<K>
-    ]: string;
-  };
+export type ParamDict<ParamNames extends string[]> = {
+  [K in ParamNames[number] as K extends `?${string}`
+    ? ParamName<K>
+    : never]?: string;
+} & {
+  [K in ParamNames[number] as K extends `?${string}`
+    ? never
+    : ParamName<K>]: string;
+};
 
 export type ParamDictFor<
   Routes extends Record<string, any>,
   RName extends string,
-> = GetParamRoute<Routes, RName> extends RouteDefWithParams<any, infer O> ? O
-  : never;
+> =
+  GetParamRoute<Routes, RName> extends RouteDefWithParams<any, infer O>
+    ? O
+    : never;
 
 class Route {
   private element: JSX.Element | null = null;
@@ -83,7 +77,7 @@ class Route {
   ) {}
 
   private updateParams(params: Record<string, string>) {
-    this.params.dispatch(current => {
+    this.params.dispatch((current) => {
       return {
         ...current,
         ...params,
@@ -116,7 +110,7 @@ class Route {
   }
 
   public getCurrentParams(): Record<string, any> {
-    return this.params.current();
+    return this.params.get();
   }
 }
 
@@ -181,7 +175,7 @@ export class SimpleRouter<
   >,
 > {
   private readonly titleElem: HTMLTitleElement;
-  private readonly container = <div class={"routerbox"} />;
+  private readonly container = (<div class={"routerbox"} />);
   private currentRoute: Route | null = null;
   private readonly routes: Route[];
   private readonly url = new UrlController();
@@ -190,14 +184,12 @@ export class SimpleRouter<
   };
   private currentTransition: ViewTransition | null = null;
 
-  public constructor(
-    routes: ROUTES,
-  ) {
+  public constructor(routes: ROUTES) {
     const titleElem = document.head.getElementsByTagName("title")[0];
     if (titleElem) {
       this.titleElem = titleElem as HTMLTitleElement;
     } else {
-      this.titleElem = <title></title> as any;
+      this.titleElem = (<title></title>) as any;
       document.head.appendChild(this.titleElem);
     }
 
@@ -270,9 +262,7 @@ export class SimpleRouter<
 
     if (this.currentRoute === newRoute) {
       this.currentRoute.render(params);
-      this.url.setParams(
-        this.currentRoute.getCurrentParams(),
-      );
+      this.url.setParams(this.currentRoute.getCurrentParams());
 
       return new Immediate(() => {});
     }
@@ -367,13 +357,9 @@ export class SimpleRouter<
 }
 
 export function route(def: RouteDefWithoutParams): RouteDefWithoutParams;
-export function route<
-  const P extends string[],
->(
+export function route<const P extends string[]>(
   def: RouteDefWithParams<P, ParamDict<P>>,
 ): RouteDefWithParams<P, ParamDict<P>>;
-export function route(
-  def: any,
-): any {
+export function route(def: any): any {
   return def;
 }

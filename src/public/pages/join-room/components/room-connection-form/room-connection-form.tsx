@@ -10,7 +10,7 @@ export const RoomConnectionForm = (props: { disable: Signal<boolean> }) => {
   const disable = props.disable;
 
   const onConnect = async () => {
-    const roomID = inputValue.current();
+    const roomID = inputValue.get();
 
     if (!roomID) return;
 
@@ -32,10 +32,7 @@ export const RoomConnectionForm = (props: { disable: Signal<boolean> }) => {
 
   const handleKeyUp = (e: KeyboardEvent) => {
     if (e.key === "Enter") {
-      const hasModifier = e.ctrlKey
-        || e.altKey
-        || e.metaKey
-        || e.shiftKey;
+      const hasModifier = e.ctrlKey || e.altKey || e.metaKey || e.shiftKey;
       if (!hasModifier) {
         onConnect();
       }

@@ -11,7 +11,7 @@ export const router = new SimpleRouter({
     default: true,
     memoized: true,
     component: () => {
-      if (UserService.userExists().current() === false) {
+      if (UserService.userExists().get() === false) {
         router.navigate("register", {});
       }
       return <JoinRoom />;
@@ -25,10 +25,10 @@ export const router = new SimpleRouter({
   room: route({
     params: ["roomID"],
     component: (params) => {
-      if (UserService.userExists().current() === false) {
-        router.navigate("register", { roomID: params.current().roomID });
+      if (UserService.userExists().get() === false) {
+        router.navigate("register", { roomID: params.get().roomID });
       }
-      return <Room roomID={params.derive(p => p.roomID)} />;
+      return <Room roomID={params.derive((p) => p.roomID)} />;
     },
   }),
   notfound: route({

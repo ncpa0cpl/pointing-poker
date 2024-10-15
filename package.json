@@ -27,7 +27,7 @@
     "email": ""
   },
   "dependencies": {
-    "@ncpa0cpl/vanilla-jsx": "^0.0.1-alpha.21",
+    "@ncpa0cpl/vanilla-jsx": "^0.0.1-alpha.31",
     "adwavecss": "^0.0.13",
     "adwaveui": "^0.0.6",
     "axios": "^1.6.4",
@@ -62,5 +62,6 @@
     "husky": "^8.0.3",
     "jsdom": "^24.0.0",
     "typescript": "latest"
-  }
+  },
+  "packageManager": "yarn@1.22.22+sha1.ac34549e6aa8e7ead463a7407e1c7390f61a6610"
 }

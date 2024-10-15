@@ -17,7 +17,7 @@ export const ChatInput = () => {
   };
 
   const sendMsg = () => {
-    const value = input.current();
+    const value = input.get();
     if (value) {
       input.dispatch("");
       PokerRoomService.postChatMessage(value);

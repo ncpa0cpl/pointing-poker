@@ -40,7 +40,7 @@ export class PokerRoomService {
         id: "01",
         hasResults: true,
         isInProgress: false,
-        options: PokerRoomService.options.current(),
+        options: PokerRoomService.options.get(),
         results: [
           {
             publicUserID: "u1",
@@ -185,38 +185,38 @@ export class PokerRoomService {
     };
   }
 
-  private static reconcileChatMessages(
-    newMessageList: ChatMessageView[],
-  ) {
-    const msgs = newMessageList.map((msg): ClientChatMessage => {
-      return this.mapChatMsg(msg);
-    }).sort((a, b) => {
-      return a.sentAt > b.sentAt ? 1 : -1;
-    });
+  private static reconcileChatMessages(newMessageList: ChatMessageView[]) {
+    const msgs = newMessageList
+      .map((msg): ClientChatMessage => {
+        return this.mapChatMsg(msg);
+      })
+      .sort((a, b) => {
+        return a.sentAt > b.sentAt ? 1 : -1;
+      });
 
     const isMsgSame = (a: ClientChatMessage, b: ClientChatMessage) => {
       return (
-        a.publicUserID === b.publicUserID
-        && a.username === b.username
-        && a.text === b.text
-        && a.sentAt.toMillis() === b.sentAt.toMillis()
+        a.publicUserID === b.publicUserID &&
+        a.username === b.username &&
+        a.text === b.text &&
+        a.sentAt.toMillis() === b.sentAt.toMillis()
       );
     };
 
-    this.#chatMessages.dispatch(currentList => {
+    this.#chatMessages.dispatch((currentList) => {
       const newList: Signal<ClientChatMessage>[] = [];
 
       for (let i = 0; i < msgs.length; i++) {
         const newMsg = msgs[i]!;
         const oldMsg = currentList[i];
 
-        if (oldMsg?.current().clientOnly) {
+        if (oldMsg?.get().clientOnly) {
           newList.push(oldMsg);
           newList.push(sig(newMsg));
           continue;
         } else if (oldMsg) {
           newList.push(oldMsg);
-          if (!isMsgSame(newMsg, oldMsg.current())) {
+          if (!isMsgSame(newMsg, oldMsg.get())) {
             oldMsg.dispatch(newMsg);
           }
         } else {
@@ -232,12 +232,14 @@ export class PokerRoomService {
    * Displays a message to this client only in a form of a chat message.
    */
   public static showSystemChatMsg(text: string) {
-    this.#chatMessages.dispatch(current => {
-      return current.concat(sig<ClientChatMessage>({
-        clientOnly: true,
-        sentAt: DateTime.local(),
-        text,
-      }));
+    this.#chatMessages.dispatch((current) => {
+      return current.concat(
+        sig<ClientChatMessage>({
+          clientOnly: true,
+          sentAt: DateTime.local(),
+          text,
+        }),
+      );
     });
   }
 
@@ -279,7 +281,7 @@ export class PokerRoomService {
       });
     });
 
-    this.#connection.on(OutgoingMessageType.ROOM_CHAT_UPDATE, data => {
+    this.#connection.on(OutgoingMessageType.ROOM_CHAT_UPDATE, (data) => {
       this.reconcileChatMessages(data.chatMessages);
     });
 
@@ -291,34 +293,37 @@ export class PokerRoomService {
   }
 
   public static connectToRoom(roomID: string) {
-    const user = UserService.user.current();
+    const user = UserService.user.get();
 
     this.#roomID.dispatch(roomID);
     this.#connected.dispatch(false);
 
-    return this.#connection.openConnection({
-      roomID,
-      userID: user.id,
-      publicUserID: user.publicID,
-      username: user.name,
-    }).then((data) => {
-      this.#connected.dispatch(true);
-      this.#participants.dispatch(data.room.participants);
-      this.#rounds.dispatch(data.room.rounds);
-      this.#publicUserID.dispatch(data.userPublicID);
-      this.#options.dispatch(data.room.defaultOptions);
-      this.#roomOwner.dispatch({
-        publicID: data.room.ownerPublicID,
-        username: data.room.ownerName,
-        isActive: true,
+    return this.#connection
+      .openConnection({
+        roomID,
+        userID: user.id,
+        publicUserID: user.publicID,
+        username: user.name,
+      })
+      .then((data) => {
+        this.#connected.dispatch(true);
+        this.#participants.dispatch(data.room.participants);
+        this.#rounds.dispatch(data.room.rounds);
+        this.#publicUserID.dispatch(data.userPublicID);
+        this.#options.dispatch(data.room.defaultOptions);
+        this.#roomOwner.dispatch({
+          publicID: data.room.ownerPublicID,
+          username: data.room.ownerName,
+          isActive: true,
+        });
+        this.#chatMessages.dispatch(
+          data.room.chatMessages.map((msg) => sig(this.mapChatMsg(msg))),
+        );
+      })
+      .catch((err) => {
+        this.#roomID.dispatch(null);
+        throw err;
       });
-      this.#chatMessages.dispatch(
-        data.room.chatMessages.map(msg => sig(this.mapChatMsg(msg))),
-      );
-    }).catch((err) => {
-      this.#roomID.dispatch(null);
-      throw err;
-    });
   }
 
   public static disconnectFromRoom() {
@@ -338,7 +343,7 @@ export class PokerRoomService {
   }
 
   public static async createRoom() {
-    const user = UserService.user.current();
+    const user = UserService.user.get();
 
     const {
       data: { roomID },
@@ -351,8 +356,8 @@ export class PokerRoomService {
   }
 
   public static sendVote(optionID: string) {
-    const roomID = this.roomID.current();
-    const currentRound = this.#currentRound.current();
+    const roomID = this.roomID.get();
+    const currentRound = this.#currentRound.get();
 
     if (roomID && currentRound) {
       return this.#connection.send({
@@ -361,7 +366,7 @@ export class PokerRoomService {
         optionRef: optionID,
         roomID: roomID,
         roundID: currentRound.id,
-        userID: UserService.user.current().id,
+        userID: UserService.user.get().id,
       });
     }
 
@@ -375,7 +380,7 @@ export class PokerRoomService {
                         <br />/vote <value>`);
     }
 
-    const roomID = this.roomID.current();
+    const roomID = this.roomID.get();
 
     if (roomID) {
       return this.#connection.send({
@@ -383,7 +388,7 @@ export class PokerRoomService {
         messageID: v4(),
         text,
         roomID: roomID,
-        userID: UserService.user.current().id,
+        userID: UserService.user.get().id,
       });
     }
 
@@ -391,15 +396,15 @@ export class PokerRoomService {
   }
 
   public static showResults() {
-    const roomID = this.roomID.current();
-    const currentRound = this.#currentRound.current();
+    const roomID = this.roomID.get();
+    const currentRound = this.#currentRound.get();
 
     if (roomID && currentRound) {
       return this.#connection.send({
         type: IncomingMessageType.FINISH_LAST_ROUND,
         messageID: v4(),
         roomID: roomID,
-        userID: UserService.user.current().id,
+        userID: UserService.user.get().id,
       });
     }
 
@@ -407,14 +412,14 @@ export class PokerRoomService {
   }
 
   public static startNextRound() {
-    const roomID = this.roomID.current();
+    const roomID = this.roomID.get();
 
     if (roomID) {
       return this.#connection.send({
         type: IncomingMessageType.CREATE_NEW_ROUND,
         messageID: v4(),
         roomID: roomID,
-        userID: UserService.user.current().id,
+        userID: UserService.user.get().id,
       });
     }
 

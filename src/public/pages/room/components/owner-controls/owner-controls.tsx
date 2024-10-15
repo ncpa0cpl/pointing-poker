@@ -30,28 +30,32 @@ export const OwnerControls = () => {
   );
 
   const endRound = () => {
-    if (!disableAll.current()) {
+    if (!disableAll.get()) {
       disableAll.dispatch(true);
-      PokerRoomService.showResults().catch(e => {
-        PokerRoomService.showSystemChatMsg(
-          "ERROR: Unable to show results, due to connection issues.",
-        );
-      }).finally(() => {
-        disableAll.dispatch(false);
-      });
+      PokerRoomService.showResults()
+        .catch((e) => {
+          PokerRoomService.showSystemChatMsg(
+            "ERROR: Unable to show results, due to connection issues.",
+          );
+        })
+        .finally(() => {
+          disableAll.dispatch(false);
+        });
     }
   };
 
   const startNextRound = () => {
-    if (!disableAll.current()) {
+    if (!disableAll.get()) {
       disableAll.dispatch(true);
-      PokerRoomService.startNextRound().catch(e => {
-        PokerRoomService.showSystemChatMsg(
-          "ERROR: Unable to start the next round, due to connection issues.",
-        );
-      }).finally(() => {
-        disableAll.dispatch(false);
-      });
+      PokerRoomService.startNextRound()
+        .catch((e) => {
+          PokerRoomService.showSystemChatMsg(
+            "ERROR: Unable to start the next round, due to connection issues.",
+          );
+        })
+        .finally(() => {
+          disableAll.dispatch(false);
+        });
     }
   };
 

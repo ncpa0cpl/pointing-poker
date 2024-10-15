@@ -7,8 +7,8 @@ export class WsHandler<T> {
   private handlers: Map<ServerWebSocket<T>, WsHandlers<T>> = new Map();
 
   public constructor(
-    private readonly server: HttpServer,
-    private readonly serverHandler: ServeHandler,
+    protected readonly server: HttpServer,
+    protected readonly serverHandler: ServeHandler,
   ) {
     this.open = this.open.bind(this);
     this.message = this.message.bind(this);
