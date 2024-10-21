@@ -21,21 +21,25 @@ import type {
   ErrorMessage,
   MessageReceivedOutgoingMessage,
   RoomConnectionInitiatedOutgoingMessage,
+  RoomWSOutgoingMessage,
 } from "../../../shared/websockets-messages/room-websocket-outgoing-message-types";
 import { OutgoingMessageType } from "../../../shared/websockets-messages/room-websocket-outgoing-message-types";
 import { logger } from "../../app-logger";
 import { RoomService } from "../../rooms/room-sevice";
 import { RoundOption } from "../../rooms/round/option/round-option";
 import { RequestError } from "../../utilities/request-error";
+import { createResponse } from "../../utilities/response";
 import type { HttpServer } from "../../utilities/simple-server/http-server";
+
+const MAX_WS_CONNECTIONS = 2500;
 
 const parseMessage = createWsMsgParser(
   DTRoomWSIncomingMessage,
 );
 
 class PingPong {
-  private timeout: NodeJS.Timeout | null = null;
-  private pingThrottle: NodeJS.Timeout | null = null;
+  private timeout: Timer | null = null;
+  private pingThrottle: Timer | null = null;
   private stopped = false;
 
   public constructor(private readonly ws: ServerWebSocket<unknown>) {}
@@ -87,20 +91,39 @@ class PingPong {
 }
 
 class RoomWsHandler {
+  private static connectionCount = 0;
+
+  public static beforeUpgrade() {
+    if (RoomWsHandler.connectionCount >= MAX_WS_CONNECTIONS) {
+      return createResponse(503, "Server is busy");
+    }
+  }
+
   public static open(ws: ServerWebSocket<unknown>) {
+    RoomWsHandler.connectionCount++;
     return new RoomWsHandler(new PingPong(ws));
   }
 
+  private intervalTimer;
   private onclosecb: (() => void) | undefined = undefined;
-  private readonly msgsReceived = new Set<string>();
+  private readonly msgsReceived = new Map<string, number>();
 
   public constructor(private pingPong: PingPong) {
     this.pingPong.ping();
+    this.intervalTimer = setInterval(() => {
+      const now = Date.now();
+      for (const [key, receivedAt] of [...this.msgsReceived.entries()]) {
+        if (now - receivedAt >= 30_000) {
+          this.msgsReceived.delete(key);
+        }
+      }
+    }, 30_000);
   }
 
   public close(ws: ServerWebSocket<unknown>) {
     this.pingPong!.stop();
     this.onclosecb?.();
+    clearInterval(this.intervalTimer);
   }
 
   public message(
@@ -114,12 +137,12 @@ class RoomWsHandler {
         if (this.msgsReceived.has(data.messageID)) {
           return;
         }
-        this.msgsReceived.add(data.messageID);
+        this.msgsReceived.set(data.messageID, Date.now());
       }
 
       switch (data.type) {
-        case IncomingMessageType.INITIATE:
-          this.onclosecb = this.handleInitiate(ws, data);
+        case IncomingMessageType.ROOM_CONNECT:
+          this.onclosecb = this.handleRoomConnect(ws, data);
           break;
         case IncomingMessageType.ADD_ROUND_VOTE:
           this.handleAddVote(ws, data);
@@ -142,7 +165,7 @@ class RoomWsHandler {
         case IncomingMessageType.SET_DEFAULT_OPTIONS:
           this.handleSetDefaultOptions(ws, data);
           break;
-        case IncomingMessageType.CLOSE:
+        case IncomingMessageType.ROOM_DISCONNECT:
           this.handleCloseRoomConnection(ws, data);
           break;
         case IncomingMessageType.PONG:
@@ -210,14 +233,19 @@ class RoomWsHandler {
     ));
   }
 
-  private handleInitiate(
+  private handleRoomConnect(
     ws: ServerWebSocket<unknown>,
     data: RoomOpenConnectionIncomingMessage,
   ) {
     const room = RoomService.getRoom(data.roomID);
 
     if (RequestError.is(room)) {
-      this.sendError(ws, data, room);
+      ws.send(JSON.stringify(
+        <RoomWSOutgoingMessage> {
+          type: OutgoingMessageType.ROOM_CLOSED,
+          roomID: data.roomID,
+        },
+      ));
       return undefined;
     }
 
@@ -240,7 +268,7 @@ class RoomWsHandler {
     const removeWs = connection.addWebSocket(ws);
 
     const response: RoomConnectionInitiatedOutgoingMessage = {
-      type: OutgoingMessageType.INITIATED,
+      type: OutgoingMessageType.ROOM_CONNECTED,
       connectionID: connection.id,
       room: room.toView(),
       userPublicID: connection.publicUserID,
@@ -412,10 +440,15 @@ class RoomWsHandler {
       return this.sendError(ws, data, room);
     }
 
-    room.closeConnection(data.userID);
+    room.closeUserConnection(data.userID);
+    this.onclosecb?.();
   }
 }
 
 export function addRoomWsRoute(server: HttpServer) {
-  server.ws("/ws/room", (ws) => RoomWsHandler.open(ws));
+  server.ws(
+    "/ws/room",
+    (ws) => RoomWsHandler.open(ws),
+    (req) => RoomWsHandler.beforeUpgrade(),
+  );
 }

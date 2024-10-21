@@ -1,6 +1,5 @@
 import type { ReadonlySignal, Signal } from "@ncpa0cpl/vanilla-jsx/signals";
 import { sig } from "@ncpa0cpl/vanilla-jsx/signals";
-import axios from "axios";
 import { DateTime } from "luxon";
 import { marked } from "marked";
 import { v4 } from "uuid";
@@ -24,7 +23,7 @@ type ClientChatMessage = {
   clientOnly?: boolean;
   publicUserID?: string | undefined;
   username?: string | undefined;
-  text: string;
+  content: string | Element;
   sentAt: DateTime;
 };
 
@@ -134,6 +133,8 @@ export class PokerRoomService {
     return rounds.at(-1);
   });
 
+  public static onRoomClosed?: Function;
+
   public static get roomID(): ReadonlySignal<string | null> {
     return PokerRoomService.#roomID;
   }
@@ -162,6 +163,10 @@ export class PokerRoomService {
     return PokerRoomService.#options;
   }
 
+  public static get socketOpened(): ReadonlySignal<boolean> {
+    return PokerRoomService.#connection.isOpen;
+  }
+
   public static get chatMessages(): ReadonlySignal<
     ReadonlySignal<ClientChatMessage>[]
   > {
@@ -180,7 +185,7 @@ export class PokerRoomService {
     return {
       publicUserID: msg.publicUserID,
       username: msg.username,
-      text: marked.parse(msg.text, { async: false }) as string,
+      content: marked.parse(msg.text, { async: false }) as string,
       sentAt: DateTime.fromISO(msg.sentAt).toLocal(),
     };
   }
@@ -198,7 +203,7 @@ export class PokerRoomService {
       return (
         a.publicUserID === b.publicUserID
         && a.username === b.username
-        && a.text === b.text
+        && a.content === b.content
         && a.sentAt.toMillis() === b.sentAt.toMillis()
       );
     };
@@ -231,13 +236,13 @@ export class PokerRoomService {
   /**
    * Displays a message to this client only in a form of a chat message.
    */
-  public static showSystemChatMsg(text: string) {
+  public static showSystemChatMsg(content: string | Element) {
     this.#chatMessages.dispatch((current) => {
       return current.concat(
         sig<ClientChatMessage>({
           clientOnly: true,
           sentAt: DateTime.local(),
-          text,
+          content: content,
         }),
       );
     });
@@ -289,6 +294,11 @@ export class PokerRoomService {
       this.#connection.sendSimple({
         type: IncomingMessageType.PONG,
       });
+    });
+
+    this.#connection.on(OutgoingMessageType.ROOM_CLOSED, () => {
+      this.onRoomClosed?.();
+      this.disconnectFromRoom();
     });
   }
 
@@ -345,12 +355,14 @@ export class PokerRoomService {
   public static async createRoom() {
     const user = UserService.user.get();
 
-    const {
-      data: { roomID },
-    } = await axios.post<{ roomID: string }>("/api/room", {
-      userID: user.id,
-      username: user.name,
-    });
+    const { roomID } = await fetch("/api/room", {
+      method: "POST",
+      body: JSON.stringify({
+        userID: user.id,
+        username: user.name,
+      }),
+    })
+      .then(resp => resp.json() as Promise<{ roomID: string }>);
 
     return roomID;
   }
@@ -374,10 +386,21 @@ export class PokerRoomService {
   }
 
   public static postChatMessage(text: string) {
-    if (text.startsWith("/help")) {
-      this.showSystemChatMsg(`Available commands:
-                        <br />/transfer {username}
-                        <br />/vote {value}`);
+    switch (text) {
+      case "/help":
+        this.showSystemChatMsg(
+          <pre class="nomargin">
+          Available commands:
+          {"\n  "}/transfer [username]
+          {"\n  "}/vote [value]
+          {"\n  "}/exit
+          {"\n  "}/close
+          </pre>,
+        );
+        return;
+      case "/exit":
+        this.disconnectFromRoom();
+        return;
     }
 
     const roomID = this.roomID.get();

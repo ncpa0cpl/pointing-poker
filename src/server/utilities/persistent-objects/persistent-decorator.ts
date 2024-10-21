@@ -1,6 +1,6 @@
 import { createActionDispatcher } from "../event-dispatcher";
 import { PersistentMetadataKeys } from "./metadata-keys";
-import { Storages } from "./storage/storage";
+import { Storages } from "./storage/storages";
 
 export type SerializedClassInstance = object & { id: string };
 
@@ -72,16 +72,21 @@ export function Persistent<T>(
       public constructor(...args: any[]) {
         super(...args);
 
-        const updatePersistentStorage = (): void => {
-          const data = constructor.serializer.serialize(this as any as T);
-          Storages.save(name, data.id, data);
-        };
+        const data = constructor.serializer.serialize(this as any as T);
+        Storages.has(name, data.id).then(exists => {
+          if (!exists) {
+            Storages.create(name, data.id, data);
+          }
 
-        applyWatchers(this, () => {
-          actions.dispatch(updatePersistentStorage);
+          const updatePersistentStorage = (): void => {
+            const data = constructor.serializer.serialize(this as any as T);
+            Storages.update(name, data.id, data);
+          };
+
+          applyWatchers(this, () => {
+            actions.dispatch(updatePersistentStorage);
+          });
         });
-
-        updatePersistentStorage();
       }
     },
   }[name];

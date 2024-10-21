@@ -1,9 +1,10 @@
 import type { ServerWebSocket } from "bun";
 import { DateTime } from "luxon";
 import * as uuid from "uuid";
-import type {
-  RoomParticipantsUpdateOutgoingMessage,
-  RoomWSOutgoingMessage,
+import {
+  OutgoingMessageType,
+  type RoomParticipantsUpdateOutgoingMessage,
+  type RoomWSOutgoingMessage,
 } from "../../../shared/websockets-messages/room-websocket-outgoing-message-types";
 import { WsReadyState } from "../../utilities/ws-utils";
 import type { Room } from "../room/room";
@@ -56,6 +57,17 @@ export class RoomConnection {
       if (webSocket.readyState === WsReadyState.Open) {
         webSocket.send(JSON.stringify(message));
       }
+    });
+  }
+
+  close() {
+    this.propagateMessage({
+      type: OutgoingMessageType.ROOM_CLOSED,
+      roomID: this.room.id,
+    });
+    this.webSockets.splice(0, this.webSockets.length);
+    this.room.removeConnection({
+      connectionID: this.id,
     });
   }
 

@@ -1,5 +1,5 @@
 import type { AllDataTypes, GetDataType } from "dilswer";
-import { compileFastValidator } from "dilswer";
+import { compileFastValidator, ensureDataType } from "dilswer";
 
 export const createWsMsgParser = <D extends AllDataTypes>(
   type: D,
@@ -14,6 +14,7 @@ export const createWsMsgParser = <D extends AllDataTypes>(
     if (isValid(data)) {
       return data;
     } else {
+      ensureDataType(type, data); // should throw a more detailed error
       throw new Error("Invalid message");
     }
   };

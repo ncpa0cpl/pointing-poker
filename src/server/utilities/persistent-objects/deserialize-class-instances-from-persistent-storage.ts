@@ -2,7 +2,7 @@ import type {
   ClassSerializer,
   SerializedClassInstance,
 } from "./persistent-decorator";
-import { Storages } from "./storage/storage";
+import { Storages } from "./storage/storages";
 
 const getClassName = (obj: {
   name: string;

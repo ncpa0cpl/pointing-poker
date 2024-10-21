@@ -1,3 +1,4 @@
+import { sig } from "@ncpa0cpl/vanilla-jsx/signals";
 import { v4 } from "uuid";
 import type {
   MessageReceivedOutgoingMessage,
@@ -12,6 +13,7 @@ import {
 } from "../../../shared/index";
 import { createWsMsgParser } from "../../../shared/websockets-messages/parse-ws-message";
 import type { FindInUnion } from "../../type-utils/find-in-union";
+import { SentryService } from "../sentry-service/sentry-service";
 
 type ConnectionParams = {
   roomID: string;
@@ -26,11 +28,9 @@ const parseMsg = createWsMsgParser(DTRoomWSOutgoingMessage);
 
 const RECONNECT_BACKOFFS = {
   [-1]: -1,
-  0: 100,
-  100: 500,
-  500: 1000,
-  1000: 2000,
-  2000: 5000,
+  0: 200,
+  200: 1000,
+  1000: 5000,
   5000: 5000,
 } as const;
 
@@ -63,28 +63,24 @@ class WsMessage {
     }
   }
 
-  public send(attemptCount = 0): Promise<void> {
+  public send(
+    prevTimeout: keyof typeof RECONNECT_BACKOFFS = 200,
+  ): Promise<void> {
     if (this.sentSuccessfully) return Promise.resolve();
-    if (attemptCount > 10) {
-      this.eventEmitter.removeEventListener(
-        OutgoingMessageType.MESSAGE_RECEIVED,
-        this.handleMsgReceivedEvent as any,
-      );
-      return Promise.reject(new Error("Could not send message."));
-    }
 
     const socket = this.getCurrentSocket();
     const isOpen = socket.readyState === WebSocket.OPEN;
     if (isOpen) {
       socket.send(this.strdata);
     }
-    attemptCount++;
+
+    const nextTimeout = RECONNECT_BACKOFFS[prevTimeout];
 
     return new Promise((res, rej) => {
       setTimeout(() => {
         if (this.sentSuccessfully) return res();
-        this.send(attemptCount).then(res).catch(rej);
-      }, attemptCount === 0 ? 50 : 500);
+        this.send(nextTimeout).then(res).catch(rej);
+      }, nextTimeout);
     });
   }
 }
@@ -92,52 +88,73 @@ class WsMessage {
 export class WsConnection {
   #socket!: WebSocket;
   #isOpened = false;
-  #isInitiated = false;
   #attemptingConnection = false;
   #connectionParams: null | ConnectionParams = null;
   #eventEmitter = new EventTarget();
   private onopen = noop;
 
+  private isOpenSig = sig(false);
+  public isOpen = this.isOpenSig.readonly();
+
   public constructor() {
+    this.on(OutgoingMessageType.ERROR, (errMsg) => {
+      SentryService.error(new Error(`Server error: ${errMsg.message}`), errMsg);
+    });
     this.createWs().catch(() => {});
+  }
+
+  private setOpened(opened: boolean) {
+    this.isOpenSig.dispatch(opened);
+    this.#isOpened = opened;
   }
 
   private createWs() {
     return new Promise<void>((resolve, reject) => {
-      const isSecure = location.protocol.startsWith("https");
-      const protocol = isSecure ? "wss" : "ws";
-      this.#socket = new WebSocket(`${protocol}://${location.host}/ws/room`);
+      try {
+        const isSecure = location.protocol.startsWith("https");
+        const protocol = isSecure ? "wss" : "ws";
+        this.#socket = new WebSocket(`${protocol}://${location.host}/ws/room`);
 
-      this.#socket.onopen = () => {
-        this.#socket.onerror = (err) => {
-          console.error(err);
+        this.#socket.onopen = () => {
+          this.#socket.onerror = (err) => {
+            console.error(err);
+            if (
+              this.#socket.readyState === WebSocket.CLOSED
+              || this.#socket.readyState === WebSocket.CLOSING
+            ) {
+              this.tryReconnect();
+            }
+          };
+          this.setOpened(true);
+          this.#attemptingConnection = false;
+          this.#socket.onclose = () => {
+            this.setOpened(false);
+            this.disposeOfSocket();
+            this.tryReconnect();
+          };
+          resolve();
+          this.onopen();
         };
-        this.#isOpened = true;
-        this.#attemptingConnection = false;
-        this.#socket.onclose = () => {
-          this.#isOpened = false;
-          this.disposeOfSocket();
+
+        this.#socket.onerror = (errEvent) => {
+          console.error(errEvent);
           this.tryReconnect();
+          reject(
+            new Error(
+              "Connection could not be established.",
+            ),
+          );
         };
-        resolve();
-        this.onopen();
-      };
 
-      this.#socket.onerror = () => {
-        console.error();
-        reject(
-          new Error(
-            "Connection could not be established.",
-          ),
-        );
-      };
-
-      this.#socket.onmessage = (event) => {
-        const data = parseMsg(event.data);
-        this.#eventEmitter.dispatchEvent(
-          new CustomEvent(data.type, { detail: event }),
-        );
-      };
+        this.#socket.onmessage = (event) => {
+          const data = parseMsg(event.data);
+          this.#eventEmitter.dispatchEvent(
+            new CustomEvent(data.type, { detail: event }),
+          );
+        };
+      } catch (err) {
+        reject(err);
+      }
     });
   }
 
@@ -153,27 +170,55 @@ export class WsConnection {
     }
   }
 
+  private incomingRetry?: Timer;
+  private lastRetry?: [
+    at: number,
+    backoff: keyof typeof RECONNECT_BACKOFFS,
+    isPending: boolean,
+  ];
+
   private tryReconnect() {
-    // retry up to 5 times with a exponential backoff
-    let nextBackoff: keyof typeof RECONNECT_BACKOFFS = RECONNECT_BACKOFFS[0];
-    const retry = () => {
-      if (nextBackoff !== -1) {
-        setTimeout(async () => {
-          if (this.#isOpened) return;
-          nextBackoff = RECONNECT_BACKOFFS[nextBackoff];
-          try {
-            await this.createWs();
-            if (this.#connectionParams) {
-              await this.openConnection(this.#connectionParams);
-            }
-          } catch {
-            retry();
+    if (this.incomingRetry) return;
+
+    const retry = (backoff: number) => {
+      if (this.#isOpened) return;
+
+      const retryEntry = [Date.now(), backoff, true] as Exclude<
+        typeof this.lastRetry,
+        undefined
+      >;
+      this.lastRetry = retryEntry;
+
+      this.createWs()
+        .then(async () => {
+          if (this.#connectionParams) {
+            await this.openConnection(this.#connectionParams);
           }
-        }, nextBackoff);
-      }
+          retryEntry[2] = false;
+        })
+        .catch(() => {
+          retryEntry[2] = false;
+          this.tryReconnect();
+        });
     };
 
-    retry();
+    if (this.lastRetry) {
+      const [lastRetriedAt, lastBackoff, isPending] = this.lastRetry;
+      if (isPending) return;
+      const now = Date.now();
+      const nextBackoff = RECONNECT_BACKOFFS[lastBackoff];
+      const nextRunAfter = nextBackoff - (now - lastRetriedAt);
+      if (nextRunAfter >= 0) {
+        this.incomingRetry = setTimeout(() => {
+          this.incomingRetry = undefined;
+          retry(nextBackoff);
+        }, nextRunAfter);
+      } else {
+        retry(nextBackoff);
+      }
+    } else {
+      retry(RECONNECT_BACKOFFS[0]);
+    }
   }
 
   public send(message: RoomWSIncomingMessage) {
@@ -226,8 +271,7 @@ export class WsConnection {
 
           this.#connectionParams = { ...connectionParams };
 
-          this.once(OutgoingMessageType.INITIATED, (data) => {
-            this.#isInitiated = true;
+          this.once(OutgoingMessageType.ROOM_CONNECTED, (data) => {
             this.#attemptingConnection = false;
             resolve(data);
           });
@@ -249,7 +293,7 @@ export class WsConnection {
           };
 
           this.send({
-            type: IncomingMessageType.INITIATE,
+            type: IncomingMessageType.ROOM_CONNECT,
             messageID: v4(),
             ...connectionParams,
           });
@@ -279,16 +323,12 @@ export class WsConnection {
   public closeRoomConnection() {
     if (this.#connectionParams) {
       this.send({
-        type: IncomingMessageType.CLOSE,
+        type: IncomingMessageType.ROOM_DISCONNECT,
         messageID: v4(),
         roomID: this.#connectionParams.roomID,
         userID: this.#connectionParams.userID,
       }).catch(() => {});
       this.#connectionParams = null;
     }
-  }
-
-  public isOpen() {
-    return this.#isInitiated;
   }
 }

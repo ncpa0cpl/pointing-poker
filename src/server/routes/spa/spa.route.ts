@@ -2,7 +2,7 @@ import path from "path";
 import { ROOT_DIR } from "../../root-dir";
 import type { HttpServer } from "../../utilities/simple-server/http-server";
 
-const pubDir = path.resolve(ROOT_DIR, "./dist/esm/public");
+const pubDir = path.resolve(ROOT_DIR, "./dist/public");
 
 const SPA_ROUTES = [
   "/join",
@@ -10,6 +10,7 @@ const SPA_ROUTES = [
   "/register",
   "/room",
   "/error",
+  "/roomclosed",
 ];
 
 const isSpaRoute = (path: string) => {

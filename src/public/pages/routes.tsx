@@ -3,6 +3,7 @@ import { UserService } from "../services/user-service/user-service";
 import { ErrorPage } from "./error/error";
 import { JoinRoom } from "./join-room/join-room";
 import { RegisterPage } from "./register-form/register-form";
+import { RoomClosed } from "./room-closed/room-closed";
 import { RoomNotFound } from "./room-not-found/room-not-found";
 import { Room } from "./room/room";
 
@@ -43,14 +44,19 @@ export const Router = router({
         },
       }),
       error: define({
-        paramNames: [],
+        paramNames: ["message"],
         title: "Error",
-        component: ErrorPage,
+        component: ctx => <ErrorPage params={ctx.params} />,
       }),
       notfound: define({
         paramNames: [],
         title: "Room Not Found - Pointing Poker",
         component: RoomNotFound,
+      }),
+      roomclosed: define({
+        paramNames: [],
+        title: "Room Closed - Pointing Poker",
+        component: RoomClosed,
       }),
     };
   },

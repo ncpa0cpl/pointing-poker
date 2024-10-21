@@ -13,9 +13,10 @@ import { OutgoingMessageType } from "../../../shared/websockets-messages/room-we
 import { Persistent } from "../../utilities/persistent-objects/persistent-decorator";
 import { PDependency } from "../../utilities/persistent-objects/persistent-property-dependency-decorator";
 import { PWatch } from "../../utilities/persistent-objects/persistent-property-watcher-decorator";
-import { Storages } from "../../utilities/persistent-objects/storage/storage";
+import { Storages } from "../../utilities/persistent-objects/storage/storages";
 import { RequestError } from "../../utilities/request-error";
 import { RoomConnection } from "../room-connection/room-connection";
+import { RoomService } from "../room-sevice";
 import { RoundOption } from "../round/option/round-option";
 import { RoundResult } from "../round/result/round-result";
 import { Round } from "../round/round";
@@ -45,6 +46,7 @@ export class Room {
 
   public readonly id: string;
   public readonly createdAt: DateTime;
+  public lastActivity: DateTime;
 
   @PWatch()
   public ownerID: string;
@@ -66,6 +68,7 @@ export class Room {
     overrides: {
       id?: string;
       createdAt?: DateTime;
+      lastActivity?: DateTime;
       ownerPublicID?: string;
       rounds?: Round[];
       defaultOptions?: RoundOption[];
@@ -78,6 +81,7 @@ export class Room {
     this.ownerPublicID = overrides.ownerPublicID;
     this.id = overrides.id ?? generateRoomID();
     this.createdAt = overrides.createdAt ?? DateTime.now();
+    this.lastActivity = overrides.lastActivity ?? this.createdAt;
     this.defaultOptions = overrides.defaultOptions ?? getDefaultOptions();
     this.rounds = overrides.rounds
       ?? [new Round(undefined, getDefaultOptions())];
@@ -140,6 +144,8 @@ export class Room {
   }
 
   public setDefaultOptions(options: RoundOption[]): void {
+    this.lastActivity = DateTime.now();
+
     this.defaultOptions = options.slice();
 
     const lastRound = this.rounds[this.rounds.length - 1];
@@ -195,6 +201,7 @@ export class Room {
 
   private addVote(result: RoundResult) {
     const lastRound = this.getLastRound();
+
     if (lastRound.isInProgress) {
       lastRound.addResultVote(
         result,
@@ -214,6 +221,8 @@ export class Room {
     publicUserID: string,
     optionID: string,
   ): void {
+    this.lastActivity = DateTime.now();
+
     const conn = this.connections.find(c => c.isConnectionOwner(userID))!;
     const option = this.getOption(optionID);
     this.addVote(
@@ -222,6 +231,8 @@ export class Room {
   }
 
   public cancelLastRound(userID: string): void {
+    this.lastActivity = DateTime.now();
+
     const username = this.getUsername(userID);
 
     const lastRound = this.rounds[this.rounds.length - 1];
@@ -244,6 +255,8 @@ export class Room {
   }
 
   public startNewRound(userID: string): void {
+    this.lastActivity = DateTime.now();
+
     const lastRound = this.getLastRound();
 
     if (lastRound.isInProgress) {
@@ -269,6 +282,8 @@ export class Room {
   }
 
   public setOwner(userID: string, publicID: string, username: string): void {
+    this.lastActivity = DateTime.now();
+
     this.ownerID = userID;
     this.ownerPublicID = publicID;
 
@@ -282,6 +297,8 @@ export class Room {
   }
 
   public finishLastRound(): void {
+    this.lastActivity = DateTime.now();
+
     const lastRound = this.getLastRound();
 
     lastRound.finish();
@@ -299,6 +316,8 @@ export class Room {
     publicUserID: string,
     username: string,
   ): RoomConnection {
+    this.lastActivity = DateTime.now();
+
     const connection = new RoomConnection(this, userID, publicUserID, username);
     this.connections.push(connection);
     this.addSystemMessage(
@@ -308,6 +327,8 @@ export class Room {
   }
 
   private handleMsgCommand(userID: string, text: string): void {
+    this.lastActivity = DateTime.now();
+
     const [command, ...rest] = text.substring(1).split(" ");
 
     // eslint-disable-next-line @typescript-eslint/switch-exhaustiveness-check
@@ -339,10 +360,17 @@ export class Room {
         }
         break;
       }
+      case "close": {
+        if (this.isOwner(userID)) {
+          RoomService.removeRoom(this.id);
+        }
+      }
     }
   }
 
   public postMessage(userID: string, text: string): void {
+    this.lastActivity = DateTime.now();
+
     if (text.startsWith("/")) {
       this.handleMsgCommand(userID, text);
       return;
@@ -367,7 +395,7 @@ export class Room {
     this.propagateMessage(chatMessageUpdateMessage);
   }
 
-  public closeConnection(userID: string): void {
+  public closeUserConnection(userID: string): void {
     const connection = this.findUserConnection(userID);
 
     if (connection) {
@@ -391,8 +419,14 @@ export class Room {
   }
 
   public isStale(): boolean {
-    return this.createdAt.plus({ minutes: 5 }).diffNow().milliseconds < 0
-        && this.connections.length === 0
+    const activityTsDiff = this.lastActivity.plus({ minutes: 5 }).diffNow();
+
+    // if the room had seen some activity within last 5 minutes - it's not stale
+    if (activityTsDiff.milliseconds >= 0) {
+      return false;
+    }
+
+    return this.connections.length === 0
       || this.connections.every((c) => !c.isActive);
   }
 
@@ -469,6 +503,9 @@ export class Room {
   }
 
   public dispose() {
+    for (const conn of this.connections) {
+      conn.close();
+    }
     Storages.remove(Room.name, this.id);
   }
 }

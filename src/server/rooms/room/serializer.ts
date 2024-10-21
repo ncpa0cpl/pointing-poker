@@ -11,6 +11,7 @@ import { Room } from "./room";
 type SerializedRoom = {
   id: string;
   createdAt: string;
+  lastActivity: string;
   rounds: SerializedRound[];
   ownerID: string;
   ownerPublicID?: string;
@@ -24,6 +25,7 @@ export class RoomSerializer {
     const serializedData: SerializedRoom = {
       id: roomConnection.id,
       createdAt: roomConnection.createdAt.toISO(),
+      lastActivity: roomConnection.lastActivity.toISO(),
       ownerID: roomConnection.ownerID,
       ownerPublicID: roomConnection.ownerPublicID,
       ownerName: roomConnection.ownerName,
@@ -44,6 +46,7 @@ export class RoomSerializer {
     const room = new Room(serializedData.ownerID, serializedData.ownerName, {
       id: serializedData.id,
       createdAt: DateTime.fromISO(serializedData.createdAt),
+      lastActivity: DateTime.fromISO(serializedData.lastActivity),
       ownerPublicID: serializedData.ownerPublicID,
       rounds: serializedData.rounds.map((round) => {
         return Round.serializer.deserialize(round);

@@ -47,7 +47,7 @@ export const CacheMiddleware = (
 
     if (!!etag && req.headers.get("If-None-Match") === etag) {
       return addCacheHeaders(
-        new RouterResponse(Buffer.from(""), {
+        RouterResponse.empty({
           status: 304,
           headers: resp.headers,
         }, resp),

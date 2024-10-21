@@ -20,12 +20,17 @@ const isGzipAcceptable = (req: Request): boolean => {
   return acceptEncoding != null && acceptEncoding.includes("gzip");
 };
 
+const isAboveMinSizeForGzip = (resp: RouterResponse): boolean => {
+  return resp.getBuffer().byteLength >= 512;
+};
+
 export const GzipMiddleware = (): ResponseMiddleware => (resp, req) => {
   if (
     resp.status < 200
     || resp.status >= 300
     || resp.headers.get("Content-Encoding") != null
     || !isGzipAcceptable(req)
+    || !isAboveMinSizeForGzip(resp)
   ) {
     return resp;
   }

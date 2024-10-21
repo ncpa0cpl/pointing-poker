@@ -1,11 +1,13 @@
 import { build } from "@ncpa0cpl/nodepack";
-import { spawn } from "child_process";
+import { execSync, spawn } from "child_process";
 import crc32 from "crc-32";
 import fsSync from "fs";
 import fs from "fs/promises";
 import path from "path";
 import { fileURLToPath, URL } from "url";
 import { buildIndexPage } from "./generate-index.mjs";
+import dedent from "dedent";
+const js = dedent;
 
 const __dirname = fileURLToPath(new URL(".", import.meta.url));
 
@@ -15,33 +17,47 @@ const watch = process.argv.includes("--watch");
 const serve = process.argv.includes("--serve");
 const dev = process.argv.includes("--dev");
 
+const packageJson = JSON.parse(
+  fsSync.readFileSync(p("package.json"), { encoding: "utf-8" }),
+);
+
+const gitHash = new TextDecoder().decode(execSync("git rev-parse HEAD")).trim();
+
 async function main() {
   try {
-    await fs.mkdir(p("dist/esm/public"), { recursive: true });
+    await fs.mkdir(p("dist/public/esm"), { recursive: true });
 
     await Promise.all([
       build({
         bundle: true,
         entrypoint: p("src/public/index.tsx"),
-        srcDir: p("src"),
-        outDir: p("dist"),
+        srcDir: p("src/public"),
+        outDir: p("dist/public"),
         tsConfig: p("tsconfig.json"),
         formats: ["esm"],
-        target: "es2022",
+        target: "ES2022",
         exclude: [/\/server\//],
+        banner: {
+          index: {
+            text: js`
+              const ENVIRONMENT = "${dev ? "development" : "production"}";
+              const RLS_VERSION = "${packageJson.version}#${gitHash}";
+              `.trim(),
+          },
+        },
         esbuildOptions: {
           platform: "browser",
           jsxImportSource: "@ncpa0cpl/vanilla-jsx",
           jsx: "transform",
           keepNames: true,
-          plugins: [AxiosImportReplacerPlugin()],
-          sourcemap: dev ? "inline" : undefined,
+          sourcemap: dev ? "inline" : "external",
           minify: !dev,
           loader: {
             ".svg": "file",
           },
-          publicPath: "/public",
+          publicPath: "/public/esm",
         },
+        compileVendors: ["@sentry/browser"],
         watch,
         parsableExtensions: [".css"],
         onBuildComplete() {
@@ -54,6 +70,8 @@ async function main() {
     if (!watch) {
       await postBuild();
     }
+
+    process.exit(0);
   } catch (error) {
     console.error(error);
     process.exit(1);
@@ -62,14 +80,18 @@ async function main() {
 
 async function postBuild() {
   try {
-    const stylesheet = await hashFileName(p("dist/esm/public/index.css"));
-    const script = await hashFileName(p("dist/esm/public/index.mjs"));
+    const stylesheet = await hashFileName(p("dist/public/esm/index.css"));
+    const script = await hashFileName(p("dist/public/esm/index.mjs"));
+    if (!dev) {
+      await fs.rename(p("dist/public/esm/index.css.map"), `${stylesheet}.map`);
+      await fs.rename(p("dist/public/esm/index.mjs.map"), `${script}.map`);
+    }
 
     console.log("Building index page...");
     await buildIndexPage({
       entrypointPath: script,
       htmlTemplatePath: p("src/public/index.html"),
-      outDir: p("dist/esm/public"),
+      outDir: p("dist/public"),
       scriptFilename: path.basename(script),
       stylesheetFilename: path.basename(stylesheet),
     });
@@ -97,37 +119,17 @@ async function hashFileName(file) {
   return newFilePath;
 }
 
-function AxiosImportReplacerPlugin() {
-  return {
-    name: "axios-import-replacer",
-    setup(build) {
-      build.onResolve({ filter: /axios/ }, async (args) => {
-        if (args.pluginData) {
-          return;
-        }
-
-        const r = await build.resolve("axios", {
-          kind: "import-statement",
-          resolveDir: args.resolveDir,
-          importer: args.importer,
-          pluginData: {},
-        });
-
-        return {
-          path: path.join(path.dirname(r.path), "dist/browser/axios.cjs"),
-        };
-      });
-    },
-  };
-}
-
 function runServer() {
   if (serve) {
     try {
       console.log("Starting server...");
-      const proc = spawn("bun", [p("src/server/start.ts"), "--debug"], {
-        stdio: "inherit",
-      });
+      const proc = spawn(
+        "bun",
+        ["--hot", p("src/server/start.ts"), "--debug"],
+        {
+          stdio: "inherit",
+        },
+      );
 
       const cleanup = () => {
         try {

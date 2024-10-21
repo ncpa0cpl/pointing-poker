@@ -1,5 +1,6 @@
 import type { Server, ServerWebSocket } from "bun";
 import { CompiledPath } from "../compiled-path";
+import { MaybePromise } from "../http-server";
 import type { Route } from "../router";
 import { RouterResponse } from "../router-response";
 
@@ -10,6 +11,10 @@ export interface WsHandlers<T> {
 
 export type GetWsHandlers<T> = (ws: ServerWebSocket<T>) => WsHandlers<T>;
 
+export type BeforeUpgradeHandler = (
+  request: Request,
+) => MaybePromise<void | RouterResponse>;
+
 export class WebsocketRoute<T> implements Route {
   private readonly compiledPath: CompiledPath;
 
@@ -17,6 +22,7 @@ export class WebsocketRoute<T> implements Route {
     public readonly method: string,
     public readonly path: string,
     public readonly onOpen: GetWsHandlers<T>,
+    public readonly beforeUpgrade?: BeforeUpgradeHandler,
   ) {
     this.compiledPath = new CompiledPath(path);
   }
@@ -36,12 +42,20 @@ export class WebsocketRoute<T> implements Route {
     request: Request,
     bunServer: Server,
   ): Promise<RouterResponse | undefined> {
+    if (this.beforeUpgrade) {
+      const resp = await this.beforeUpgrade(request);
+      if (resp) {
+        return resp;
+      }
+    }
+
     const ok = bunServer.upgrade(request, {
       data: { getHandlers: this.onOpen },
     });
     if (ok) {
       return;
     }
+
     return RouterResponse.from("Internal server error", {
       status: 500,
       statusText: "Internal server error",

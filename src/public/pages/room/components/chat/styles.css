@@ -16,6 +16,7 @@
     padding: unset;
 
     & .chat-message {
+        margin-top: .25em;
         display: flex;
 
         & p {
@@ -46,7 +47,13 @@
         }
 
         & pre {
-            margin: 0.5em 0;
+            &.nomargin {
+                margin: 0;
+            }
+
+            &:not(.nomargin) {
+                margin: 0.5em 0;
+            }
         }
 
         & code {

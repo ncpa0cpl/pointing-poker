@@ -1,3 +1,4 @@
+/* <dialog> reset */
 *:not(body) {
     font-size: inherit;
 }
@@ -25,6 +26,10 @@ body div {
 a {
     color: inherit;
     text-decoration: none;
+
+    &:focus-visible {
+        outline: unset;
+    }
 }
 
 p {
@@ -118,5 +123,15 @@ h6 {
 @media screen and (max-width: 520px) {
     .main-container > div {
         padding-bottom: 4em;
+    }
+}
+
+dialog {
+    padding: 0;
+    border: unset;
+    background: transparent;
+
+    &::backdrop {
+        background: rgba(0, 0, 0, 0.5);
     }
 }

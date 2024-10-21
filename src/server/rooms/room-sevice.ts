@@ -2,6 +2,8 @@ import { StatusCodes } from "http-status-codes";
 import { RequestError } from "../utilities/request-error";
 import { Room } from "./room/room";
 
+const MAX_ACTIVE_ROOMS = 3;
+
 export class RoomService {
   private static rooms: Room[] = [];
 
@@ -9,7 +11,14 @@ export class RoomService {
     this.rooms.push(room);
   }
 
-  public static createRoom(ownerID: string, ownerName: string): Room {
+  public static createRoom(ownerID: string, ownerName: string): Room | null {
+    if (this.rooms.length >= MAX_ACTIVE_ROOMS) {
+      this.purgeStaleRooms();
+      if (this.rooms.length >= MAX_ACTIVE_ROOMS) {
+        return null;
+      }
+    }
+
     const room = new Room(ownerID, ownerName);
     this.putRoom(room);
     return room;

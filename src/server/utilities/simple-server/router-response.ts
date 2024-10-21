@@ -37,6 +37,10 @@ export class RouterResponse extends Response {
     return new RouterResponse(buffer, init, comesFrom);
   }
 
+  public static empty(init?: ResponseInit, comesFrom?: RouterResponse) {
+    return new RouterResponse(Buffer.alloc(0), init, comesFrom);
+  }
+
   private logData: Record<string, string> = {};
 
   public constructor(

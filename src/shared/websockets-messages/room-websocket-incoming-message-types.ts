@@ -2,15 +2,25 @@ import type { GetDataType } from "dilswer";
 import { OptionalField, Type } from "dilswer";
 
 export enum IncomingMessageType {
-  INITIATE = "connection:initiate",
-  CLOSE = "connection:close",
+  /** A message sent to the client to check if the connection is still alive. */
   PONG = "connection:pong",
+  /** A message sent by the client to request joining a room. */
+  ROOM_CONNECT = "room:connect",
+  /** A message sent by the client to request leaving a room. */
+  ROOM_DISCONNECT = "room:disconnect",
+  /** A message sent by the client to set the default options for the room. (owner only) */
   SET_DEFAULT_OPTIONS = "room:set-default-options",
+  /** A message sent by the client to add a vote to the current round. */
   ADD_ROUND_VOTE = "round:add-vote",
+  /** A message sent by the client to transfer the ownership to another user. */
   CHANGE_OWNER = "room:change-owner",
+  /** A message sent by the client to post a message to the chat. */
   POST_MESSAGE = "room:post-message",
+  /** A message sent by the client to cancel the last round. */
   CANCEL_LAST_ROUND = "round:cancel",
+  /** A message sent by the client to finish the current round. */
   FINISH_LAST_ROUND = "round:finish",
+  /** A message sent by the client to start a new round. */
   CREATE_NEW_ROUND = "round:create",
 }
 
@@ -22,7 +32,7 @@ export const DTRoomCreateNewRoundOutgoingMessage = Type.RecordOf({
 });
 
 export const DTRoomOpenConnectionIncomingMessage = Type.RecordOf({
-  type: Type.EnumMember(IncomingMessageType.INITIATE),
+  type: Type.EnumMember(IncomingMessageType.ROOM_CONNECT),
   messageID: Type.String,
   roomID: Type.String,
   userID: Type.String,
@@ -78,7 +88,7 @@ export const DTFinishLastRoundIncomingMessage = Type.RecordOf({
 });
 
 export const DTCloseRoomConnectionIncomingMessage = Type.RecordOf({
-  type: Type.EnumMember(IncomingMessageType.CLOSE),
+  type: Type.EnumMember(IncomingMessageType.ROOM_DISCONNECT),
   messageID: Type.String,
   roomID: Type.String,
   userID: Type.String,

@@ -1,5 +1,5 @@
 export function createActionDispatcher() {
-  let lastTimeout: NodeJS.Timeout | undefined;
+  let lastTimeout: Timer | undefined;
 
   const dispatch = (action: () => void) => {
     if (lastTimeout !== undefined) {

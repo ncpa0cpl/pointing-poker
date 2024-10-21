@@ -41,6 +41,11 @@ export const RoomConnectionForm = (props: { disable: Signal<boolean> }) => {
     }
   };
 
+  const d = sig.or(
+    disable,
+    sig.not(PokerRoomService.socketOpened),
+  );
+
   return (
     <div class="column room-connection-form">
       <h2 class="header">Join existing Room</h2>
@@ -48,8 +53,9 @@ export const RoomConnectionForm = (props: { disable: Signal<boolean> }) => {
         <input
           class={{
             [Input.input]: true,
-            [Input.disabled]: disable,
+            [Input.disabled]: d,
           }}
+          disabled={d}
           placeholder="Room ID"
           oninput={handleInput}
           onkeyup={handleKeyUp}
@@ -57,10 +63,10 @@ export const RoomConnectionForm = (props: { disable: Signal<boolean> }) => {
         <button
           class={{
             [Button.button]: true,
-            [Button.disabled]: disable,
+            [Button.disabled]: d,
           }}
+          disabled={d}
           onclick={onConnect}
-          disabled={disable}
         >
           Connect
         </button>

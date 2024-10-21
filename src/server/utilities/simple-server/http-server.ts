@@ -1,3 +1,4 @@
+import { Server } from "bun";
 import path from "path";
 import type { Context } from "./context";
 import type { Route } from "./router";
@@ -6,15 +7,22 @@ import type { RouterResponse } from "./router-response";
 import type { RouteHandler } from "./routes/custom-route";
 import { CustomRoute } from "./routes/custom-route";
 import { StaticFileRoute } from "./routes/static-file-route";
-import type { GetWsHandlers } from "./routes/websocket-route";
+import type {
+  BeforeUpgradeHandler,
+  GetWsHandlers,
+} from "./routes/websocket-route";
 import { WebsocketRoute } from "./routes/websocket-route";
 import { ServeHandler } from "./serve-handler";
 
 export type MaybePromise<T> = T | Promise<T>;
 
 export interface HttpServerOptions {
+  allowedOrigins?: string[] | "*";
+  allowedHeaders?: string[] | "*";
+  accessControlMaxAge?: number;
   mode?: "development" | "production";
   forceHttps?: boolean;
+  maxBodySize?: number;
   onRouteError?(
     err: unknown,
     request: Request,
@@ -23,11 +31,18 @@ export interface HttpServerOptions {
 }
 
 export interface RequestMiddleware {
-  (request: Request): MaybePromise<RouterResponse | Request | void>;
+  (
+    request: Request,
+    server: Server,
+  ): MaybePromise<RouterResponse | Request | void>;
 }
 
 export interface ResponseMiddleware {
-  (response: RouterResponse, request: Request): MaybePromise<RouterResponse>;
+  (
+    response: RouterResponse,
+    request: Request,
+    server: Server,
+  ): MaybePromise<RouterResponse>;
 }
 
 export class HttpServer {
@@ -143,28 +158,17 @@ export class HttpServer {
     );
   }
 
-  public options(
-    path: string,
-    handler: RouteHandler,
-  ) {
-    this.router.addRoute(
-      new CustomRoute(
-        "OPTIONS",
-        path,
-        handler,
-      ),
-    );
-  }
-
   public ws<T>(
     path: string,
     onOpen: GetWsHandlers<T>,
+    beforeUpgrade?: BeforeUpgradeHandler,
   ) {
     this.router.addRoute(
       new WebsocketRoute(
         "GET",
         path,
         onOpen,
+        beforeUpgrade,
       ),
     );
   }
@@ -199,6 +203,8 @@ export class HttpServer {
       websocket: serve.websocket,
       port: serve.port,
       development: options.mode === "development",
+      // 512KB max body size
+      maxRequestBodySize: options.maxBodySize,
     });
   }
 }

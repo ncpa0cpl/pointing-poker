@@ -25,6 +25,12 @@ export const Room = $component<RoomProps>((props, api) => {
 
   api.onMount(() => {
     Router.setTitle(`Room ${props.roomID.get()} - Pointing Poker`);
+    PokerRoomService.onRoomClosed = () => {
+      Router.nav.roomclosed.$replace();
+    };
+    return () => {
+      PokerRoomService.onRoomClosed = undefined;
+    };
   });
 
   api.onChange(() => {

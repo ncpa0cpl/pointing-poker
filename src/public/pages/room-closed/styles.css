@@ -1,0 +1,9 @@
+.room-closed-page {
+    padding: 2em;
+    height: fit-content;
+    place-self: center;
+
+    & button {
+        margin-top: 1.5em;
+    }
+}

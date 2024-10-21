@@ -1,4 +1,4 @@
-import { Settings } from "luxon";
+import { Settings as LuxonSettings } from "luxon";
 import "reflect-metadata";
 import { logger } from "./app-logger";
 import { Room } from "./rooms/room/room";
@@ -9,11 +9,12 @@ import {
   LogRequestMiddleware,
   LogResponseMiddleware,
 } from "./utilities/middleware/log-middleware";
+import { LimiterMiddleware } from "./utilities/middleware/protection-middleware";
 import { deserializeClassInstancesFromPersistentStorage } from "./utilities/persistent-objects/deserialize-class-instances-from-persistent-storage";
 import { HttpServer } from "./utilities/simple-server/http-server";
 import { RouterResponse } from "./utilities/simple-server/router-response";
 
-Settings.throwOnInvalid = true;
+LuxonSettings.throwOnInvalid = true;
 declare module "luxon" {
   interface TSSettings {
     throwOnInvalid: true;
@@ -22,6 +23,7 @@ declare module "luxon" {
 
 const port = Number(process.env.PORT) || 8080;
 const isDev = process.env.NODE_ENV === "development";
+const hostname = process.env.HOSTNAME;
 
 deserializeClassInstancesFromPersistentStorage(Room).catch((e) => {
   logger.error({
@@ -31,6 +33,7 @@ deserializeClassInstancesFromPersistentStorage(Room).catch((e) => {
 });
 
 const app = new HttpServer();
+app.onRequest(LimiterMiddleware());
 app.onRequest(LogRequestMiddleware());
 app.onResponse(CacheMiddleware());
 app.onResponse(GzipMiddleware());
@@ -39,7 +42,12 @@ app.onResponse(LogResponseMiddleware());
 addRoutes(app);
 
 app.listen(port, {
+  allowedOrigins: isDev
+    ? ["http://localhost:8080"]
+    : (hostname ? [hostname] : []),
+  allowedHeaders: "*",
   forceHttps: !isDev,
+  maxBodySize: 512 * 1024,
   onRouteError(err, req, route) {
     logger.error({
       message: "Unexpected error occurred.",
@@ -51,4 +59,8 @@ app.listen(port, {
   },
 });
 
-logger.info(`Server started at http://localhost:${port}`);
+if (isDev) {
+  logger.info(`Server started at http://localhost:${port} in DEV mode`);
+} else {
+  logger.info(`Server started at http://localhost:${port}`);
+}

@@ -1,0 +1,24 @@
+.kofi-modal {
+    display: flex;
+    flex-direction: column;
+    padding: 1em;
+    background: var(--clr-bg-4);
+    border-radius: 6px;
+
+    & p {
+        display: block;
+        width: 28em;
+        min-width: unset;
+        margin-top: .8em;
+    }
+
+    & .buttons {
+        margin-top: .8em;
+        display: flex;
+        justify-content: space-around;
+
+        & .btn {
+            min-width: 40%;
+        }
+    }
+}

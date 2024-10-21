@@ -1,0 +1,13 @@
+a.kofi-link {
+    & button {
+        color: #2fa7fe;
+        text-decoration: underline;
+        display: flex;
+        align-items: center;
+
+        & img {
+            height: 1.5em;
+            margin-left: .5em;
+        }
+    }
+}

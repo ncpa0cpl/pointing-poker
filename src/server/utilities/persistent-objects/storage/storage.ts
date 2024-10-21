@@ -1,36 +1,72 @@
 import fs from "fs/promises";
-import Storage from "node-persist";
 import path from "path";
 
-export class Storages {
-  private static storageMap = new Map<string, Storage.LocalStorage>();
+export class Storage<T> {
+  constructor(private dir: string) {}
 
-  private static async getStorage(name: string): Promise<Storage.LocalStorage> {
-    if (!Storages.storageMap.has(name)) {
-      const relPath = `./dist/persistent-storage/${name}`;
-      await fs.mkdir(path.resolve(process.cwd(), relPath), { recursive: true });
-      const storage = Storage.create({
-        dir: relPath,
-      });
-      Storages.storageMap.set(name, storage);
+  has(id: string): Promise<boolean> {
+    const fname = `${id}.json`;
+    const fpath = path.resolve(this.dir, fname);
+    return fs.access(fpath).then(() => true).catch(() => false);
+  }
+
+  add(id: string, data: T): Promise<void> {
+    const fname = `${id}.json`;
+    const fpath = path.resolve(this.dir, fname);
+    const content = JSON.stringify(data);
+    return fs.writeFile(
+      fpath,
+      content,
+      {
+        encoding: "utf-8",
+        flag: "wx", // Create the file only if it does not exist
+      },
+    );
+  }
+
+  async update(id: string, data: T): Promise<void> {
+    const fname = `${id}.json`;
+    const fpath = path.resolve(this.dir, fname);
+    const content = JSON.stringify(data);
+    const exists = await fs.access(fpath).then(() => true).catch(() => false);
+    if (!exists) {
+      throw new Error(`Entry ${fpath} does not exist in the storage.`);
     }
-
-    return Storages.storageMap.get(name)!;
+    return fs.writeFile(
+      fpath,
+      content,
+      {
+        encoding: "utf-8",
+        flag: "w",
+      },
+    );
   }
 
-  public static async save(storageName: string, id: string, value: object) {
-    const storage = await Storages.getStorage(storageName);
-    storage.updateItem(id, value);
+  remove(id: string): Promise<void> {
+    const fname = `${id}.json`;
+    const fpath = path.resolve(this.dir, fname);
+    return fs.unlink(fpath);
   }
 
-  public static async remove(storageName: string, id: string) {
-    const storage = await Storages.getStorage(storageName);
-    storage.removeItem(id);
+  get(id: string): Promise<T | null> {
+    const fname = `${id}.json`;
+    const fpath = path.resolve(this.dir, fname);
+    return fs.readFile(
+      fpath,
+      { encoding: "utf-8" },
+    ).then((content) => JSON.parse(content));
   }
 
-  public static async load(storageName: string): Promise<object[]> {
-    const storage = await Storages.getStorage(storageName);
-    const allEntries: object[] = await storage.values();
-    return allEntries;
+  getAll(): Promise<T[]> {
+    return fs.readdir(this.dir).then((files) => {
+      const promises = files.map((file) => {
+        const fpath = path.resolve(this.dir, file);
+        return fs.readFile(fpath, {
+          encoding: "utf-8",
+        }).then((content) => JSON.parse(content));
+      });
+
+      return Promise.all(promises);
+    });
   }
 }

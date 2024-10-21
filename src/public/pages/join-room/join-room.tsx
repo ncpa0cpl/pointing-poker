@@ -1,11 +1,13 @@
 import { sig } from "@ncpa0cpl/vanilla-jsx/signals";
-import { Card, Typography } from "adwavecss";
+import { Alert, Card, Typography } from "adwavecss";
 import { PointingPokerDescription } from "../../components/pp-description/pp-description";
 import { RepoLink } from "../../components/repo-link/repo-link";
 import { UserService } from "../../services/user-service/user-service";
 import { RoomConnectionForm } from "./components/room-connection-form/room-connection-form";
 import { RoomCreateForm } from "./components/room-create-form/room-create-form";
 import "./styles.css";
+import { KofiLink } from "../../components/kofi-link/kofi-link";
+import { PokerRoomService } from "../../services/poker-room-service/poker-room-service";
 import { Router } from "../routes";
 
 export const JoinRoom = () => {
@@ -18,6 +20,16 @@ export const JoinRoom = () => {
 
   return (
     <div class={["join-room-page", Card.card]}>
+      {PokerRoomService.socketOpened.derive(open => {
+        if (!open) {
+          return (
+            <div class={[Alert.alert, Alert.error]}>
+              There is an issue with the connection. We are unable to create new
+              rooms or join existing ones.
+            </div>
+          );
+        }
+      })}
       <PointingPokerDescription endMsg="Create new room or join an existing one below." />
       <div class="join-form">
         <RoomCreateForm disable={disableControls} />
@@ -27,6 +39,7 @@ export const JoinRoom = () => {
         <RoomConnectionForm disable={disableControls} />
       </div>
       <RepoLink />
+      <KofiLink />
     </div>
   );
 };

@@ -2,14 +2,25 @@ import type { GetDataType } from "dilswer";
 import { Omit, OptionalField, Type } from "dilswer";
 
 export enum OutgoingMessageType {
-  INITIATED = "connection:initiated",
+  /** A message notifiying about an error that occured while processing an incoming message. */
   ERROR = "connection:error",
+  /** A message sent to the client to check if the connection is still alive. */
   PING = "connection:ping",
+  /** A message sent back to the client when the client has successfully joined the room requested. */
+  ROOM_CONNECTED = "room:connected",
+  /** A message sent back to the client when the Room owner has changed. */
   OWNER_UPDATE = "room:owner-change",
+  /** A message sent back to the client when the current round has been updated (votes added, round finished, etc). */
   ROUND_UPDATE = "round:update",
+  /** A message sent back to the client when the room state has changed (new round started, round config change) */
   ROOM_UPDATE = "room:update",
+  /** A message sent back to the client when new chat messages have been added to the room. */
   ROOM_CHAT_UPDATE = "room:chat-update",
+  /** Notifies the clients that some other user has joined or left the room. */
   ROOM_PARTICIPANTS_UPDATE = "room:participants-change",
+  /** Notifies the clients that the room they are connected to has been closed or is not available. */
+  ROOM_CLOSED = "room:closed",
+  /** Sent back to the sender of a WS message to acknowledge that it was received. */
   MESSAGE_RECEIVED = "message:received",
 }
 
@@ -82,7 +93,7 @@ export const DTRoomUpdateOutgoingMessage = Type.RecordOf({
 });
 
 export const DTRoomConnectionOpenedOutgoingMessage = Type.RecordOf({
-  type: Type.EnumMember(OutgoingMessageType.INITIATED),
+  type: Type.EnumMember(OutgoingMessageType.ROOM_CONNECTED),
   connectionID: Type.String,
   room: Omit(DTRoomUpdateOutgoingMessage, "type"),
   userPublicID: Type.String,
@@ -109,8 +120,14 @@ export const DTMessageReceivedMessage = Type.RecordOf({
   messageID: Type.String,
 });
 
+export const DTRoomClosedOutgoingMessage = Type.RecordOf({
+  type: Type.EnumMember(OutgoingMessageType.ROOM_CLOSED),
+  roomID: Type.String,
+});
+
 export const DTRoomWSOutgoingMessage = Type.OneOf(
   DTRoomConnectionOpenedOutgoingMessage,
+  DTRoomClosedOutgoingMessage,
   DTRoomOwnerUpdateOutgoingMessage,
   DTRoundUpdateOutgoingMessage,
   DTRoomChatUpdateOutgoingMessage,

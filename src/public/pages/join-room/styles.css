@@ -15,6 +15,10 @@
         justify-content: center;
         align-items: center;
     }
+
+    & .kofi-link {
+        margin-top: .5em;
+    }
 }
 
 @media screen and (max-width: 780px) {

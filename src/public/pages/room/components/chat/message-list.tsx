@@ -26,7 +26,7 @@ export const MessageList = () => {
                   <span class="username">
                     {m.username ? m.username + ": " : ""}
                   </span>
-                  {m.text.trim()}
+                  {typeof m.content === "string" ? m.content.trim() : m.content}
                 </span>,
               ];
             })}
