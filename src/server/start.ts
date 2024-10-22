@@ -24,6 +24,11 @@ declare module "luxon" {
 const port = Number(process.env.PORT) || 8080;
 const isDev = process.env.NODE_ENV === "development";
 const hostname = process.env.HOSTNAME;
+const tlsCertLocation = process.env.TLS_CERT;
+const tlsKeyLocation = process.env.TLS_KEY;
+
+const tlsCert = tlsCertLocation ? Bun.file(tlsCertLocation) : undefined;
+const tlsKey = tlsKeyLocation ? Bun.file(tlsKeyLocation) : undefined;
 
 deserializeClassInstancesFromPersistentStorage(Room).catch((e) => {
   logger.error({
@@ -48,6 +53,8 @@ app.listen(port, {
   allowedHeaders: "*",
   forceHttps: !isDev,
   maxBodySize: 512 * 1024,
+  tlsCert,
+  tlsKey,
   onRouteError(err, req, route) {
     logger.error({
       message: "Unexpected error occurred.",

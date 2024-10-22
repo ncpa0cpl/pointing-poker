@@ -1,4 +1,4 @@
-import { Server } from "bun";
+import { BunFile, Server } from "bun";
 import path from "path";
 import type { Context } from "./context";
 import type { Route } from "./router";
@@ -23,6 +23,8 @@ export interface HttpServerOptions {
   mode?: "development" | "production";
   forceHttps?: boolean;
   maxBodySize?: number;
+  tlsCert?: BunFile;
+  tlsKey?: BunFile;
   onRouteError?(
     err: unknown,
     request: Request,
@@ -205,6 +207,10 @@ export class HttpServer {
       development: options.mode === "development",
       // 512KB max body size
       maxRequestBodySize: options.maxBodySize,
+      tls: {
+        cert: options.tlsCert,
+        key: options.tlsKey,
+      },
     });
   }
 }
