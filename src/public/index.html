@@ -19,8 +19,17 @@
             as="font"
             crossorigin="anonymous"
         />
+        <style>
+            body.not_ready {
+                background-color: hsl(0, 0%, 12.12%);
+                margin: 0;
+            }
+            body.not_ready > * {
+                display: none;
+            }
+        </style>
     </head>
-    <body>
+    <body class="not_ready">
         <div id="root" class="background main-container">
             <noscript class="dark-theme box grow">
                 <h1 class="header">
@@ -30,5 +39,20 @@
             </noscript>
             %CONTENT%
         </div>
+        <script>
+            function docReady(fn) {
+                if (
+                    document.readyState === "complete" ||
+                    document.readyState === "interactive"
+                ) {
+                    fn();
+                } else {
+                    document.addEventListener("DOMContentLoaded", fn);
+                }
+            }
+            docReady(() => {
+                document.body.classList.remove("not_ready");
+            });
+        </script>
     </body>
 </html>
