@@ -1,4 +1,5 @@
 import type { Server } from "bun";
+import { removeTrailing } from "../remove-trailing";
 import type {
   HttpServerOptions,
   RequestMiddleware,
@@ -68,14 +69,29 @@ export class ServeHandler {
 
   private isAllowedOrigin(origin: string | null): boolean | "*" {
     if (origin) {
+      origin = removeTrailing(origin, "/");
       const { allowedOrigins } = this.options;
       if (allowedOrigins === "*") {
         return "*";
       } else if (
         Array.isArray(allowedOrigins)
-        && allowedOrigins.includes(origin)
       ) {
-        return true;
+        for (let allowed of allowedOrigins) {
+          allowed = removeTrailing(allowed, "/");
+          if (allowed.startsWith("https") || allowed.startsWith("http")) {
+            // only allows https origins
+            if (origin === allowed) {
+              return true;
+            }
+          } else {
+            if (origin.startsWith("http")) {
+              origin = origin.replace(/http(s)?:\/\//, "");
+            }
+            if (origin === allowed) {
+              return true;
+            }
+          }
+        }
       }
     }
     return false;
