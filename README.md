@@ -1,6 +1,6 @@
 # Pointing Poker Web App
 
-Check it out [in here](https://camqiwa.ams.dom.my.id)
+Check it out [in here]([pointingpoker.site](https://pointingpoker.site))
 
 ## Setup
 
