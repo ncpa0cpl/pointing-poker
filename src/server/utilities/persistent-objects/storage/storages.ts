@@ -1,6 +1,7 @@
 import fs from "fs/promises";
 import path from "path";
 import { logger } from "../../../app-logger";
+import { ROOT_DIR } from "../../../root-dir";
 import { Storage } from "./storage";
 
 export class Storages {
@@ -9,7 +10,7 @@ export class Storages {
   private static async getStorage(name: string): Promise<Storage<any>> {
     if (!Storages.storageMap.has(name)) {
       const dirpath = path.resolve(
-        process.cwd(),
+        ROOT_DIR,
         `./dist/persistent-storage/${name}`,
       );
       await fs.mkdir(dirpath, { recursive: true });
