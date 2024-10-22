@@ -1,3 +1,5 @@
+#!/usr/bin/env bun
+
 import { Settings as LuxonSettings } from "luxon";
 import "reflect-metadata";
 import { logger } from "./app-logger";
