@@ -164,7 +164,7 @@ export class Round {
   }
 
   public hasResults(): boolean {
-    return !!this.results;
+    return this.results.length > 0;
   }
 
   public finish(): void {

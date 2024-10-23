@@ -149,7 +149,7 @@ export class Room {
     this.defaultOptions = options.slice();
 
     const lastRound = this.rounds[this.rounds.length - 1];
-    if (lastRound && lastRound?.isInProgress && lastRound.hasResults()) {
+    if (lastRound && lastRound?.isInProgress) {
       lastRound.setOptions(options.slice());
     }
 
