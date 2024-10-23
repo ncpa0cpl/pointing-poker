@@ -36,7 +36,7 @@ export class Round {
 
   public constructor(
     id?: string,
-    options?: RoundOption[],
+    options?: readonly RoundOption[],
     results?: RoundResult[],
     isInProgress?: boolean,
     finalResults?: FinalResults,

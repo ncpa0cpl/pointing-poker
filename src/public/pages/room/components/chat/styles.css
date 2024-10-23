@@ -47,6 +47,8 @@
         }
 
         & pre {
+            white-space: pre-wrap;
+
             &.nomargin {
                 margin: 0;
             }

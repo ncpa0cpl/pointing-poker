@@ -2,7 +2,7 @@ import { StatusCodes } from "http-status-codes";
 import { RequestError } from "../utilities/request-error";
 import { Room } from "./room/room";
 
-const MAX_ACTIVE_ROOMS = 3;
+const MAX_ACTIVE_ROOMS = 100;
 
 export class RoomService {
   private static rooms: Room[] = [];

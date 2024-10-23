@@ -260,6 +260,7 @@ export class PokerRoomService {
     this.#connection.on(OutgoingMessageType.ROOM_UPDATE, (data) => {
       this.#participants.dispatch(data.participants);
       this.#rounds.dispatch(data.rounds);
+      this.#options.dispatch(data.defaultOptions);
     });
 
     this.#connection.on(
@@ -284,6 +285,7 @@ export class PokerRoomService {
           return [...currentRounds, data];
         }
       });
+      this.#options.dispatch(data.options);
     });
 
     this.#connection.on(OutgoingMessageType.ROOM_CHAT_UPDATE, (data) => {
@@ -329,6 +331,7 @@ export class PokerRoomService {
         this.#chatMessages.dispatch(
           data.room.chatMessages.map((msg) => sig(this.mapChatMsg(msg))),
         );
+        this.selectedRound.dispatch("");
       })
       .catch((err) => {
         this.#roomID.dispatch(null);
@@ -350,6 +353,7 @@ export class PokerRoomService {
     this.#publicUserID.dispatch(null);
     this.#options.dispatch([]);
     this.#chatMessages.dispatch([]);
+    this.selectedRound.dispatch("");
   }
 
   public static async createRoom() {
@@ -385,22 +389,106 @@ export class PokerRoomService {
     return Promise.reject(new Error("No room or round present."));
   }
 
-  public static postChatMessage(text: string) {
+  private static handleChatCommands(text: string): boolean {
     switch (text) {
       case "/help":
         this.showSystemChatMsg(
           <pre class="nomargin">
-          Available commands:
-          {"\n  "}/transfer [username]
-          {"\n  "}/vote [value]
-          {"\n  "}/exit
-          {"\n  "}/close
+            Available commands:
+            {"\n  "}/transfer [username]
+            {"\n  "}/vote [value]
+            {"\n  "}/exit
+            {"\n  "}/close
+            {"\n  "}/setoptions
+            {"\n  "}
+            {"\n  "}Use /help [command] for
+            {"\n  "}more information.
           </pre>,
         );
-        return;
+        return true;
       case "/exit":
         this.disconnectFromRoom();
-        return;
+        return true;
+    }
+
+    if (text.startsWith("/help ")) {
+      const command = text.split(" ")[1];
+      switch (command) {
+        case "transfer":
+        case "/transfer":
+          this.showSystemChatMsg(
+            <pre class="nomargin">
+              /transfer [username]
+              {"\n  "}Transfer the room ownership to
+              {"\n  "}another user.
+            </pre>,
+          );
+          break;
+        case "vote":
+        case "/vote":
+          this.showSystemChatMsg(
+            <pre class="nomargin">
+              /vote [value]
+              {"\n  "}Send a vote for the current
+              {"\n  "}round with the specified value,
+              {"\n  "}similar to clicking the vote
+              {"\n  "}button, but allows arbitrary
+              {"\n  "}values.
+            </pre>,
+          );
+          break;
+        case "exit":
+        case "/exit":
+          this.showSystemChatMsg(
+            <pre class="nomargin">
+              /exit
+              {"\n  "}Leave the current room. Same
+              {"\n  "}as the exit button.
+            </pre>,
+          );
+          break;
+        case "close":
+        case "/close":
+          this.showSystemChatMsg(
+            <pre class="nomargin">
+              /close
+              {"\n  "}Close the current room, and
+              {"\n  "}disconnect all players from
+              {"\n  "}it. Only available to the owner.
+            </pre>,
+          );
+          break;
+        case "setoptions":
+        case "/setoptions":
+          this.showSystemChatMsg(
+            <pre class="nomargin">
+              /setoptions [...newoptions]
+              {"\n  "}Changes the availalbe vote
+              {"\n  "}options for the current and
+              {"\n  "}future rounds. The option list
+              {"\n  "}should be a whitespace separated
+              {"\n  "}list of values.
+              {"\n  "}(e.g. `/setoptions 1 2 3 4`)
+            </pre>,
+          );
+          break;
+        default:
+          this.showSystemChatMsg(
+            <pre class="nomargin">
+              Unknown command: {command}
+            </pre>,
+          );
+          break;
+      }
+      return true;
+    }
+
+    return false;
+  }
+
+  public static postChatMessage(text: string) {
+    if (this.handleChatCommands(text)) {
+      return;
     }
 
     const roomID = this.roomID.get();

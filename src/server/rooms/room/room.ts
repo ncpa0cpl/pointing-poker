@@ -84,7 +84,7 @@ export class Room {
     this.lastActivity = overrides.lastActivity ?? this.createdAt;
     this.defaultOptions = overrides.defaultOptions ?? getDefaultOptions();
     this.rounds = overrides.rounds
-      ?? [new Round(undefined, getDefaultOptions())];
+      ?? [new Round(undefined, this.defaultOptions.slice())];
     this.chatMessages = overrides.chatMessages ?? [];
   }
 
@@ -263,7 +263,7 @@ export class Room {
       lastRound.finish();
     }
 
-    const newRound = new Round(undefined, getDefaultOptions());
+    const newRound = new Round(undefined, this.defaultOptions.slice());
     this.addRound(newRound);
 
     const username = this.getUsername(userID);
@@ -363,6 +363,14 @@ export class Room {
       case "close": {
         if (this.isOwner(userID)) {
           RoomService.removeRoom(this.id);
+        }
+      }
+      case "setoptions": {
+        if (this.isOwner(userID)) {
+          const options = rest.filter(Boolean);
+          this.setDefaultOptions(options.map(optLabel => {
+            return new RoundOption(optLabel);
+          }));
         }
       }
     }
