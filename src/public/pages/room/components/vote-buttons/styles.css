@@ -8,5 +8,6 @@
         width: 2.5em;
         margin-right: 0.5em;
         padding: 0.5em;
+        min-width: max-content;
     }
 }
