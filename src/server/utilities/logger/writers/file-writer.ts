@@ -5,11 +5,16 @@ import { LogType } from "../logger";
 
 export class LogFileWriter implements LogWriter {
   private writeStream!: WriteStream;
+  private intervalTimer;
 
   public constructor(
     private readonly filepath: string,
     private readonly loglevel: EnumVal<typeof LogType> = LogType.Warning,
+    private readonly maxLines = 10_000,
   ) {
+    this.intervalTimer = setInterval(() => {
+      this.truncate(this.maxLines);
+    }, 30_000);
   }
 
   private shouldWrite(type: EnumVal<typeof LogType>): boolean {
@@ -25,6 +30,19 @@ export class LogFileWriter implements LogWriter {
     }
   }
 
+  private truncate(maxLines: number) {
+    try {
+      const contents = fs.readFileSync(this.filepath, "utf8");
+      const lines = contents.split("\n");
+      if (lines.length > maxLines) {
+        fs.writeFileSync(this.filepath, lines.slice(-maxLines).join("\n"));
+      }
+      return true;
+    } catch (e) {
+      return e;
+    }
+  }
+
   public async start(): Promise<true | Error> {
     try {
       this.writeStream = fs.createWriteStream(this.filepath, { flags: "a" });
@@ -37,6 +55,7 @@ export class LogFileWriter implements LogWriter {
   public async end(): Promise<true | Error> {
     try {
       await new Promise<void>((res) => {
+        clearInterval(this.intervalTimer);
         this.writeStream.end(undefined, () => {
           res();
         });
@@ -57,17 +76,16 @@ export class LogFileWriter implements LogWriter {
 
     try {
       await new Promise<void>((res, rej) => {
-        this.writeStream.write(message, err => {
+        // add a newline to the message buffer
+        const line = new Uint8Array(message.length + 1);
+        line.set(message);
+        line.set([0x0A], line.length - 1);
+
+        this.writeStream.write(line, err => {
           if (err) {
             rej(err);
           } else {
-            this.writeStream.write("\n", err => {
-              if (err) {
-                rej(err);
-              } else {
-                res();
-              }
-            });
+            res();
           }
         });
       });
