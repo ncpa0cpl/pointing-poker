@@ -14,7 +14,8 @@
     "start:dev": "NODE_ENV=development node ./scripts/build.mjs --watch --serve --dev",
     "watch": "NODE_ENV=development node ./scripts/build.mjs --watch",
     "build:dev": "NODE_ENV=development node ./scripts/build.mjs --dev",
-    "build:prod": "NODE_ENV=production node ./scripts/build.mjs"
+    "build:prod": "NODE_ENV=production node ./scripts/build.mjs",
+    "gen:icon": "magick convert -background transparent -define 'icon:auto-resize=16,24,32,64,128' icon.svg ./src/server/routes/spa/favicon.ico"
   },
   "keywords": [],
   "repository": {
@@ -56,7 +57,7 @@
     "crc-32": "^1.2.2",
     "dedent": "^1.5.3",
     "dprint": "^0.45.0",
-    "esbuild": "^0.19.11",
+    "esbuild": "^0.24.00",
     "git-hook-tasks": "git+https://github.com/ncpa0cpl/git-hook-tasks",
     "husky": "^8.0.3",
     "jsdom": "^24.0.0",

@@ -1,12 +1,12 @@
 import { build } from "@ncpa0cpl/nodepack";
 import { execSync, spawn } from "child_process";
 import crc32 from "crc-32";
+import dedent from "dedent";
 import fsSync from "fs";
 import fs from "fs/promises";
 import path from "path";
 import { fileURLToPath, URL } from "url";
 import { buildIndexPage } from "./generate-index.mjs";
-import dedent from "dedent";
 const js = dedent;
 
 const __dirname = fileURLToPath(new URL(".", import.meta.url));

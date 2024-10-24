@@ -2,6 +2,7 @@ import path from "path";
 import { ROOT_DIR } from "../../root-dir";
 import type { HttpServer } from "../../utilities/simple-server/http-server";
 
+const __dirname = path.dirname(new URL(import.meta.url).pathname);
 const pubDir = path.resolve(ROOT_DIR, "./dist/public");
 
 const SPA_ROUTES = [
@@ -25,6 +26,20 @@ const isSpaRoute = (path: string) => {
 };
 
 export function addSpaRoute(server: HttpServer) {
+  const favicon = Bun.file(
+    path.join(__dirname, "./favicon.ico"),
+  );
+
+  server.get(
+    "/favicon.ico",
+    ctx => {
+      ctx.setCacheControl({
+        maxAge: 60 * 60,
+      });
+      return ctx.sendFile(200, favicon);
+    },
+  );
+
   server.get("/*", async (ctx) => {
     const wildcard = ctx.getPathWildcard();
 

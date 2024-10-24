@@ -1,11 +1,12 @@
 import { SentryService } from "./services/sentry-service/sentry-service";
 
 import { Box, Theme } from "adwavecss";
-import "../../node_modules/adwavecss/dist/styles.css";
-import { ThemeSwitch } from "./components/theme-switch/theme-switch";
-import "./index.css";
 import { KofiModal } from "./components/kofi-modal/kofi-modal";
+import { ThemeSwitch } from "./components/theme-switch/theme-switch";
 import { PageRouterRoutes } from "./pages/routes";
+
+import "../../node_modules/adwavecss/dist/styles.css";
+import "./index.css";
 
 declare global {
   const RLS_VERSION: string;
