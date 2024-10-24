@@ -50,10 +50,22 @@
             }
             body.not_ready > .pade_init_loader > h2 {
                 font-size: 48px;
-                color: rgb(238, 238, 236);
+                color: hsl(0, 0%, 12.12%);
+                animation: fadeintext 2s forwards;
             }
             * {
                 font-family: "Ubuntu", sans-serif;
+            }
+            @keyframes fadeintext {
+                0% {
+                    color: hsl(0, 0%, 12.12%);
+                }
+                20% {
+                    color: hsl(0, 0%, 12.12%);
+                }
+                100% {
+                    color: hsl(60, 5.6%, 93%);
+                }
             }
         </style>
     </head>
