@@ -27,8 +27,8 @@
     "email": ""
   },
   "dependencies": {
-    "@ncpa0cpl/vanilla-jsx": "^0.0.1-alpha.31",
-    "@ncpa0cpl/vrouter": "^0.0.3",
+    "@ncpa0cpl/vanilla-jsx": "^0.0.1-alpha.32",
+    "@ncpa0cpl/vrouter": "^0.0.4",
     "@sentry/browser": "^8.35.0",
     "adwavecss": "^0.1.1",
     "adwaveui": "^0.0.11",
