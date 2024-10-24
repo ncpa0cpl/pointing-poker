@@ -52,6 +52,7 @@ async function main() {
           keepNames: true,
           sourcemap: dev ? "inline" : "external",
           minify: !dev,
+          treeShaking: true,
           loader: {
             ".svg": "file",
           },

@@ -1,7 +1,6 @@
 import { SentryService } from "./services/sentry-service/sentry-service";
 
 import { Box, Theme } from "adwavecss";
-import "adwaveui";
 import "../../node_modules/adwavecss/dist/styles.css";
 import { ThemeSwitch } from "./components/theme-switch/theme-switch";
 import "./index.css";
