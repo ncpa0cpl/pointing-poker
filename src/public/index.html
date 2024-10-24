@@ -32,6 +32,23 @@
             body.not_ready > * {
                 display: none;
             }
+            .pade_init_loader {
+                display: none;
+                width: 100vw;
+                height: 100vh;
+                justify-content: center;
+                align-items: center;
+            }
+            body.not_ready > .pade_init_loader.pade_init_loader {
+                display: flex;
+            }
+            body.not_ready > .pade_init_loader > h2 {
+                font-size: 48px;
+                color: rgb(238, 238, 236);
+            }
+            * {
+                font-family: "Ubuntu", sans-serif;
+            }
         </style>
     </head>
     <body class="not_ready">
@@ -43,6 +60,9 @@
                 </h1>
             </noscript>
             %CONTENT%
+        </div>
+        <div class="pade_init_loader dark-theme">
+            <h2 class="text">Loading...</h2>
         </div>
         <script>
             function docReady(fn) {
