@@ -42,6 +42,12 @@ export class StaticFileRoute implements Route {
     }
 
     let subpath = result.wildcardValue;
+    if (subpath.split("/").includes("..")) {
+      return RouterResponse.from(
+        "Not Found",
+        { status: 404, statusText: "Not Found" },
+      );
+    }
     if (subpath.startsWith("/")) {
       subpath = subpath.substring(1);
     }
