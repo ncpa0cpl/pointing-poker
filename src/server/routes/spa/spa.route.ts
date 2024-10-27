@@ -10,6 +10,7 @@ const SPA_ROUTES = [
   "/notfound",
   "/register",
   "/room",
+  "/about",
   "/error",
   "/roomclosed",
 ];
@@ -44,8 +45,19 @@ export function addSpaRoute(server: HttpServer) {
     const wildcard = ctx.getPathWildcard();
 
     if (!wildcard || isSpaRoute(wildcard)) {
-      const filepath = path.join(pubDir, "index.html");
-      const indexFile = Bun.file(
+      let filepath = pubDir;
+      if (wildcard) {
+        const fp = path.join(pubDir, wildcard + ".html");
+        if (await Bun.file(fp).exists()) {
+          filepath = fp;
+        } else {
+          filepath = path.join(pubDir, "index.html");
+        }
+      } else {
+        filepath = path.join(pubDir, "index.html");
+      }
+
+      const resFile = Bun.file(
         filepath,
       );
 
@@ -54,7 +66,7 @@ export function addSpaRoute(server: HttpServer) {
       });
 
       ctx.logValue("file_location", filepath);
-      return ctx.sendFile(200, indexFile);
+      return ctx.sendFile(200, resFile);
     }
 
     return ctx.sendText(404, "Not found");

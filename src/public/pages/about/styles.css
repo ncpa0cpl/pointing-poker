@@ -1,0 +1,56 @@
+.about-page {
+    & > div {
+        width: min(42em, 90vw);
+        padding: 2em;
+        height: fit-content;
+        place-self: center;
+        margin-block: 1em;
+    }
+
+    & .about-start-playing-btn {
+        width: max-content;
+        color: var(--clr-primary-100);
+        text-decoration: underline;
+    }
+
+    & .about-contents {
+        font-size: 1.1em;
+
+        p {
+            margin: .3em 0;
+        }
+
+        h2 {
+            font-size: 1.2em;
+        }
+
+        & .about-header {
+            margin: .5em 0 .35em;
+        }
+    }
+
+    & .images-view {
+        margin-top: .3em;
+        background: var(--clr-bg-1);
+        padding: .8em;
+        gap: .8em;
+        justify-content: center;
+
+        & .img-container {
+            & p {
+                place-self: center;
+                font-size: .8em;
+            }
+        }
+    }
+
+    & ol > li:not(:first-child) {
+        margin-top: 1.5em;
+    }
+
+    & code {
+        background: var(--clr-bg-1);
+        opacity: .8;
+        padding-inline: .3em;
+    }
+}

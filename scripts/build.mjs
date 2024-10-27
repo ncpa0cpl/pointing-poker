@@ -6,7 +6,7 @@ import fsSync from "fs";
 import fs from "fs/promises";
 import path from "path";
 import { fileURLToPath, URL } from "url";
-import { buildIndexPage } from "./generate-index.mjs";
+import { buildStaticPages } from "./generate-index.mjs";
 const js = dedent;
 
 const __dirname = fileURLToPath(new URL(".", import.meta.url));
@@ -55,6 +55,7 @@ async function main() {
           treeShaking: true,
           loader: {
             ".svg": "file",
+            ".webp": "file",
           },
           publicPath: "/public/esm",
         },
@@ -89,12 +90,30 @@ async function postBuild() {
     }
 
     console.log("Building index page...");
-    await buildIndexPage({
+    await buildStaticPages({
       entrypointPath: script,
       htmlTemplatePath: p("src/public/index.html"),
       outDir: p("dist/public"),
       scriptFilename: path.basename(script),
       stylesheetFilename: path.basename(stylesheet),
+      pages: [
+        {
+          path: "/register",
+          name: "index",
+        },
+        {
+          path: "/about",
+          name: "about",
+        },
+        {
+          path: "/roomclosed",
+          name: "roomclosed",
+        },
+        {
+          path: "/notfound",
+          name: "notfound",
+        },
+      ],
     });
     console.log("Index page built.");
   } catch (error) {

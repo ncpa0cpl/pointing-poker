@@ -34,7 +34,6 @@ a {
 
 p {
     margin: unset;
-    min-width: max-content;
 }
 
 h1,
@@ -99,6 +98,13 @@ h6 {
 
 .vrouter-root {
     height: 100%;
+}
+
+.vrouter-outlet {
+    min-width: 100%;
+    min-height: 100%;
+    justify-content: center;
+    align-items: center;
 }
 
 @keyframes onload {

@@ -1,5 +1,6 @@
 import { router } from "@ncpa0cpl/vrouter";
 import { UserService } from "../services/user-service/user-service";
+import { AboutPage } from "./about/about";
 import { ErrorPage } from "./error/error";
 import { JoinRoom } from "./join-room/join-room";
 import { RegisterPage } from "./register-form/register-form";
@@ -16,9 +17,8 @@ export const Router = router({
     return {
       join: define({
         paramNames: [],
-        title: "Join Room - Pointing Poker",
+        title: "Pointing Poker - Join Room",
         default: true,
-        memo: true,
         component: () => {
           if (UserService.userExists().get() === false) {
             Router.nav.register.$open();
@@ -27,7 +27,7 @@ export const Router = router({
         },
       }),
       register: define({
-        title: "Register - Pointing Poker",
+        title: "Pointing Poker",
         paramNames: ["roomID"],
         component: (ctx) => <RegisterPage qparams={ctx.params} />,
       }),
@@ -43,19 +43,24 @@ export const Router = router({
           return <Room roomID={params.derive((p) => p.roomID)} />;
         },
       }),
+      about: define({
+        paramNames: [],
+        title: "Pointing Poker - About",
+        component: AboutPage,
+      }),
       error: define({
         paramNames: ["message"],
-        title: "Error",
+        title: "Pointing Poker - Error",
         component: ctx => <ErrorPage params={ctx.params} />,
       }),
       notfound: define({
         paramNames: [],
-        title: "Room Not Found - Pointing Poker",
+        title: "Pointing Poker - Room Not Found",
         component: RoomNotFound,
       }),
       roomclosed: define({
         paramNames: [],
-        title: "Room Closed - Pointing Poker",
+        title: "Pointing Poker - Room Closed",
         component: RoomClosed,
       }),
     };

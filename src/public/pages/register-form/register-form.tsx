@@ -5,6 +5,7 @@ import { PointingPokerDescription } from "../../components/pp-description/pp-des
 import { RepoLink } from "../../components/repo-link/repo-link";
 import { UserService } from "../../services/user-service/user-service";
 import "./styles.css";
+import { PageLayout } from "../../components/page-layout/page-layout";
 import { Router } from "../routes";
 
 export const RegisterPage = (props: {
@@ -39,24 +40,26 @@ export const RegisterPage = (props: {
   };
 
   return (
-    <div class={[Card.card, "register-form"]}>
-      <PointingPokerDescription endMsg="Enter your username below to get started." />
-      <form onsubmit={onSubmit}>
-        <div class={Button.linked}>
-          <input
-            class={Input.input}
-            id="username"
-            type="text"
-            value={username}
-            oninput={onInput}
-            placeholder={"Enter your username"}
-          />
-          <button class={Button.button} type="submit">
-            Start Playing
-          </button>
-        </div>
-      </form>
-      <RepoLink />
-    </div>
+    <PageLayout class="register-page">
+      <div class={[Card.card, "register-form"]}>
+        <PointingPokerDescription endMsg="Enter your username below to get started." />
+        <form onsubmit={onSubmit}>
+          <div class={Button.linked}>
+            <input
+              class={Input.input}
+              id="username"
+              type="text"
+              value={username}
+              oninput={onInput}
+              placeholder={"Enter your username"}
+            />
+            <button class={Button.button} type="submit">
+              Start Playing
+            </button>
+          </div>
+        </form>
+        <RepoLink />
+      </div>
+    </PageLayout>
   );
 };

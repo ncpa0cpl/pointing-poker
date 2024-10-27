@@ -1,6 +1,14 @@
 import fs from "fs";
 import globalizeJSDOM from "jsdom-global";
 
+globalizeJSDOM(null, {
+  url: "http://localhost/",
+});
+addMissingGlobals();
+const root = document.createElement("div");
+root.id = "root";
+document.body.appendChild(root);
+
 function addMissingGlobals() {
   globalThis.customElements = class {
     static define() {}
@@ -25,7 +33,6 @@ function addMissingGlobals() {
 }
 
 /**
- * @param {string} entrypointPath filepath of the JavaScript application
  * @param {string} htmlTemplatePath filepath of the HTML template
  * @param {{
  *  stylesheetFilename: string;
@@ -33,31 +40,18 @@ function addMissingGlobals() {
  * }} data
  * @returns
  */
-export async function generateIndexPage(
-  entrypointPath,
-  htmlTemplatePath,
-  data,
-) {
-  globalizeJSDOM(null, {
-    url: "http://localhost",
-  });
-  addMissingGlobals();
-  const root = document.createElement("div");
-  root.id = "root";
-  document.body.appendChild(root);
-  await import(`file://${entrypointPath}`);
-  while (true) {
-    const currentPath = AppRouter.current().path;
-    if (currentPath === "/register") {
-      break;
-    }
-    await new Promise((resolve) => setTimeout(resolve, 100));
+export async function generatePage(htmlTemplatePath, data, path = "/") {
+  if (!path.startsWith("/")) {
+    path = `/${path}`;
   }
+  await AppRouter.navigate(path);
 
   const template = await fs.promises.readFile(htmlTemplatePath, "utf8");
 
   const html = root.innerHTML;
+  const titleElem = document.querySelector("title");
   return template
+    .replace("%TITLE%", AppRouter.titleElem.innerText)
     .replace("%CONTENT%", html)
     .replace("%SCRIPT%", data.scriptFilename)
     .replace("%STYLESHEET%", data.stylesheetFilename);
@@ -70,16 +64,23 @@ export async function generateIndexPage(
  *  outDir: string;
  *  stylesheetFilename: string;
  *  scriptFilename: string;
+ *  pages: {path: string; name: string}[];
  * }} params
  */
-export async function buildIndexPage(params) {
-  const indexPage = await generateIndexPage(
-    params.entrypointPath,
-    params.htmlTemplatePath,
-    {
-      scriptFilename: params.scriptFilename,
-      stylesheetFilename: params.stylesheetFilename,
-    },
-  );
-  await fs.promises.writeFile(`${params.outDir}/index.html`, indexPage);
+export async function buildStaticPages(params) {
+  await import(`file://${params.entrypointPath}`);
+  for (const page of params.pages) {
+    const indexPage = await generatePage(
+      params.htmlTemplatePath,
+      {
+        scriptFilename: params.scriptFilename,
+        stylesheetFilename: params.stylesheetFilename,
+      },
+      page.path,
+    );
+    await fs.promises.writeFile(
+      `${params.outDir}/${page.name}.html`,
+      indexPage,
+    );
+  }
 }

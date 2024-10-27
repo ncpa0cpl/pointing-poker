@@ -1,4 +1,4 @@
-.room-not-found-page {
+.room-not-found-page > .card {
     padding: 2em;
     height: fit-content;
     place-self: center;

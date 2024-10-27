@@ -1,4 +1,4 @@
-.room-closed-page {
+.room-closed-page > .card {
     padding: 2em;
     height: fit-content;
     place-self: center;

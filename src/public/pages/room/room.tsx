@@ -10,6 +10,7 @@ import { Participants } from "./components/participants/participants";
 import { RoomIDDisplay } from "./components/room-id-display/room-id-display";
 import { VoteButtons } from "./components/vote-buttons/vote-buttons";
 import "./styles.css";
+import { PageLayout } from "../../components/page-layout/page-layout";
 import { Router } from "../routes";
 
 type RoomProps = {
@@ -24,7 +25,7 @@ export const Room = $component<RoomProps>((props, api) => {
   };
 
   api.onMount(() => {
-    Router.setTitle(`Room ${props.roomID.get()} - Pointing Poker`);
+    Router.setTitle(`Pointing Poker - Room ${props.roomID.get()}`);
     PokerRoomService.onRoomClosed = () => {
       Router.nav.roomclosed.$replace();
     };
@@ -49,28 +50,30 @@ export const Room = $component<RoomProps>((props, api) => {
   const isSkeleton = PokerRoomService.connected.derive((c) => !c);
 
   return (
-    <div
-      class={{
-        column: true,
-        [Box.box]: true,
-        [Skeleton.skeleton]: isSkeleton,
-      }}
-    >
-      <button class="btn exit-room-btn" onclick={handleExitRoom}>
-        Exit Room
-      </button>
-      <div class="room-view">
-        <LeftBar isSkeleton={isSkeleton} />
-        <div class="column card voting-section room-view-card">
-          <div class="voting-section-top-bar column">
-            <RoomIDDisplay />
-            <OwnerControls />
+    <PageLayout class="room-page">
+      <div
+        class={{
+          column: true,
+          [Box.box]: true,
+          [Skeleton.skeleton]: isSkeleton,
+        }}
+      >
+        <button class="btn exit-room-btn" onclick={handleExitRoom}>
+          Exit Room
+        </button>
+        <div class="room-view">
+          <LeftBar isSkeleton={isSkeleton} />
+          <div class="column card voting-section room-view-card">
+            <div class="voting-section-top-bar column">
+              <RoomIDDisplay />
+              <OwnerControls />
+            </div>
+            <VoteButtons isSkeleton={isSkeleton} />
+            <Participants />
           </div>
-          <VoteButtons isSkeleton={isSkeleton} />
-          <Participants />
+          <Chat />
         </div>
-        <Chat />
       </div>
-    </div>
+    </PageLayout>
   );
 });

@@ -1,5 +1,12 @@
 :root {
-    --room-view-card-width: max(26vw, 22em);
+    --room-view-card-width: max(26vw, min(22em, 90vw));
+}
+
+.room-page {
+    & > div {
+        width: fit-content;
+        place-self: center;
+    }
 }
 
 .exit-room-btn {
@@ -29,6 +36,12 @@
     & .voting-section {
         max-width: 40em;
         min-width: 25vw;
+    }
+}
+
+@media (max-width: 1200px) {
+    .voting-section {
+        width: var(--room-view-card-width) !important;
     }
 }
 
