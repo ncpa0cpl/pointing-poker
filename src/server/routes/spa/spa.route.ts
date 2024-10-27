@@ -1,5 +1,6 @@
 import path from "path";
 import { ROOT_DIR } from "../../root-dir";
+import { removeTrailing } from "../../utilities/remove-trailing";
 import type { HttpServer } from "../../utilities/simple-server/http-server";
 
 const __dirname = path.dirname(new URL(import.meta.url).pathname);
@@ -16,7 +17,10 @@ const SPA_ROUTES = [
 ];
 
 const isSpaRoute = (path: string) => {
-  const pathname = new URL(path, "http://localhost/").pathname;
+  const pathname = removeTrailing(
+    new URL(path, "http://localhost/").pathname,
+    "/",
+  );
   for (let i = 0; i < SPA_ROUTES.length; i++) {
     const spaRoute = SPA_ROUTES[i]!;
     if (spaRoute === pathname) {
@@ -47,7 +51,11 @@ export function addSpaRoute(server: HttpServer) {
     if (!wildcard || isSpaRoute(wildcard)) {
       let filepath = pubDir;
       if (wildcard) {
-        const fp = path.join(pubDir, wildcard + ".html");
+        const fp = path.join(
+          pubDir,
+          removeTrailing(wildcard, "/") + ".html",
+        );
+        console.log("wildcard", fp);
         if (await Bun.file(fp).exists()) {
           filepath = fp;
         } else {
