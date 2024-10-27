@@ -90,6 +90,7 @@ export class Context {
       | Blob
       | FormData
       | string
+      | unknown
     >
     | ReadableStream<Uint8Array>
     | null
@@ -201,6 +202,21 @@ export class Context {
       statusText: "OK",
     };
     this.sendType = "html";
+    return this;
+  }
+
+  /**
+   * Creates a Response object with the given status code, and the given
+   * data string with a html content type, and sends it.
+   */
+  public sendXml(code: number, data: string): Context {
+    this.responseHeaders.set("Content-Type", "application/xml");
+    this.responseData = {
+      body: data,
+      status: code,
+      statusText: "OK",
+    };
+    this.sendType = "xml";
     return this;
   }
 
