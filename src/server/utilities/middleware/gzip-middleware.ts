@@ -27,7 +27,8 @@ const isAboveMinSizeForGzip = (resp: RouterResponse): boolean => {
 const isTextContent = (resp: RouterResponse): boolean => {
   const contentType = resp.headers.get("Content-Type") ?? "text/plain";
   return contentType.startsWith("text/")
-    || contentType.startsWith("application/");
+    || contentType.startsWith("application/")
+    || contentType.startsWith("image/svg");
 };
 
 export const GzipMiddleware = (): ResponseMiddleware => (resp, req) => {
