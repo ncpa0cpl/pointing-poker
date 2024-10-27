@@ -24,6 +24,12 @@ const isAboveMinSizeForGzip = (resp: RouterResponse): boolean => {
   return resp.getBuffer().byteLength >= 512;
 };
 
+const isTextContent = (resp: RouterResponse): boolean => {
+  const contentType = resp.headers.get("Content-Type") ?? "text/plain";
+  return contentType.startsWith("text/")
+    || contentType.startsWith("application/");
+};
+
 export const GzipMiddleware = (): ResponseMiddleware => (resp, req) => {
   if (
     resp.status < 200
@@ -31,6 +37,7 @@ export const GzipMiddleware = (): ResponseMiddleware => (resp, req) => {
     || resp.headers.get("Content-Encoding") != null
     || !isGzipAcceptable(req)
     || !isAboveMinSizeForGzip(resp)
+    || !isTextContent(resp)
   ) {
     return resp;
   }
