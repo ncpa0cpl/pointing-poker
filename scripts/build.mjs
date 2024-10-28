@@ -98,20 +98,24 @@ async function postBuild() {
       stylesheetFilename: path.basename(stylesheet),
       pages: [
         {
+          name: "index.html",
           path: "/register",
-          name: "index",
         },
         {
+          name: "about.html",
           path: "/about",
-          name: "about",
         },
         {
+          name: "privacy.html",
+          path: "/privacy",
+        },
+        {
+          name: "roomclosed.html",
           path: "/roomclosed",
-          name: "roomclosed",
         },
         {
+          name: "notfound.html",
           path: "/notfound",
-          name: "notfound",
         },
       ],
     });

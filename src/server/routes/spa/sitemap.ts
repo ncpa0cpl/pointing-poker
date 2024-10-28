@@ -6,6 +6,7 @@ const xml = dedent;
 
 const INDEX_URL = `https://${process.env.HOSTNAME}/`;
 const ABOUT_URL = `https://${process.env.HOSTNAME}/about`;
+const PRIVACY_URL = `https://${process.env.HOSTNAME}/privacy`;
 
 function fmtTs(ts: number) {
   const date = new Date(ts);
@@ -18,6 +19,7 @@ const getSitemap = (
   lastMod: {
     index: string;
     about: string;
+    privacy: string;
   },
 ) =>
   xml`
@@ -31,6 +33,10 @@ const getSitemap = (
     <loc>${ABOUT_URL.toString()}</loc>
     <lastmod>${lastMod.about}</lastmod>
   </url>
+  <url>
+    <loc>${PRIVACY_URL.toString()}</loc>
+    <lastmod>${lastMod.privacy}</lastmod>
+  </url>
 </urlset>
   `;
 
@@ -40,11 +46,14 @@ export function addSitemapRoute(server: HttpServer) {
       return ctx.sendText(500, "HOSTNAME not known");
     }
 
-    const INDEX_FILE = Bun.file(path.join(PUBLIC_DIR, "index.html"));
-    const ABOUT_FILE = Bun.file(path.join(PUBLIC_DIR, "about.html"));
+    const indexFile = Bun.file(path.join(PUBLIC_DIR, "index.html"));
+    const aboutFile = Bun.file(path.join(PUBLIC_DIR, "about.html"));
+    const privacyFile = Bun.file(path.join(PUBLIC_DIR, "privacy.html"));
+
     const lastMod = {
-      index: fmtTs(INDEX_FILE.lastModified),
-      about: fmtTs(ABOUT_FILE.lastModified),
+      index: fmtTs(indexFile.lastModified),
+      about: fmtTs(aboutFile.lastModified),
+      privacy: fmtTs(privacyFile.lastModified),
     };
     return ctx.sendXml(200, getSitemap(lastMod));
   });

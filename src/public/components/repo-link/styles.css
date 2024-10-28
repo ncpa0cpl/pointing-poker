@@ -2,7 +2,7 @@ a.repo-link {
     margin-top: 1.5em;
 
     & button {
-        color: #2fa7fe;
+        color: var(--link-clr);
         text-decoration: underline;
     }
 }

@@ -1,0 +1,40 @@
+.privacy-page {
+    & > div {
+        width: min(42em, 90vw);
+        padding: 1em 1.6em 1.6em;
+        height: fit-content;
+        place-self: center;
+    }
+
+    & .privacy-start-playing-btn {
+        width: max-content;
+        color: var(--link-clr);
+        text-decoration: underline;
+    }
+
+    & .privacy-contents {
+        margin-top: .7em;
+        font-size: 1.1em;
+
+        & p {
+            margin: .3em 0;
+        }
+
+        & h2 {
+            font-size: 1.2em;
+        }
+
+        & .privacy-header {
+            margin: .5em 0 .35em;
+        }
+
+        & a {
+            color: var(--link-clr);
+            text-decoration: underline;
+        }
+
+        & ul li:not(:first-child) {
+            margin-top: 1.2em;
+        }
+    }
+}

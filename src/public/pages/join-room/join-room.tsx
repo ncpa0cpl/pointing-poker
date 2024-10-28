@@ -7,6 +7,7 @@ import { RoomConnectionForm } from "./components/room-connection-form/room-conne
 import { RoomCreateForm } from "./components/room-create-form/room-create-form";
 import "./styles.css";
 import { KofiLink } from "../../components/kofi-link/kofi-link";
+import { Link } from "../../components/link/link";
 import { PageLayout } from "../../components/page-layout/page-layout";
 import { PokerRoomService } from "../../services/poker-room-service/poker-room-service";
 import { Router } from "../routes";
@@ -43,6 +44,9 @@ export const JoinRoom = () => {
         <RepoLink />
         <KofiLink />
       </div>
+      <Link class="privacy-link blue-link" to={Router.nav.privacy}>
+        Privacy
+      </Link>
     </PageLayout>
   );
 };

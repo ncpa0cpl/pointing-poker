@@ -1,13 +1,15 @@
 import fs from "fs";
 import globalizeJSDOM from "jsdom-global";
+import {
+  isMainThread,
+  Worker,
+  parentPort,
+  workerData,
+} from "node:worker_threads";
 
-globalizeJSDOM(null, {
-  url: "http://localhost/",
-});
-addMissingGlobals();
-const root = document.createElement("div");
-root.id = "root";
-document.body.appendChild(root);
+let root;
+
+const __filename = new URL(import.meta.url).pathname;
 
 function addMissingGlobals() {
   globalThis.customElements = class {
@@ -68,19 +70,54 @@ export async function generatePage(htmlTemplatePath, data, path = "/") {
  * }} params
  */
 export async function buildStaticPages(params) {
-  await import(`file://${params.entrypointPath}`);
-  for (const page of params.pages) {
-    const indexPage = await generatePage(
-      params.htmlTemplatePath,
-      {
-        scriptFilename: params.scriptFilename,
-        stylesheetFilename: params.stylesheetFilename,
-      },
-      page.path,
-    );
-    await fs.promises.writeFile(
-      `${params.outDir}/${page.name}.html`,
-      indexPage,
-    );
+  if (isMainThread) {
+    const worker = new Worker(__filename, {
+      workerData: params,
+    });
+    return new Promise((resolve, reject) => {
+      worker.on("message", (v) => {
+        if (v == "done") {
+          resolve();
+        }
+      });
+      worker.on("error", reject);
+      worker.on("exit", (code) => {
+        if (code !== 0) {
+          reject(new Error(`Worker stopped with exit code ${code}`));
+        }
+      });
+      worker.postMessage("start");
+    });
+  } else {
+    await import(`file://${params.entrypointPath}`);
+    for (const page of params.pages) {
+      const indexPage = await generatePage(
+        params.htmlTemplatePath,
+        {
+          scriptFilename: params.scriptFilename,
+          stylesheetFilename: params.stylesheetFilename,
+        },
+        page.path,
+      );
+      const fname = page.name.includes(".") ? page.name : `${page.name}.html`;
+      await fs.promises.writeFile(`${params.outDir}/${fname}`, indexPage);
+    }
+    parentPort.postMessage("done");
   }
+}
+
+if (!isMainThread) {
+  globalizeJSDOM(null, {
+    url: "http://localhost/",
+  });
+  addMissingGlobals();
+  root = document.createElement("div");
+  root.id = "root";
+  document.body.appendChild(root);
+
+  parentPort.on("message", (v) => {
+    if (v == "start") {
+      buildStaticPages(workerData);
+    }
+  });
 }

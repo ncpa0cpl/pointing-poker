@@ -1,19 +1,19 @@
 .about-page {
     & > div {
         width: min(42em, 90vw);
-        padding: 2em;
+        padding: 1em 1.6em 1.6em;
         height: fit-content;
         place-self: center;
-        margin-block: 1em;
     }
 
     & .about-start-playing-btn {
         width: max-content;
-        color: var(--clr-primary-100);
+        color: var(--link-clr);
         text-decoration: underline;
     }
 
     & .about-contents {
+        margin-top: .7em;
         font-size: 1.1em;
 
         p {

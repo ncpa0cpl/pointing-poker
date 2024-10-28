@@ -1,12 +1,18 @@
-.register-form {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    flex-direction: column;
-    height: fit-content;
-    place-self: center;
+.register-page {
+    .register-form {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-direction: column;
+        height: fit-content;
+        place-self: center;
 
-    & input {
-        max-width: 55vw;
+        & input {
+            max-width: 55vw;
+        }
+    }
+
+    & .privacy-link {
+        margin: 0 1em;
     }
 }

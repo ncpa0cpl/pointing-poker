@@ -1,5 +1,6 @@
 import { Button, Card, Typography } from "adwavecss";
 import "./styles.css";
+import { Route } from "@ncpa0cpl/vrouter/dist/types/route";
 import CommandsImg from "../../assets/images/commands.webp";
 import DistributionImg from "../../assets/images/distribution.webp";
 import RoundListImg from "../../assets/images/round-list.webp";
@@ -133,6 +134,12 @@ export const AboutPage = () => {
                 />
               </li>
             </ol>
+          </p>
+
+          <h2 class={[Typography.header, "about-header"]}>Privacy Policy</h2>
+          <p>
+            You can find our privacy policy in
+            <Link class="blue-link" to={Router.nav.privacy}>{" "}here</Link>.
           </p>
         </div>
       </div>

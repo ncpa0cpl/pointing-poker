@@ -3,6 +3,7 @@ import { UserService } from "../services/user-service/user-service";
 import { AboutPage } from "./about/about";
 import { ErrorPage } from "./error/error";
 import { JoinRoom } from "./join-room/join-room";
+import { PrivacyPage } from "./privacy/privacy";
 import { RegisterPage } from "./register-form/register-form";
 import { RoomClosed } from "./room-closed/room-closed";
 import { RoomNotFound } from "./room-not-found/room-not-found";
@@ -47,6 +48,11 @@ export const Router = router({
         paramNames: [],
         title: "Pointing Poker - About",
         component: AboutPage,
+      }),
+      privacy: define({
+        paramNames: [],
+        title: "Pointing Poker - Privacy",
+        component: PrivacyPage,
       }),
       error: define({
         paramNames: ["message"],

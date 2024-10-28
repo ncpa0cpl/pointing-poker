@@ -5,6 +5,7 @@ import { PointingPokerDescription } from "../../components/pp-description/pp-des
 import { RepoLink } from "../../components/repo-link/repo-link";
 import { UserService } from "../../services/user-service/user-service";
 import "./styles.css";
+import { Link } from "../../components/link/link";
 import { PageLayout } from "../../components/page-layout/page-layout";
 import { Router } from "../routes";
 
@@ -60,6 +61,9 @@ export const RegisterPage = (props: {
         </form>
         <RepoLink />
       </div>
+      <Link class="privacy-link blue-link" to={Router.nav.privacy}>
+        Privacy
+      </Link>
     </PageLayout>
   );
 };
