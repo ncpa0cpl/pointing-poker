@@ -1,4 +1,5 @@
 import { StatusCodes } from "http-status-codes";
+import { usage } from "../usage-log";
 import { RequestError } from "../utilities/request-error";
 import { Room } from "./room/room";
 
@@ -20,6 +21,7 @@ export class RoomService {
     }
 
     const room = new Room(ownerID, ownerName);
+    usage.logStart("ROOM_CREATED");
     this.putRoom(room);
     return room;
   }

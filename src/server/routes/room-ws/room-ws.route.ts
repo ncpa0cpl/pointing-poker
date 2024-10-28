@@ -27,6 +27,7 @@ import { OutgoingMessageType } from "../../../shared/websockets-messages/room-we
 import { logger } from "../../app-logger";
 import { RoomService } from "../../rooms/room-sevice";
 import { RoundOption } from "../../rooms/round/option/round-option";
+import { usage } from "../../usage-log";
 import { RequestError } from "../../utilities/request-error";
 import { createResponse } from "../../utilities/response";
 import type { HttpServer } from "../../utilities/simple-server/http-server";
@@ -118,12 +119,14 @@ class RoomWsHandler {
         }
       }
     }, 30_000);
+    usage.logStart("CONNECTION_OPENED");
   }
 
   public close(ws: ServerWebSocket<unknown>) {
     this.pingPong!.stop();
     this.onclosecb?.();
     clearInterval(this.intervalTimer);
+    usage.logEnd("CONNECTION_OPENED");
   }
 
   public message(

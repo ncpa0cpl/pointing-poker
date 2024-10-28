@@ -59,6 +59,15 @@ export async function generatePage(htmlTemplatePath, data, path = "/") {
     .replace("%STYLESHEET%", data.stylesheetFilename);
 }
 
+async function hasFileChanged(filepath, newContent) {
+  const exists = fs.existsSync(filepath);
+  if (!exists) {
+    return true;
+  }
+  const currentContent = await fs.promises.readFile(filepath, "utf-8");
+  return currentContent !== newContent;
+}
+
 /**
  * @param {{
  *  entrypointPath: string;
@@ -91,7 +100,7 @@ export async function buildStaticPages(params) {
   } else {
     await import(`file://${params.entrypointPath}`);
     for (const page of params.pages) {
-      const indexPage = await generatePage(
+      const pageContent = await generatePage(
         params.htmlTemplatePath,
         {
           scriptFilename: params.scriptFilename,
@@ -100,7 +109,12 @@ export async function buildStaticPages(params) {
         page.path,
       );
       const fname = page.name.includes(".") ? page.name : `${page.name}.html`;
-      await fs.promises.writeFile(`${params.outDir}/${fname}`, indexPage);
+      const fpath = `${params.outDir}/${fname}`;
+
+      const changed = await hasFileChanged(fpath, pageContent);
+      if (changed) {
+        await fs.promises.writeFile(fpath, pageContent);
+      }
     }
     parentPort.postMessage("done");
   }

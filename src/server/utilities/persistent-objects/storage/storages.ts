@@ -27,23 +27,17 @@ export class Storages {
 
   public static async create(storageName: string, id: string, value: object) {
     const storage = await Storages.getStorage(storageName);
-    storage.add(id, value).catch(err => {
-      logger.error(`Failed to create new storage entry`, err);
-    });
+    storage.add(id, value);
   }
 
   public static async update(storageName: string, id: string, value: object) {
     const storage = await Storages.getStorage(storageName);
-    storage.update(id, value).catch(err => {
-      logger.error(`Failed to update storage entry`, err);
-    });
+    storage.update(id, value);
   }
 
   public static async remove(storageName: string, id: string) {
     const storage = await Storages.getStorage(storageName);
-    storage.remove(id).catch(err => {
-      logger.error(`Failed to remove storage entry`, err);
-    });
+    storage.remove(id);
   }
 
   public static async load(storageName: string): Promise<object[]> {

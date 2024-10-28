@@ -10,6 +10,7 @@ import type {
   RoundUpdateOutgoingMessage,
 } from "../../../shared/websockets-messages/room-websocket-outgoing-message-types";
 import { OutgoingMessageType } from "../../../shared/websockets-messages/room-websocket-outgoing-message-types";
+import { usage } from "../../usage-log";
 import { Persistent } from "../../utilities/persistent-objects/persistent-decorator";
 import { PDependency } from "../../utilities/persistent-objects/persistent-property-dependency-decorator";
 import { PWatch } from "../../utilities/persistent-objects/persistent-property-watcher-decorator";
@@ -514,6 +515,11 @@ export class Room {
     for (const conn of this.connections) {
       conn.close();
     }
-    Storages.remove(Room.name, this.id);
+
+    setTimeout(() => {
+      Storages.remove(Room.name, this.id);
+    }, 100);
+
+    usage.logEnd("ROOM_CREATED");
   }
 }
