@@ -6,6 +6,7 @@ import type {
   ResponseMiddleware,
 } from "./http-server";
 import { HttpServer } from "./http-server";
+import { isRouterRequest, routerRequest } from "./router-request";
 import { RouterResponse } from "./router-response";
 import { WsHandler } from "./websocket-handler";
 
@@ -280,28 +281,34 @@ export class ServeHandler {
       return this.respondToOptionsRequest(request, bunServer);
     }
 
+    let rRequest = routerRequest(bunServer, request);
+
     for (let i = 0; i < this.requestMiddleware.length; i++) {
       const middleware = this.requestMiddleware[i]!;
-      const result = await middleware(request, bunServer);
+      const result = await middleware(rRequest, bunServer);
       if (result instanceof Response) {
-        return this.addCorsHeaders(request, result);
+        return this.addCorsHeaders(rRequest, result);
       }
       if (result instanceof Request) {
-        request = result;
+        if (isRouterRequest(result)) {
+          rRequest = result;
+        } else {
+          rRequest = routerRequest(bunServer, result);
+        }
       }
     }
 
     let response: RouterResponse | undefined;
-    if (this.options.forceHttps && !this.isHttps(request)) {
-      response = await this.redirectToHttps(request);
+    if (this.options.forceHttps && !this.isHttps(rRequest)) {
+      response = await this.redirectToHttps(rRequest);
     } else {
-      response = await this.respond(request, bunServer);
+      response = await this.respond(rRequest, bunServer);
     }
 
     if (response) {
       for (let i = 0; i < this.responseMiddleware.length; i++) {
         const middleware = this.responseMiddleware[i]!;
-        response = await middleware(response, request, bunServer);
+        response = await middleware(response, rRequest, bunServer);
       }
     }
 

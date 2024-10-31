@@ -1,8 +1,11 @@
+import { randomUUID } from "crypto";
 import { logger } from "../../app-logger";
 import type {
   RequestMiddleware,
   ResponseMiddleware,
 } from "../simple-server/http-server";
+
+const CORRELATION_ID = "reqCorrelationID";
 
 function getProtocol(req: Request): string {
   const url = new URL(req.url);
@@ -28,7 +31,12 @@ function getForwardProtocol(req: Request): string {
 
 export function LogRequestMiddleware(): RequestMiddleware {
   return (req) => {
+    const uid = randomUUID();
+
+    req.kv.set(CORRELATION_ID, uid);
+
     const info = {
+      correlation_id: uid,
       url: req.url,
       method: req.method,
       protocol: getProtocol(req),
@@ -46,7 +54,9 @@ export function LogRequestMiddleware(): RequestMiddleware {
 
 export function LogResponseMiddleware(): ResponseMiddleware {
   return (resp, req) => {
+    const uid = req.kv.get(CORRELATION_ID);
     const info = {
+      correlation_id: uid,
       ...resp.getLogData(),
       url: req.url,
       protocol: getProtocol(req),

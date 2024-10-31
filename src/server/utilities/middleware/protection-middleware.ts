@@ -32,7 +32,7 @@ class RequestCounter {
 export function LimiterMiddleware(options?: {
   /**
    * Maximum number of requests per client allowed within the time frame.
-   * Default: 100
+   * Default: 50
    */
   clientRequestThreshold?: number;
   /**
@@ -42,12 +42,12 @@ export function LimiterMiddleware(options?: {
   maxOverallRequests?: number;
   /**
    * Time frame in milliseconds.
-   * Default: 60_000
+   * Default: 60_000 (1 minute)
    */
   timeFrame?: number;
 }): RequestMiddleware {
   const {
-    clientRequestThreshold: requestThreshold = 100,
+    clientRequestThreshold: requestThreshold = 50,
     timeFrame = 60_000,
     maxOverallRequests = 10_000,
   } = options ?? {};
@@ -71,13 +71,13 @@ export function LimiterMiddleware(options?: {
   };
 
   let overallCounter = 0;
-  return (req, server) => {
+  return (req) => {
     if (overallCounter >= maxOverallRequests) {
       return tooManyrequests();
     }
 
     const clientIp = req.headers.get("x-forwarded-for")
-      ?? server.requestIP(req)?.address;
+      ?? req.clientIp();
 
     if (!clientIp) {
       return;

@@ -2,6 +2,7 @@ import type { BunFile, Server } from "bun";
 import type { CacheConfig } from "./headers/generate-cache-control-header";
 import { generateCacheControlHeader } from "./headers/generate-cache-control-header";
 import type { MaybePromise } from "./http-server";
+import { RouterRequest } from "./router-request";
 import { RouterResponse } from "./router-response";
 
 type ResponseData = {
@@ -68,12 +69,16 @@ export class Context {
   private dontSendResponse = false;
 
   public constructor(
-    public readonly request: Request,
+    public readonly request: RouterRequest,
     public readonly bunServer: Server,
     public readonly url: URL,
     public readonly params: Record<string, string>,
     public readonly wildcardValue: null | string,
   ) {
+  }
+
+  get kv() {
+    return this.request.kv;
   }
 
   public body(): ReadableStream<Uint8Array> | null;
@@ -253,8 +258,8 @@ export class Context {
     return this;
   }
 
-  public noResponse(): Context {
-    this.dontSendResponse = true;
+  public noResponse(value = true): Context {
+    this.dontSendResponse = value;
     return this;
   }
 

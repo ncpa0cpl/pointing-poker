@@ -3,6 +3,7 @@ import path from "path";
 import type { Context } from "./context";
 import type { Route } from "./router";
 import { Router } from "./router";
+import { RouterRequest } from "./router-request";
 import type { RouterResponse } from "./router-response";
 import type { RouteHandler } from "./routes/custom-route";
 import { CustomRoute } from "./routes/custom-route";
@@ -34,7 +35,7 @@ export interface HttpServerOptions {
 
 export interface RequestMiddleware {
   (
-    request: Request,
+    request: RouterRequest,
     server: Server,
   ): MaybePromise<RouterResponse | Request | void>;
 }
@@ -42,7 +43,7 @@ export interface RequestMiddleware {
 export interface ResponseMiddleware {
   (
     response: RouterResponse,
-    request: Request,
+    request: RouterRequest,
     server: Server,
   ): MaybePromise<RouterResponse>;
 }
