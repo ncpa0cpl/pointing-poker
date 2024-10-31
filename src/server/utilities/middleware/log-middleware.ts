@@ -26,9 +26,26 @@ function getForwardProtocol(req: Request): string {
   return "";
 }
 
+export function LogRequestMiddleware(): RequestMiddleware {
+  return (req) => {
+    const info = {
+      url: req.url,
+      method: req.method,
+      protocol: getProtocol(req),
+      forward_protocol: getForwardProtocol(req),
+      referer: req.headers.get("Referer") ?? "NULL",
+      user_agent: req.headers.get("User-Agent") ?? "NULL",
+      sec_mobile: req.headers.get("Sec-Ch-Ua-Mobile") ?? "NULL",
+    };
+
+    queueMicrotask(() => {
+      logger.info(`request received`, info);
+    });
+  };
+}
+
 export function LogResponseMiddleware(): ResponseMiddleware {
   return (resp, req) => {
-    const status = resp.status;
     const info = {
       ...resp.getLogData(),
       url: req.url,
@@ -41,18 +58,8 @@ export function LogResponseMiddleware(): ResponseMiddleware {
       last_modified: resp.headers.get("Last-Modified"),
     };
     queueMicrotask(() => {
-      logger.info(`Sending response with status ${status}.`, info);
+      logger.info(`sending response`, info);
     });
     return resp;
-  };
-}
-
-export function LogRequestMiddleware(): RequestMiddleware {
-  return (req) => {
-    const method = req.method;
-    const url = req.url;
-    queueMicrotask(() => {
-      logger.info(`Received a request: ${method} ${url}`);
-    });
   };
 }
