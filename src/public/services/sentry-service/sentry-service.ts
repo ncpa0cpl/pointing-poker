@@ -2,8 +2,7 @@ import * as Sentry from "@sentry/browser";
 
 export class SentryService {
   private static client = Sentry.init({
-    dsn:
-      "https://4ec29488d3ce352195f0e2d3df9184d1@o4508160774569984.ingest.de.sentry.io/4508160778240080",
+    dsn: SENTRY_DSN,
     release: RLS_VERSION,
     environment: ENVIRONMENT,
     integrations: [

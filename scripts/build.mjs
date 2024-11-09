@@ -42,6 +42,7 @@ async function main() {
             text: js`
               const ENVIRONMENT = "${dev ? "development" : "production"}";
               const RLS_VERSION = "${packageJson.version}#${gitHash}";
+              const SENTRY_DSN = ${process.env.SENTRY_DSN ? JSON.stringify(process.env.SENTRY_DSN) : "undefined"};
               `.trim(),
           },
         },

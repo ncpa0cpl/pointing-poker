@@ -11,6 +11,7 @@ import "./index.css";
 declare global {
   const RLS_VERSION: string;
   const ENVIRONMENT: string;
+  const SENTRY_DSN: string;
 }
 
 const start = () => {

@@ -13,8 +13,8 @@
     "start": "bun ./src/server/start.ts",
     "start:dev": "NODE_ENV=development node ./scripts/build.mjs --watch --serve --dev",
     "watch": "NODE_ENV=development node ./scripts/build.mjs --watch",
-    "build:dev": "NODE_ENV=development node ./scripts/build.mjs --dev",
-    "build:prod": "NODE_ENV=production node ./scripts/build.mjs",
+    "build:dev": "NODE_ENV=development node --env-file=.env ./scripts/build.mjs --dev",
+    "build:prod": "NODE_ENV=production node --env-file=.env ./scripts/build.mjs",
     "gen:icon": "magick convert -background transparent -define 'icon:auto-resize=16,24,32,64,128' icon.svg ./src/server/routes/spa/favicon.ico"
   },
   "keywords": [],
