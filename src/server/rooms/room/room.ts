@@ -32,6 +32,7 @@ const getDefaultOptions = () => [
   new RoundOption("5"),
   new RoundOption("8"),
   new RoundOption("13"),
+  new RoundOption("?"),
 ];
 
 const generateRoomID = (): string => {
@@ -372,6 +373,15 @@ export class Room {
           this.setDefaultOptions(options.map(optLabel => {
             return new RoundOption(optLabel);
           }));
+        }
+      }
+      case "addoption": {
+        if (this.isOwner(userID)) {
+          const optionLabel = rest.filter(Boolean).join(" ");
+          const option = new RoundOption(optionLabel);
+          this.setDefaultOptions(
+            this.defaultOptions.concat(option),
+          );
         }
       }
     }

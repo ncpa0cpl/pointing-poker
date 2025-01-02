@@ -28,19 +28,18 @@
     "email": ""
   },
   "dependencies": {
-    "@ncpa0cpl/vanilla-jsx": "^0.0.1-alpha.32",
-    "@ncpa0cpl/vrouter": "^0.0.5",
-    "@sentry/browser": "^8.35.0",
+    "@ncpa0cpl/vanilla-jsx": "^0.0.1-alpha.34",
+    "@ncpa0cpl/vrouter": "^0.0.6",
+    "@sentry/browser": "^8.47.0",
     "adwavecss": "^0.1.1",
     "adwaveui": "^0.0.11",
     "dilswer": "^2.1.1",
     "escape-html": "^1.0.3",
     "http-status-codes": "^2.3.0",
     "jsdom-global": "^3.0.2",
-    "luxon": "^3.4.4",
+    "luxon": "^3.5.0",
     "marked": "^11.1.1",
-    "node-persist": "3.1.0",
-    "reflect-metadata": "^0.2.1",
+    "reflect-metadata": "^0.2.2",
     "uuid": "^9.0.1"
   },
   "devDependencies": {
@@ -62,6 +61,9 @@
     "husky": "^8.0.3",
     "jsdom": "^24.0.0",
     "typescript": "latest"
+  },
+  "resolutions": {
+    "@ncpa0cpl/vanilla-jsx": "0.0.1-alpha.34"
   },
   "packageManager": "yarn@1.22.22+sha1.ac34549e6aa8e7ead463a7407e1c7390f61a6610"
 }

@@ -63,6 +63,13 @@ async function main() {
         compileVendors: ["@sentry/browser"],
         watch,
         parsableExtensions: [".css"],
+        pathAliases: {
+          "@Root/*": "./*",
+        },
+        replaceImports: {
+          "@ncpa0cpl/vanilla-jsx/signals":
+            "@Root/../../node_modules/@ncpa0cpl/vanilla-jsx/dist/esm/signals/signal",
+        },
         onBuildComplete() {
           postBuild();
           return runServer();

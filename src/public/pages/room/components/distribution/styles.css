@@ -1,75 +1,95 @@
 .votes-distribution {
     display: flex;
-    flex-direction: row;
+    flex-direction: column;
     flex-wrap: wrap;
-    height: 8em;
+    height: 13em;
     align-items: flex-end;
-    margin: 2em 0 3em;
-    margin-inline: auto;
+    margin: 1em 0 2em;
     flex-wrap: nowrap;
+    flex: 1;
 
-    & .dist-col {
+    & .header {
+        place-self: flex-start;
+        margin-bottom: 1.5em;
+    }
+
+    & .ditribution-empty-msg {
+        color: var(--clr-text-secondary);
+        place-self: center;
+        margin-top: .85em;
+    }
+
+    & .graph {
+        flex: 1;
+        place-self: stretch;
         display: flex;
-        flex-direction: column;
-        height: 100%;
-        width: 2em;
-        margin-right: 1em;
-        justify-content: flex-end;
-        align-items: center;
+        justify-content: center;
 
-        & .distribution-bar {
-            position: relative;
-            width: 100%;
-            background-color: var(--clr-primary-200);
-            transition: background-color 0.2s;
+        & .dist-col {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            width: 2em;
+            justify-content: flex-end;
+            align-items: center;
+            place-self: center;
+            margin: 0 1em 0 0;
 
-            &:hover {
-                background-color: var(--clr-primary-600);
+            & .distribution-bar {
+                position: relative;
+                width: 100%;
+                background-color: var(--clr-primary-200);
+                transition: background-color 0.2s;
+
+                &:hover {
+                    background-color: var(--clr-primary-600);
+
+                    & .col-top-symbol {
+                        color: var(--clr-text);
+                    }
+
+                    & .col-bottom-symbol {
+                        & span {
+                            background-color: var(--clr-primary-300);
+                        }
+                    }
+                }
+
+                & .col-top-symbol,
+                & .col-bottom-symbol {
+                    position: absolute;
+                    text-align: center;
+                    user-select: none;
+                }
 
                 & .col-top-symbol {
-                    color: var(--clr-text);
+                    top: -1.5em;
+                    left: 0;
+                    right: 0;
+                    min-height: 1.5em;
                 }
 
                 & .col-bottom-symbol {
+                    bottom: -2em;
+                    left: 0;
+                    right: 0;
+                    display: flex;
+                    justify-content: center;
+                    align-items: flex-end;
+                    padding-left: 1px;
+                    min-height: 2em;
+
                     & span {
-                        background-color: var(--clr-primary-300);
+                        line-height: 1.4em;
+                        text-align: center;
+                        color: var(--clr-primary-text);
+                        background-color: var(--clr-primary-000);
+                        border-radius: 100px;
+                        width: 1.4em;
+                        height: 1.4em;
+                        user-select: none;
+                        overflow: hidden;
                     }
-                }
-            }
-
-            & .col-top-symbol,
-            & .col-bottom-symbol {
-                position: absolute;
-                text-align: center;
-                user-select: none;
-            }
-
-            & .col-top-symbol {
-                top: -1.5em;
-                left: 0;
-                right: 0;
-                min-height: 1.5em;
-            }
-
-            & .col-bottom-symbol {
-                bottom: -2em;
-                left: 0;
-                right: 0;
-                display: flex;
-                justify-content: center;
-                align-items: flex-end;
-                padding-left: 1px;
-                min-height: 2em;
-
-                & span {
-                    line-height: 1.4em;
-                    text-align: center;
-                    color: var(--clr-primary-text);
-                    background-color: var(--clr-primary-000);
-                    border-radius: 100px;
-                    width: 1.4em;
-                    height: 1.4em;
-                    user-select: none;
                 }
             }
         }

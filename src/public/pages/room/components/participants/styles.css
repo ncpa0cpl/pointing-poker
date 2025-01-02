@@ -7,9 +7,9 @@
         align-items: center;
         flex-grow: 1;
         justify-content: space-between;
-        margin-bottom: 0.1em;
+        margin-bottom: 0.25em;
         border-radius: var(--border-radius);
-        padding: 0.2em 0.3em;
+        padding: 0.1em 0.3em;
 
         &.highlight {
             background-color: #9696964d;

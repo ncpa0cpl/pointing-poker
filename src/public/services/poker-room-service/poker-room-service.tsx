@@ -400,6 +400,7 @@ export class PokerRoomService {
             {"\n  "}/exit
             {"\n  "}/close
             {"\n  "}/setoptions
+            {"\n  "}/addoption
             {"\n  "}
             {"\n  "}Use /help [command] for
             {"\n  "}more information.
@@ -469,6 +470,18 @@ export class PokerRoomService {
               {"\n  "}should be a whitespace separated
               {"\n  "}list of values.
               {"\n  "}(e.g. `/setoptions 1 2 3 4`)
+            </pre>,
+          );
+          break;
+        case "addoption":
+        case "/addoption":
+          this.showSystemChatMsg(
+            <pre class="nomargin">
+              /addoption [newoption]
+              {"\n  "}Add a new option to the list of
+              {"\n  "}available vote options for the
+              {"\n  "}current and future rounds.
+              {"\n  "}(e.g. `/addoption ?`)
             </pre>,
           );
           break;

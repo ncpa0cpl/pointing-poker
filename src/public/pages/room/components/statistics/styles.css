@@ -1,5 +1,5 @@
 .statistics {
-    height: 13em;
+    margin: 1em 0 2em;
     justify-content: center;
 
     & .statistics-grid {
