@@ -96,6 +96,7 @@ class RoomWsHandler {
 
   public static beforeUpgrade() {
     if (RoomWsHandler.connectionCount >= MAX_WS_CONNECTIONS) {
+      logger.info("too many connections, refusing WebSocket with 503");
       return createResponse(503, "Server is busy");
     }
   }
@@ -123,6 +124,7 @@ class RoomWsHandler {
   }
 
   public close(ws: ServerWebSocket<unknown>) {
+    RoomWsHandler.connectionCount--;
     this.pingPong!.stop();
     this.onclosecb?.();
     clearInterval(this.intervalTimer);
