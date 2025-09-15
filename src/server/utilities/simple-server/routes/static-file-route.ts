@@ -3,7 +3,7 @@ import path from "node:path";
 import { CompiledPath } from "../compiled-path";
 import { Context } from "../context";
 import type { Route } from "../router";
-import { routerRequest } from "../router-request";
+import { RouterRequest, routerRequest } from "../router-request";
 import { RouterResponse } from "../router-response";
 
 export class StaticFileRoute implements Route {
@@ -30,7 +30,7 @@ export class StaticFileRoute implements Route {
   }
 
   public async handleRequest(
-    request: Request,
+    request: RouterRequest,
     bunServer: Server,
     url: URL,
   ): Promise<RouterResponse | undefined> {
@@ -57,7 +57,7 @@ export class StaticFileRoute implements Route {
     const file = Bun.file(filePath);
 
     let ctx = new Context(
-      routerRequest(bunServer, request),
+      request,
       bunServer,
       url,
       {},

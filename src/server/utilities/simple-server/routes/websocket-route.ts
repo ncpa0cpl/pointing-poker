@@ -2,6 +2,7 @@ import type { Server, ServerWebSocket } from "bun";
 import { CompiledPath } from "../compiled-path";
 import { MaybePromise } from "../http-server";
 import type { Route } from "../router";
+import { RouterRequest } from "../router-request";
 import { RouterResponse } from "../router-response";
 
 export interface WsHandlers<T> {
@@ -39,7 +40,7 @@ export class WebsocketRoute<T> implements Route {
   }
 
   public async handleRequest(
-    request: Request,
+    request: RouterRequest,
     bunServer: Server,
   ): Promise<RouterResponse | undefined> {
     if (this.beforeUpgrade) {

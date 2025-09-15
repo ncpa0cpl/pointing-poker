@@ -1,11 +1,6 @@
 import fs from "fs";
 import globalizeJSDOM from "jsdom-global";
-import {
-  isMainThread,
-  Worker,
-  parentPort,
-  workerData,
-} from "node:worker_threads";
+import { isMainThread, Worker, parentPort, workerData } from "node:worker_threads";
 
 let root;
 
@@ -32,6 +27,8 @@ function addMissingGlobals() {
   // window.history.pushState = function() {};
 
   globalThis.URL = window.URL;
+
+  window.scrollTo = () => {};
 }
 
 /**

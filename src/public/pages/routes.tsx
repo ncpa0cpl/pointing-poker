@@ -8,6 +8,7 @@ import { RegisterPage } from "./register-form/register-form";
 import { RoomClosed } from "./room-closed/room-closed";
 import { RoomNotFound } from "./room-not-found/room-not-found";
 import { Room } from "./room/room";
+import { StatsPage } from "./stats/stats";
 
 export const Router = vrouter({
   paramNames: [],
@@ -53,6 +54,11 @@ export const Router = vrouter({
         paramNames: [],
         title: "Pointing Poker - Privacy",
         component: PrivacyPage,
+      }),
+      stats: define({
+        paramNames: [],
+        title: "Pointing Poker - Stats",
+        component: StatsPage,
       }),
       error: define({
         paramNames: ["message"],

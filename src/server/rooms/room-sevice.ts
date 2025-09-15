@@ -8,6 +8,14 @@ const MAX_ACTIVE_ROOMS = 100;
 export class RoomService {
   private static rooms: Room[] = [];
 
+  public static roomCount() {
+    return this.rooms.length;
+  }
+
+  public static userCount() {
+    return this.rooms.reduce((sum, room) => room.countUsers() + sum, 0);
+  }
+
   public static putRoom(room: Room): void {
     this.rooms.push(room);
   }

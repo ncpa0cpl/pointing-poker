@@ -12,6 +12,7 @@ const SPA_ROUTES = [
   "/register",
   "/room",
   "/about",
+  "/stats",
   "/privacy",
   "/error",
   "/roomclosed",

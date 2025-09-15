@@ -6,7 +6,11 @@ import type {
   ResponseMiddleware,
 } from "./http-server";
 import { HttpServer } from "./http-server";
-import { isRouterRequest, routerRequest } from "./router-request";
+import {
+  isRouterRequest,
+  RouterRequest,
+  routerRequest,
+} from "./router-request";
 import { RouterResponse } from "./router-response";
 import { WsHandler } from "./websocket-handler";
 
@@ -216,7 +220,7 @@ export class ServeHandler {
   }
 
   public async respond(
-    request: Request,
+    request: RouterRequest,
     bunServer: Server,
   ): Promise<RouterResponse | undefined> {
     if (request.method !== "GET") {

@@ -1,0 +1,30 @@
+.stats-page {
+    justify-content: center;
+    align-items: center;
+
+    & .stats-view {
+        width: fit-content;
+        min-width: 40vw;
+        flex-direction: column;
+
+        & button {
+            width: fit-content;
+            margin-bottom: 1em;
+            margin-right: .25em;
+        }
+
+        & .stats-table {
+            display: grid;
+            grid-template-columns: auto 1fr;
+
+            & h2 {
+                margin-bottom: .3em;
+                margin-right: .6em;
+            }
+
+            & p {
+                margin-bottom: .6em;
+            }
+        }
+    }
+}

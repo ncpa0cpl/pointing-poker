@@ -28,6 +28,7 @@
     "email": ""
   },
   "dependencies": {
+    "@ncpa0cpl/mutex.js": "^1.0.1",
     "@ncpa0cpl/vanilla-jsx": "^0.0.1-alpha.43",
     "@ncpa0cpl/vrouter": "^0.0.14",
     "@sentry/browser": "^8.47.0",

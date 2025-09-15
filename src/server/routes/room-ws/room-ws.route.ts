@@ -133,7 +133,7 @@ class RoomWsHandler {
 
   public message(
     ws: ServerWebSocket<unknown>,
-    message: string | Uint8Array,
+    message: string | Buffer,
   ) {
     let data: RoomWSIncomingMessage | undefined = undefined;
     try {

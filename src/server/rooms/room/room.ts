@@ -145,6 +145,10 @@ export class Room {
     this.propagateMessage(roomUpdateMessage);
   }
 
+  public countUsers() {
+    return this.connections.length;
+  }
+
   public setDefaultOptions(options: RoundOption[]): void {
     this.lastActivity = DateTime.now();
 

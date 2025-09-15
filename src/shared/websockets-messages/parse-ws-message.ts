@@ -3,7 +3,7 @@ import { assertType, compileFastValidator } from "dilswer";
 
 export const createWsMsgParser = <D extends AnyType>(
   type: D,
-): (message: string | Uint8Array) => Infer<D> => {
+): (message: string | Buffer) => Infer<D> => {
   const isValid = compileFastValidator(type);
 
   return (msg) => {

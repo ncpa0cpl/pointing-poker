@@ -1,10 +1,11 @@
 import type { Server } from "bun";
+import { RouterRequest } from "./router-request";
 import type { RouterResponse } from "./router-response";
 
 export interface Route {
   matches(method: string, url: string): boolean;
   handleRequest(
-    request: Request,
+    request: RouterRequest,
     bunServer: Server,
     url: URL,
   ): RouterResponse | Promise<RouterResponse | undefined> | undefined;

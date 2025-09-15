@@ -1,7 +1,7 @@
 import "./styles.css";
 
 export type PageLayoutProps = {
-  children: JSX.Element | JSX.Element[];
+  children: JSX.Children;
   class?: string;
 };
 
