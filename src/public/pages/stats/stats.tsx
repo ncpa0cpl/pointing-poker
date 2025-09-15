@@ -17,6 +17,8 @@ export function StatsPage() {
     activeUsers: 0,
     thisMonthRoomCount: 0,
     thisMonthUserCount: 0,
+    thisMonthRounds: 0,
+    thisMonthVotes: 0,
   });
 
   const getStats = async () => {
@@ -79,6 +81,14 @@ export function StatsPage() {
           <h2>Opened connections in the last month:</h2>
           <p>
             {stats.derive(({ thisMonthUserCount }) => `${thisMonthUserCount}`)}
+          </p>
+          <h2>Rounds played in the last month:</h2>
+          <p>
+            {stats.derive(({ thisMonthRounds }) => `${thisMonthRounds}`)}
+          </p>
+          <h2>Votes placed in the last month:</h2>
+          <p>
+            {stats.derive(({ thisMonthVotes }) => `${thisMonthVotes}`)}
           </p>
         </div>
       </div>

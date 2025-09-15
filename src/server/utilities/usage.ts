@@ -66,21 +66,21 @@ export class Usage<Type extends string> {
       });
   }
 
-  logStart(type: Type) {
+  logStart(type: Type, value = 1) {
     this.mutex.acquireWrite()
       .then(() => {
         const ts = new Date().toISOString();
-        this.writeStream.write(`${ts}, ${type}, 1\n`);
+        this.writeStream.write(`${ts}, ${type}, ${value}\n`);
       }).finally(() => {
         this.mutex.releaseWrite();
       });
   }
 
-  logEnd(type: Type) {
+  logEnd(type: Type, value = -1) {
     this.mutex.acquireWrite()
       .then(() => {
         const ts = new Date().toISOString();
-        this.writeStream.write(`${ts}, ${type}, -1\n`);
+        this.writeStream.write(`${ts}, ${type}, ${value}\n`);
       }).finally(() => {
         this.mutex.releaseWrite();
       });

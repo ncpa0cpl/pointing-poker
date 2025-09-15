@@ -1,12 +1,13 @@
 import { StatusCodes } from "http-status-codes";
 import * as uuid from "uuid";
 import type { RoundUpdateOutgoingMessage } from "../../../shared/websockets-messages/room-websocket-outgoing-message-types";
+import { usage } from "../../usage-log";
 import { isNumber } from "../../utilities/is-number";
 import { PDependency } from "../../utilities/persistent-objects/persistent-property-dependency-decorator";
 import { PWatch } from "../../utilities/persistent-objects/persistent-property-watcher-decorator";
 import { RequestError } from "../../utilities/request-error";
 import type { RoundOption } from "./option/round-option";
-import type { RoundResult } from "./result/round-result";
+import type { RoundResult as RoundVote } from "./result/round-result";
 import { RoundSerializer } from "./serializer";
 
 export type FinalResults = Exclude<
@@ -28,7 +29,7 @@ export class Round {
   @PDependency()
   public options: ReadonlyArray<RoundOption> = [];
   @PDependency()
-  public results: ReadonlyArray<RoundResult> = [];
+  public votes: ReadonlyArray<RoundVote> = [];
   @PWatch()
   public isInProgress = true;
 
@@ -37,7 +38,7 @@ export class Round {
   public constructor(
     id?: string,
     options?: readonly RoundOption[],
-    results?: RoundResult[],
+    results?: RoundVote[],
     isInProgress?: boolean,
     finalResults?: FinalResults,
   ) {
@@ -48,7 +49,7 @@ export class Round {
     }
 
     if (results) {
-      this.results = results;
+      this.votes = results;
     }
 
     if (isInProgress != null) {
@@ -105,7 +106,7 @@ export class Round {
   }
 
   private calculateFinalResults(): FinalResults {
-    const votes = this.results.map((result) => Number(result.vote)).filter(
+    const votes = this.votes.map((result) => Number(result.vote)).filter(
       isNumber,
     );
 
@@ -125,20 +126,20 @@ export class Round {
     };
   }
 
-  private addResult(result: RoundResult): void {
-    const existingResultIdx = this.results?.findIndex(
+  private addResult(result: RoundVote): void {
+    const existingVoteIdx = this.votes?.findIndex(
       (r) => r.userID === result.userID,
     );
 
-    if (existingResultIdx != -1) {
-      this.results = this.results.map((r, idx) => {
-        if (idx === existingResultIdx) {
+    if (existingVoteIdx != -1) {
+      this.votes = this.votes.map((r, idx) => {
+        if (idx === existingVoteIdx) {
           return result;
         }
         return r;
       });
     } else {
-      this.results = [...this.results, result];
+      this.votes = [...this.votes, result];
     }
   }
 
@@ -146,7 +147,7 @@ export class Round {
     this.options = options;
   }
 
-  public addResultVote(result: RoundResult) {
+  public addVote(result: RoundVote) {
     this.addResult(result);
   }
 
@@ -164,12 +165,15 @@ export class Round {
   }
 
   public hasResults(): boolean {
-    return this.results.length > 0;
+    return this.votes.length > 0;
   }
 
   public finish(): void {
     this.isInProgress = false;
     this.finalResults = this.calculateFinalResults();
+
+    usage.logStart("ROUND_COMPLETED");
+    usage.logStart("VOTES_PLACED", this.votes.length);
   }
 
   public getFinishMessage(): string {
@@ -183,7 +187,7 @@ export class Round {
   public toView(): Omit<RoundUpdateOutgoingMessage, "type"> {
     return {
       options: this.options.map((option) => option.toView()),
-      results: this.results.map((result) => result.toView()) ?? [],
+      results: this.votes.map((result) => result.toView()) ?? [],
       isInProgress: this.isInProgress,
       hasResults: this.hasResults(),
       finalResult: this.finalResults ? { ...this.finalResults } : undefined,

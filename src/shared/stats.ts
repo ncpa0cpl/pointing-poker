@@ -5,4 +5,6 @@ export const StatsType = Type.Record({
   activeUsers: Type.Int,
   thisMonthRoomCount: Type.Int,
   thisMonthUserCount: Type.Int,
+  thisMonthRounds: Type.Int,
+  thisMonthVotes: Type.Int,
 });

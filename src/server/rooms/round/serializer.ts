@@ -22,7 +22,7 @@ export class RoundSerializer {
         RoundOption.serializer.serialize(option)
       ),
       results:
-        round.results?.map((result) => RoundResult.serializer.serialize(result))
+        round.votes?.map((result) => RoundResult.serializer.serialize(result))
           ?? [],
       finalResult: round.finalResults,
     };

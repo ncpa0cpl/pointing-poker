@@ -209,7 +209,7 @@ export class Room {
     const lastRound = this.getLastRound();
 
     if (lastRound.isInProgress) {
-      lastRound.addResultVote(
+      lastRound.addVote(
         result,
       );
 

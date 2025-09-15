@@ -8,10 +8,8 @@ import { Time } from "../../utilities/time";
 export function addStatsRoutes(server: HttpServer) {
   server.get("/api/stats", async (ctx) => {
     let usageLogs = await usage.getUsageLogs();
-    console.log({ usageLogs });
     const oneMonthAgo = new Date(Date.now() - Time.MONTH);
     usageLogs = usageLogs.filter(log => log.timestamp >= oneMonthAgo);
-    console.log({ usageLogs });
 
     const roomCreatedLogs = usageLogs.filter(log =>
       log.type === "ROOM_CREATED" && log.value === 1
@@ -19,14 +17,19 @@ export function addStatsRoutes(server: HttpServer) {
     const connOpenedLogs = usageLogs.filter(log =>
       log.type === "CONNECTION_OPENED" && log.value === 1
     );
-
-    console.log({ roomCreatedLogs, connOpenedLogs });
+    const roundsCompleted = usageLogs.filter(log =>
+      log.type === "ROUND_COMPLETED" && log.value === 1
+    );
+    const votesPlaced = usageLogs.filter(log => log.type === "VOTES_PLACED")
+      .reduce((sum, log) => log.value + sum, 0);
 
     const data: Infer<typeof StatsType> = {
       activeRooms: RoomService.roomCount(),
       activeUsers: RoomService.userCount(),
       thisMonthRoomCount: roomCreatedLogs.length,
       thisMonthUserCount: connOpenedLogs.length,
+      thisMonthRounds: roundsCompleted.length,
+      thisMonthVotes: votesPlaced,
     };
 
     return ctx
