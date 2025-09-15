@@ -1,5 +1,8 @@
 import { $component } from "@ncpa0cpl/vanilla-jsx";
-import type { ReadonlySignal } from "@ncpa0cpl/vanilla-jsx/dist/types/signals/signal";
+import {
+  type ReadonlySignal,
+  sig,
+} from "@ncpa0cpl/vanilla-jsx/dist/types/signals/signal";
 import { Box, Skeleton } from "adwavecss";
 import { PokerRoomService } from "../../services/poker-room-service/poker-room-service";
 import { UserService } from "../../services/user-service/user-service";
@@ -47,7 +50,7 @@ export const Room = $component<RoomProps>((props, api) => {
     }
   }, [props.roomID]);
 
-  const isSkeleton = PokerRoomService.connected.derive((c) => !c);
+  const isSkeleton = sig.not(PokerRoomService.connected);
 
   return (
     <PageLayout class="room-page">

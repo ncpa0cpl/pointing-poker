@@ -4,6 +4,7 @@ import { localStorageSignal } from "../../../../utilities/local-storage-signal";
 import { VotesDistribution } from "../distribution/distribution";
 import { Statistics } from "../statistics/statistics";
 import "./styles.css";
+import { sig } from "@ncpa0cpl/vanilla-jsx/signals";
 
 export enum ResultsTab {
   Statistics,
@@ -19,9 +20,7 @@ export const ResultTabs = () => {
         <button
           class={{
             [Button.button]: true,
-            [Button.toggled]: openedTab.derive(t =>
-              t === ResultsTab.Statistics
-            ),
+            [Button.toggled]: sig.eq(openedTab, ResultsTab.Statistics),
           }}
           onclick={() => {
             openedTab.dispatch(ResultsTab.Statistics);
@@ -32,9 +31,7 @@ export const ResultTabs = () => {
         <button
           class={{
             [Button.button]: true,
-            [Button.toggled]: openedTab.derive(t =>
-              t === ResultsTab.Distribution
-            ),
+            [Button.toggled]: sig.eq(openedTab, ResultsTab.Distribution),
           }}
           onclick={() => {
             openedTab.dispatch(ResultsTab.Distribution);

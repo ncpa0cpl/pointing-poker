@@ -1,3 +1,4 @@
+import { sig } from "@ncpa0cpl/vanilla-jsx/signals";
 import { PokerRoomService } from "../../../../services/poker-room-service/poker-room-service";
 import "./styles.css";
 
@@ -14,7 +15,7 @@ export const RoomIDDisplay = () => {
       <input
         class="input"
         disabled
-        value={PokerRoomService.roomID.derive((d) => d ?? "        ")}
+        value={sig.nuc(PokerRoomService.roomID, "        ")}
       />
       <button class="btn" onclick={copyRoomID}>
         Copy

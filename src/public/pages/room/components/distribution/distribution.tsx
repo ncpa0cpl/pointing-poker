@@ -29,7 +29,7 @@ export const VotesDistribution = () => {
                 label: option,
                 voteCount: votes.length,
                 height: `${Math.round(100 * votes.length / max)}%` as const,
-                users: Object.freeze(votes.map(v => v.publicUserID)),
+                users: votes.map(v => v.publicUserID),
               };
             });
           }

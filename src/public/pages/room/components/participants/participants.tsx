@@ -62,9 +62,7 @@ export const Participants = () => {
               "participant": true,
               "center-y": true,
               "disconnected": !participant.isActive,
-              "highlight": VoteHighlights.derive(h =>
-                h.includes(participant.publicID)
-              ),
+              "highlight": sig.includes(VoteHighlights, participant.publicID),
             }}
           >
             <p
