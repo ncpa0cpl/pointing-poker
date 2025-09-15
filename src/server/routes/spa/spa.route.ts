@@ -57,7 +57,6 @@ export function addSpaRoute(server: HttpServer) {
           pubDir,
           removeTrailing(wildcard, "/") + ".html",
         );
-        console.log("wildcard", fp);
         if (await Bun.file(fp).exists()) {
           filepath = fp;
         } else {
