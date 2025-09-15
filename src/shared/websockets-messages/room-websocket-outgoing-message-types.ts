@@ -1,5 +1,5 @@
-import type { GetDataType } from "dilswer";
-import { Omit, OptionalField, Type } from "dilswer";
+import type { Infer } from "dilswer";
+import { Omit, Type } from "dilswer";
 
 export enum OutgoingMessageType {
   /** A message notifiying about an error that occured while processing an incoming message. */
@@ -24,44 +24,44 @@ export enum OutgoingMessageType {
   MESSAGE_RECEIVED = "message:received",
 }
 
-export const DTParticipant = Type.RecordOf({
+export const DTParticipant = Type.Record({
   isActive: Type.Boolean,
   publicID: Type.String,
   username: Type.String,
 });
 
-export const DTDefaultOption = Type.RecordOf({
+export const DTDefaultOption = Type.Record({
   id: Type.String,
   name: Type.String,
 });
 
-export const DTChatMessage = Type.RecordOf({
+export const DTChatMessage = Type.Record({
   text: Type.String,
-  publicUserID: OptionalField(Type.String),
-  username: OptionalField(Type.String),
+  publicUserID: Type.Option(Type.String),
+  username: Type.Option(Type.String),
   sentAt: Type.String,
 });
 
-export const DTRoundUpdateOutgoingMessage = Type.RecordOf({
+export const DTRoundUpdateOutgoingMessage = Type.Record({
   type: Type.EnumMember(OutgoingMessageType.ROUND_UPDATE),
   id: Type.String,
   isInProgress: Type.Boolean,
   hasResults: Type.Boolean,
-  options: Type.ArrayOf(
-    Type.RecordOf({
+  options: Type.Array(
+    Type.Record({
       id: Type.String,
       name: Type.String,
     }),
   ),
-  results: Type.ArrayOf(
-    Type.RecordOf({
+  results: Type.Array(
+    Type.Record({
       publicUserID: Type.String,
       username: Type.String,
       vote: Type.String,
     }),
   ),
-  finalResult: OptionalField(
-    Type.RecordOf({
+  finalResult: Type.Option(
+    Type.Record({
       votes: Type.Number,
       mean: Type.String,
       mode: Type.String,
@@ -70,57 +70,57 @@ export const DTRoundUpdateOutgoingMessage = Type.RecordOf({
   ),
 });
 
-export const DTRoomChatUpdateOutgoingMessage = Type.RecordOf({
+export const DTRoomChatUpdateOutgoingMessage = Type.Record({
   type: Type.EnumMember(OutgoingMessageType.ROOM_CHAT_UPDATE),
-  chatMessages: Type.ArrayOf(DTChatMessage),
+  chatMessages: Type.Array(DTChatMessage),
 });
 
-export const DTRoomOwnerUpdateOutgoingMessage = Type.RecordOf({
+export const DTRoomOwnerUpdateOutgoingMessage = Type.Record({
   type: Type.EnumMember(OutgoingMessageType.OWNER_UPDATE),
   ownerPublicID: Type.String,
   ownerName: Type.String,
 });
 
-export const DTRoomUpdateOutgoingMessage = Type.RecordOf({
+export const DTRoomUpdateOutgoingMessage = Type.Record({
   type: Type.EnumMember(OutgoingMessageType.ROOM_UPDATE),
   ownerPublicID: Type.String,
   ownerName: Type.String,
   roomID: Type.String,
-  chatMessages: Type.ArrayOf(DTChatMessage),
-  rounds: Type.ArrayOf(Omit(DTRoundUpdateOutgoingMessage, "type")),
-  participants: Type.ArrayOf(DTParticipant),
-  defaultOptions: Type.ArrayOf(DTDefaultOption),
+  chatMessages: Type.Array(DTChatMessage),
+  rounds: Type.Array(Omit(DTRoundUpdateOutgoingMessage, "type")),
+  participants: Type.Array(DTParticipant),
+  defaultOptions: Type.Array(DTDefaultOption),
 });
 
-export const DTRoomConnectionOpenedOutgoingMessage = Type.RecordOf({
+export const DTRoomConnectionOpenedOutgoingMessage = Type.Record({
   type: Type.EnumMember(OutgoingMessageType.ROOM_CONNECTED),
   connectionID: Type.String,
   room: Omit(DTRoomUpdateOutgoingMessage, "type"),
   userPublicID: Type.String,
 });
 
-export const DTRoomParticipantsUpdateOutgoingMessage = Type.RecordOf({
+export const DTRoomParticipantsUpdateOutgoingMessage = Type.Record({
   type: Type.EnumMember(OutgoingMessageType.ROOM_PARTICIPANTS_UPDATE),
-  participants: Type.ArrayOf(DTParticipant),
+  participants: Type.Array(DTParticipant),
 });
 
-export const DTErrorMessage = Type.RecordOf({
+export const DTErrorMessage = Type.Record({
   type: Type.EnumMember(OutgoingMessageType.ERROR),
   code: Type.Number,
   message: Type.String,
   causedBy: Type.String,
 });
 
-export const DTPingMessage = Type.RecordOf({
+export const DTPingMessage = Type.Record({
   type: Type.EnumMember(OutgoingMessageType.PING),
 });
 
-export const DTMessageReceivedMessage = Type.RecordOf({
+export const DTMessageReceivedMessage = Type.Record({
   type: Type.EnumMember(OutgoingMessageType.MESSAGE_RECEIVED),
   messageID: Type.String,
 });
 
-export const DTRoomClosedOutgoingMessage = Type.RecordOf({
+export const DTRoomClosedOutgoingMessage = Type.Record({
   type: Type.EnumMember(OutgoingMessageType.ROOM_CLOSED),
   roomID: Type.String,
 });
@@ -140,38 +140,38 @@ export const DTRoomWSOutgoingMessage = Type.OneOf(
 
 // TS types
 
-export type DefaultOption = GetDataType<typeof DTDefaultOption>;
+export type DefaultOption = Infer<typeof DTDefaultOption>;
 
-export type ChatMessageView = GetDataType<typeof DTChatMessage>;
+export type ChatMessageView = Infer<typeof DTChatMessage>;
 
-export type RoomConnectionInitiatedOutgoingMessage = GetDataType<
+export type RoomConnectionInitiatedOutgoingMessage = Infer<
   typeof DTRoomConnectionOpenedOutgoingMessage
 >;
 
-export type RoomOwnerUpdateOutgoingMessage = GetDataType<
+export type RoomOwnerUpdateOutgoingMessage = Infer<
   typeof DTRoomOwnerUpdateOutgoingMessage
 >;
 
-export type RoundUpdateOutgoingMessage = GetDataType<
+export type RoundUpdateOutgoingMessage = Infer<
   typeof DTRoundUpdateOutgoingMessage
 >;
 
-export type RoomChatUpdateOutgoingMessage = GetDataType<
+export type RoomChatUpdateOutgoingMessage = Infer<
   typeof DTRoomChatUpdateOutgoingMessage
 >;
 
-export type RoomUpdateOutgoingMessage = GetDataType<
+export type RoomUpdateOutgoingMessage = Infer<
   typeof DTRoomUpdateOutgoingMessage
 >;
 
-export type RoomParticipantsUpdateOutgoingMessage = GetDataType<
+export type RoomParticipantsUpdateOutgoingMessage = Infer<
   typeof DTRoomParticipantsUpdateOutgoingMessage
 >;
 
-export type ErrorMessage = GetDataType<typeof DTErrorMessage>;
+export type ErrorMessage = Infer<typeof DTErrorMessage>;
 
-export type RoomWSOutgoingMessage = GetDataType<typeof DTRoomWSOutgoingMessage>;
+export type RoomWSOutgoingMessage = Infer<typeof DTRoomWSOutgoingMessage>;
 
-export type MessageReceivedOutgoingMessage = GetDataType<
+export type MessageReceivedOutgoingMessage = Infer<
   typeof DTMessageReceivedMessage
 >;

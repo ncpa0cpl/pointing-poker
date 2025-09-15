@@ -1,4 +1,4 @@
-import { router } from "@ncpa0cpl/vrouter";
+import { vrouter } from "@ncpa0cpl/vrouter";
 import { UserService } from "../services/user-service/user-service";
 import { AboutPage } from "./about/about";
 import { ErrorPage } from "./error/error";
@@ -9,7 +9,7 @@ import { RoomClosed } from "./room-closed/room-closed";
 import { RoomNotFound } from "./room-not-found/room-not-found";
 import { Room } from "./room/room";
 
-export const Router = router({
+export const Router = vrouter({
   paramNames: [],
   component(ctx) {
     return <div class="box grow center-h">{ctx.out()}</div>;
@@ -41,7 +41,7 @@ export const Router = router({
               roomID: params.get().roomID,
             });
           }
-          return <Room roomID={params.derive((p) => p.roomID)} />;
+          return <Room roomID={params.derive((p) => p.roomID!)} />;
         },
       }),
       about: define({

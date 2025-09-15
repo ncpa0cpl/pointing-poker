@@ -2,6 +2,7 @@ import type { Server } from "bun";
 import { CompiledPath } from "../compiled-path";
 import { Context } from "../context";
 import type { Route } from "../router";
+import { routerRequest } from "../router-request";
 import { RouterResponse } from "../router-response";
 
 export type RouteHandler = (ctx: Context) => Context | Promise<Context>;
@@ -43,7 +44,7 @@ export class CustomRoute implements Route {
     }
 
     const ctx = new Context(
-      request,
+      routerRequest(bunServer, request),
       bunServer,
       url,
       parsedUrl.params,

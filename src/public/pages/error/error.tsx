@@ -5,7 +5,7 @@ import { PageLayout } from "../../components/page-layout/page-layout";
 import { Router } from "../routes";
 
 export const ErrorPage = (
-  props: { params: ReadonlySignal<Record<"message", string>> },
+  props: { params: ReadonlySignal<{ message?: string }> },
 ) => {
   const handleGoHome = () => {
     Router.nav.join.$open();

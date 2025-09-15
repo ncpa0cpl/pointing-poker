@@ -1,6 +1,6 @@
-import { DataType } from "dilswer";
+import { Type } from "dilswer";
 
-export const DTCreateRoomRequestData = DataType.RecordOf({
-  userID: DataType.String,
-  username: DataType.String,
+export const DTCreateRoomRequestData = Type.Record({
+  userID: Type.String,
+  username: Type.String,
 });

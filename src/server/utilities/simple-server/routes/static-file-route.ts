@@ -3,6 +3,7 @@ import path from "node:path";
 import { CompiledPath } from "../compiled-path";
 import { Context } from "../context";
 import type { Route } from "../router";
+import { routerRequest } from "../router-request";
 import { RouterResponse } from "../router-response";
 
 export class StaticFileRoute implements Route {
@@ -55,7 +56,13 @@ export class StaticFileRoute implements Route {
     const filePath = path.resolve(this.dirPath, subpath);
     const file = Bun.file(filePath);
 
-    let ctx = new Context(request, bunServer, url, {}, result.wildcardValue);
+    let ctx = new Context(
+      routerRequest(bunServer, request),
+      bunServer,
+      url,
+      {},
+      result.wildcardValue,
+    );
     ctx.sendFile(200, file);
     ctx.logValue("file_location", filePath);
     ctx = this.beforeSend(ctx);

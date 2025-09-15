@@ -1,9 +1,9 @@
-import type { AllDataTypes, GetDataType } from "dilswer";
-import { compileFastValidator, ensureDataType } from "dilswer";
+import type { AnyType, Infer } from "dilswer";
+import { assertType, compileFastValidator } from "dilswer";
 
-export const createWsMsgParser = <D extends AllDataTypes>(
+export const createWsMsgParser = <D extends AnyType>(
   type: D,
-): (message: string | Uint8Array) => GetDataType<D> => {
+): (message: string | Uint8Array) => Infer<D> => {
   const isValid = compileFastValidator(type);
 
   return (msg) => {
@@ -14,7 +14,7 @@ export const createWsMsgParser = <D extends AllDataTypes>(
     if (isValid(data)) {
       return data;
     } else {
-      ensureDataType(type, data); // should throw a more detailed error
+      assertType(type, data); // should throw a more detailed error
       throw new Error("Invalid message");
     }
   };

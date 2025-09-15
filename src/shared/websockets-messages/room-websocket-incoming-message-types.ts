@@ -1,5 +1,5 @@
-import type { GetDataType } from "dilswer";
-import { OptionalField, Type } from "dilswer";
+import type { Infer } from "dilswer";
+import { Type } from "dilswer";
 
 export enum IncomingMessageType {
   /** A message sent to the client to check if the connection is still alive. */
@@ -24,14 +24,14 @@ export enum IncomingMessageType {
   CREATE_NEW_ROUND = "round:create",
 }
 
-export const DTRoomCreateNewRoundOutgoingMessage = Type.RecordOf({
+export const DTRoomCreateNewRoundOutgoingMessage = Type.Record({
   type: Type.EnumMember(IncomingMessageType.CREATE_NEW_ROUND),
   messageID: Type.String,
   roomID: Type.String,
   userID: Type.String,
 });
 
-export const DTRoomOpenConnectionIncomingMessage = Type.RecordOf({
+export const DTRoomOpenConnectionIncomingMessage = Type.Record({
   type: Type.EnumMember(IncomingMessageType.ROOM_CONNECT),
   messageID: Type.String,
   roomID: Type.String,
@@ -40,15 +40,15 @@ export const DTRoomOpenConnectionIncomingMessage = Type.RecordOf({
   username: Type.String,
 });
 
-export const DTSetRoomDefaultOptionsIncomingMessage = Type.RecordOf({
+export const DTSetRoomDefaultOptionsIncomingMessage = Type.Record({
   type: Type.EnumMember(IncomingMessageType.SET_DEFAULT_OPTIONS),
   messageID: Type.String,
   roomID: Type.String,
   userID: Type.String,
-  options: Type.ArrayOf(Type.String),
+  options: Type.Array(Type.String),
 });
 
-export const DTAddRoundVoteIncomingMessage = Type.RecordOf({
+export const DTAddRoundVoteIncomingMessage = Type.Record({
   type: Type.EnumMember(IncomingMessageType.ADD_ROUND_VOTE),
   messageID: Type.String,
   userID: Type.String,
@@ -57,7 +57,7 @@ export const DTAddRoundVoteIncomingMessage = Type.RecordOf({
   optionRef: Type.String,
 });
 
-export const DTPostMessageIncomingMessage = Type.RecordOf({
+export const DTPostMessageIncomingMessage = Type.Record({
   type: Type.EnumMember(IncomingMessageType.POST_MESSAGE),
   messageID: Type.String,
   roomID: Type.String,
@@ -65,14 +65,14 @@ export const DTPostMessageIncomingMessage = Type.RecordOf({
   text: Type.String,
 });
 
-export const DTCancelLastRoundIncomingMessage = Type.RecordOf({
+export const DTCancelLastRoundIncomingMessage = Type.Record({
   type: Type.EnumMember(IncomingMessageType.CANCEL_LAST_ROUND),
   messageID: Type.String,
   roomID: Type.String,
   userID: Type.String,
 });
 
-export const DTChangeRoomOwnerIncomingMessage = Type.RecordOf({
+export const DTChangeRoomOwnerIncomingMessage = Type.Record({
   type: Type.EnumMember(IncomingMessageType.CHANGE_OWNER),
   messageID: Type.String,
   roomID: Type.String,
@@ -80,23 +80,23 @@ export const DTChangeRoomOwnerIncomingMessage = Type.RecordOf({
   newOwnerID: Type.String,
 });
 
-export const DTFinishLastRoundIncomingMessage = Type.RecordOf({
+export const DTFinishLastRoundIncomingMessage = Type.Record({
   type: Type.EnumMember(IncomingMessageType.FINISH_LAST_ROUND),
   messageID: Type.String,
   roomID: Type.String,
   userID: Type.String,
 });
 
-export const DTCloseRoomConnectionIncomingMessage = Type.RecordOf({
+export const DTCloseRoomConnectionIncomingMessage = Type.Record({
   type: Type.EnumMember(IncomingMessageType.ROOM_DISCONNECT),
   messageID: Type.String,
   roomID: Type.String,
   userID: Type.String,
 });
 
-export const DTPongIncomingMessage = Type.RecordOf({
+export const DTPongIncomingMessage = Type.Record({
   type: Type.EnumMember(IncomingMessageType.PONG),
-  messageID: OptionalField(Type.Undefined),
+  messageID: Type.Option(Type.Undefined),
 });
 
 export const DTRoomWSIncomingMessage = Type.OneOf(
@@ -114,40 +114,40 @@ export const DTRoomWSIncomingMessage = Type.OneOf(
 
 // TS types
 
-export type RoomCreateNewRoundOutgoingMessage = GetDataType<
+export type RoomCreateNewRoundOutgoingMessage = Infer<
   typeof DTRoomCreateNewRoundOutgoingMessage
 >;
 
-export type RoomOpenConnectionIncomingMessage = GetDataType<
+export type RoomOpenConnectionIncomingMessage = Infer<
   typeof DTRoomOpenConnectionIncomingMessage
 >;
 
-export type SetRoomDefaultOptionsIncomingMessage = GetDataType<
+export type SetRoomDefaultOptionsIncomingMessage = Infer<
   typeof DTSetRoomDefaultOptionsIncomingMessage
 >;
 
-export type AddRoundVoteIncomingMessage = GetDataType<
+export type AddRoundVoteIncomingMessage = Infer<
   typeof DTAddRoundVoteIncomingMessage
 >;
 
-export type PostMessageIncomingMessage = GetDataType<
+export type PostMessageIncomingMessage = Infer<
   typeof DTPostMessageIncomingMessage
 >;
 
-export type CancelLastRoundIncomingMessage = GetDataType<
+export type CancelLastRoundIncomingMessage = Infer<
   typeof DTCancelLastRoundIncomingMessage
 >;
 
-export type ChangeRoomOwnerIncomingMessage = GetDataType<
+export type ChangeRoomOwnerIncomingMessage = Infer<
   typeof DTChangeRoomOwnerIncomingMessage
 >;
 
-export type FinishLastRoundIncomingMessage = GetDataType<
+export type FinishLastRoundIncomingMessage = Infer<
   typeof DTFinishLastRoundIncomingMessage
 >;
 
-export type CloseRoomConnectionIncomingMessage = GetDataType<
+export type CloseRoomConnectionIncomingMessage = Infer<
   typeof DTCloseRoomConnectionIncomingMessage
 >;
 
-export type RoomWSIncomingMessage = GetDataType<typeof DTRoomWSIncomingMessage>;
+export type RoomWSIncomingMessage = Infer<typeof DTRoomWSIncomingMessage>;

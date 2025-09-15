@@ -1,10 +1,9 @@
 import { ReadonlySignal } from "@ncpa0cpl/vanilla-jsx/signals";
+import { RouteNavigator } from "@ncpa0cpl/vrouter";
 import { isLmb } from "../../utilities/is-lmb";
 
-type Navigator = { $open(): Promise<void>; $url(): string };
-
 export type LinkProps = Omit<JSX.IntrinsicElements["a"], "href"> & {
-  to: Navigator | ReadonlySignal<Navigator>;
+  to: RouteNavigator<any> | ReadonlySignal<RouteNavigator<any>>;
 };
 
 export function Link({ children, to, ...rest }: LinkProps) {

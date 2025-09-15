@@ -1,6 +1,5 @@
 import fs from "fs/promises";
 import path from "path";
-import { logger } from "../../../app-logger";
 import { ROOT_DIR } from "../../../root-dir";
 import { Storage } from "./storage";
 

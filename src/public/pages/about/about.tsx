@@ -1,6 +1,5 @@
 import { Button, Card, Typography } from "adwavecss";
 import "./styles.css";
-import { Route } from "@ncpa0cpl/vrouter/dist/types/route";
 import CommandsImg from "../../assets/images/commands.webp";
 import DistributionImg from "../../assets/images/distribution.webp";
 import RoundListImg from "../../assets/images/round-list.webp";
