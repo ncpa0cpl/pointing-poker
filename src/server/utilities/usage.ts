@@ -1,6 +1,6 @@
 import { RWMutex } from "@ncpa0cpl/mutex.js";
 import fs from "fs";
-import { Time, unix } from "./time";
+import { Time } from "./time";
 
 export class Usage<Type extends string> {
   private mutex = new RWMutex();
@@ -55,7 +55,9 @@ export class Usage<Type extends string> {
         });
 
         const content = lines
-          .map(line => `${unix(line.timestamp)}, ${line.type}, ${line.value}\n`)
+          .map(line =>
+            `${Time.iso(line.timestamp)}, ${line.type}, ${line.value}\n`
+          )
           .join("");
 
         await fs.promises.writeFile(this.file, content, "utf8");

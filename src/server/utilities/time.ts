@@ -4,8 +4,12 @@ export class Time {
   static HOUR = 60 * Time.MINUTE;
   static DAY = 24 * Time.HOUR;
   static MONTH = 30 * Time.DAY;
-}
 
-export function unix(date: Date) {
-  return Math.floor(date.getTime() / 1000);
+  static unix(date: Date) {
+    return Math.floor(date.getTime() / 1000);
+  }
+
+  static iso(date: Date) {
+    return date.toISOString();
+  }
 }
