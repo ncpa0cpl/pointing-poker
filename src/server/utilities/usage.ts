@@ -15,7 +15,9 @@ export class Usage<Type extends string> {
       this.vacuum();
     }, 12 * Time.HOUR);
 
-    // this.vacuum();
+    setTimeout(() => {
+      this.vacuum();
+    }, Time.MINUTE);
   }
 
   private createWriteStream() {
