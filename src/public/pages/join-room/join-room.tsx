@@ -44,9 +44,20 @@ export const JoinRoom = () => {
         <RepoLink />
         <KofiLink />
       </div>
-      <Link class="privacy-link blue-link" to={Router.nav.privacy}>
-        Privacy
-      </Link>
+      <div class="botleft-btns">
+        <Link class="privacy-link blue-link" to={Router.nav.privacy}>
+          Privacy
+        </Link>
+        <a
+          class="feedback-link blue-link"
+          href="https://github.com/ncpa0cpl/pointing-poker/discussions/new?category=feedback"
+          target="_blank"
+          rel="noopener noreferrer"
+          title="Leave your feedback about this app, ask for new features or report issues and bugs."
+        >
+          Feedback
+        </a>
+      </div>
     </PageLayout>
   );
 };

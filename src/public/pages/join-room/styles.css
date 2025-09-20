@@ -22,8 +22,12 @@
         }
     }
 
-    & .privacy-link {
+    & .botleft-btns {
         margin: 0 1em;
+
+        & .blue-link {
+            margin-right: 1.2em;
+        }
     }
 }
 
