@@ -21,7 +21,7 @@ const isGzipAcceptable = (req: Request): boolean => {
 };
 
 const isAboveMinSizeForGzip = (resp: RouterResponse): boolean => {
-  return resp.getBuffer().byteLength >= 512;
+  return resp.getBuffer().byteLength >= 256;
 };
 
 const isTextContent = (resp: RouterResponse): boolean => {

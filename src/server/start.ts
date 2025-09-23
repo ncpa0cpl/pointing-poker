@@ -29,6 +29,9 @@ const forceTls = process.env.FORCE_TLS === "true";
 const isDev = process.env.NODE_ENV === "development";
 const tlsCertLocation = process.env.TLS_CERT;
 const tlsKeyLocation = process.env.TLS_KEY;
+const clientRequestThreshold = Number(process.env.REQ_THRESHOLD ?? 100);
+const maxOverallRequests = Number(process.env.REQ_LIMIT ?? 20_000);
+const timeFrame = Number(process.env.LIMIT_TIMEFRAME ?? 60_000);
 
 const tlsCert = tlsCertLocation ? Bun.file(tlsCertLocation) : undefined;
 const tlsKey = tlsKeyLocation ? Bun.file(tlsKeyLocation) : undefined;
@@ -39,11 +42,14 @@ const hostnamesList = isDev
 
 logger.info(
   `ENV:
-  HOSTNAMES=${hostnamesList}
+  HOSTNAMES=[${hostnamesList.join(", ")}]
   PORT=${port}
   FORCE_TLS=${forceTls}
   TLS_CERT=${tlsCertLocation}
   TLS_KEY=${tlsKeyLocation}
+  REQ_THRESHOLD=${clientRequestThreshold}
+  REQ_LIMIT=${maxOverallRequests}
+  LIMIT_TIMEFRAME=${timeFrame}
 `,
 );
 
@@ -55,7 +61,11 @@ deserializeClassInstancesFromPersistentStorage(Room).catch((e) => {
 });
 
 const app = new HttpServer();
-app.onRequest(LimiterMiddleware());
+app.onRequest(LimiterMiddleware({
+  clientRequestThreshold,
+  maxOverallRequests,
+  timeFrame,
+}));
 app.onRequest(LogRequestMiddleware());
 app.onResponse(CacheMiddleware());
 app.onResponse(GzipMiddleware());
