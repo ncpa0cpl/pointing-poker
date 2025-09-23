@@ -1,12 +1,9 @@
 import dedent from "dedent";
 import path from "path";
+import { logger } from "../../app-logger";
 import type { HttpServer } from "../../utilities/simple-server/http-server";
 import { PUBLIC_DIR } from "./public-files.route";
 const xml = dedent;
-
-const INDEX_URL = `https://${process.env.HOSTNAME}/`;
-const ABOUT_URL = `https://${process.env.HOSTNAME}/about`;
-const PRIVACY_URL = `https://${process.env.HOSTNAME}/privacy`;
 
 function fmtTs(ts: number) {
   const date = new Date(ts);
@@ -16,34 +13,37 @@ function fmtTs(ts: number) {
 }
 
 const getSitemap = (
+  url: string,
   lastMod: {
     index: string;
     about: string;
     privacy: string;
   },
-) =>
-  xml`
+) => {
+  return xml`
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>${INDEX_URL.toString()}</loc>
+    <loc>${url}</loc>
     <lastmod>${lastMod.index}</lastmod>
   </url>
   <url>
-    <loc>${ABOUT_URL.toString()}</loc>
+    <loc>${url}/about</loc>
     <lastmod>${lastMod.about}</lastmod>
   </url>
   <url>
-    <loc>${PRIVACY_URL.toString()}</loc>
+    <loc>${url}/privacy</loc>
     <lastmod>${lastMod.privacy}</lastmod>
   </url>
 </urlset>
   `;
+};
 
 export function addSitemapRoute(server: HttpServer) {
   server.get("/sitemap.xml", async (ctx) => {
-    if (!process.env.HOSTNAME) {
-      return ctx.sendText(500, "HOSTNAME not known");
+    if (!process.env.SITEMAP_URL) {
+      logger.error("SITEMAP_URL env var not set");
+      return ctx.sendText(500, "URL not known");
     }
 
     const indexFile = Bun.file(path.join(PUBLIC_DIR, "index.html"));
@@ -55,6 +55,7 @@ export function addSitemapRoute(server: HttpServer) {
       about: fmtTs(aboutFile.lastModified),
       privacy: fmtTs(privacyFile.lastModified),
     };
-    return ctx.sendXml(200, getSitemap(lastMod));
+
+    return ctx.sendXml(200, getSitemap(process.env.SITEMAP_URL, lastMod));
   });
 }
