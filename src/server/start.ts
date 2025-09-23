@@ -24,7 +24,7 @@ declare module "luxon" {
 }
 
 const port = Number(process.env.PORT) || 8080;
-const hostname = process.env.HOSTNAME;
+const hostnames = process.env.HOSTNAMES;
 const forceTls = process.env.FORCE_TLS === "true";
 const isDev = process.env.NODE_ENV === "development";
 const tlsCertLocation = process.env.TLS_CERT;
@@ -32,6 +32,20 @@ const tlsKeyLocation = process.env.TLS_KEY;
 
 const tlsCert = tlsCertLocation ? Bun.file(tlsCertLocation) : undefined;
 const tlsKey = tlsKeyLocation ? Bun.file(tlsKeyLocation) : undefined;
+
+const hostnamesList = isDev
+  ? ["http://localhost:8080"]
+  : (hostnames ? hostnames.split(",").map(h => h.trim()) : []);
+
+logger.info(
+  `ENV:
+  HOSTNAMES=${hostnamesList}
+  PORT=${port}
+  FORCE_TLS=${forceTls}
+  TLS_CERT=${tlsCertLocation}
+  TLS_KEY=${tlsKeyLocation}
+`,
+);
 
 deserializeClassInstancesFromPersistentStorage(Room).catch((e) => {
   logger.error({
@@ -50,9 +64,7 @@ app.onResponse(LogResponseMiddleware());
 addRoutes(app);
 
 app.listen(port, {
-  allowedOrigins: isDev
-    ? ["http://localhost:8080"]
-    : (hostname ? [hostname] : []),
+  allowedOrigins: hostnamesList,
   allowedHeaders: "*",
   forceHttps: isDev ? false : forceTls,
   maxBodySize: 512 * 1024,
