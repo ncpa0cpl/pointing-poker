@@ -7,9 +7,7 @@ const xml = dedent;
 
 function fmtTs(ts: number) {
   const date = new Date(ts);
-  return `${date.getUTCFullYear()}-${
-    date.getUTCMonth() + 1
-  }-${date.getUTCDate()}`;
+  return date.toISOString();
 }
 
 const getSitemap = (
@@ -26,14 +24,17 @@ const getSitemap = (
   <url>
     <loc>${url}</loc>
     <lastmod>${lastMod.index}</lastmod>
+    <priority>1.00</priority>
   </url>
   <url>
     <loc>${url}/about</loc>
     <lastmod>${lastMod.about}</lastmod>
+    <priority>0.80</priority>
   </url>
   <url>
     <loc>${url}/privacy</loc>
     <lastmod>${lastMod.privacy}</lastmod>
+    <priority>0.80</priority>
   </url>
 </urlset>
   `;
