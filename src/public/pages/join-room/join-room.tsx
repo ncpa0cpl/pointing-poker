@@ -23,6 +23,26 @@ export const JoinRoom = () => {
   return (
     <PageLayout class="join-room-page">
       <div class={[Card.card]}>
+        {new Date() <= new Date("2025-10-22T00:00:00") && (
+          <div
+            class={[Alert.alert, Alert.warning]}
+            style={{ marginBottom: "1em" }}
+          >
+            <p>
+              Domain name change: our domain has been changed to
+              <a
+                class="blue-link"
+                href="https://pointingpoker.work"
+                style={{ color: "#0149cf" }}
+              >
+                {" pointingpoker.work "}
+              </a>
+              and the old domain <br />{" "}
+              will stop working within a few weeks. We recommend to update your
+              bookmarks.
+            </p>
+          </div>
+        )}
         {PokerRoomService.socketOpened.derive(open => {
           if (!open) {
             return (

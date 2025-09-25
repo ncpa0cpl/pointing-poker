@@ -18,6 +18,7 @@
     & .chat-message {
         margin-top: .25em;
         display: flex;
+        align-items: center;
 
         & p {
             height: fit-content;
@@ -29,7 +30,8 @@
         opacity: 0.8;
         text-wrap: nowrap;
         line-height: 1.5em;
-        margin-right: 0.2em;
+        margin-right: 0.6em;
+        margin-top: .2em;
     }
 
     & .username {
@@ -44,6 +46,7 @@
         & p {
             display: inline-block;
             min-width: auto;
+            line-height: 1.3em;
         }
 
         & pre {
