@@ -2,6 +2,12 @@ import { RWMutex } from "@ncpa0cpl/mutex.js";
 import fs from "fs";
 import { Time } from "./time";
 
+export type LogLine<Type extends string> = {
+  timestamp: Date;
+  type: Type;
+  value: number;
+};
+
 export class Usage<Type extends string> {
   private mutex = new RWMutex();
   private writeStream;
@@ -31,7 +37,7 @@ export class Usage<Type extends string> {
     );
   }
 
-  private async readAllLines() {
+  private async readAllLines(): Promise<LogLine<Type>[]> {
     const content = await fs.promises.readFile(this.file, "utf-8");
     return content.split("\n").flatMap(line => {
       let [ts, type, val] = line.split(", ");
@@ -90,7 +96,7 @@ export class Usage<Type extends string> {
       });
   }
 
-  async getUsageLogs() {
+  async getUsageLogs(): Promise<LogLine<Type>[]> {
     return this.mutex.acquireRead()
       .then(async () => {
         return this.readAllLines();

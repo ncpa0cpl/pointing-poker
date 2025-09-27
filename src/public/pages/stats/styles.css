@@ -20,10 +20,112 @@
             & h2 {
                 margin-bottom: .3em;
                 margin-right: .6em;
+
+                &.selected {
+                    color: var(--clr-primary-700);
+                }
+
+                &.interactable:hover {
+                    text-decoration: underline;
+                    color: var(--clr-primary-500);
+                    cursor: pointer;
+                }
             }
 
             & p {
                 margin-bottom: .6em;
+            }
+        }
+
+        & .stat-graph {
+            border-bottom: 1px solid var(--clr-focus);
+            border-left: 1px solid var(--clr-focus);
+            height: 16em;
+            margin: 1em;
+            margin-top: 2em;
+            margin-left: 2em;
+            padding: .5em;
+            width: max(40vw, 80%);
+
+            & .grap-content {
+                position: relative;
+                width: 100%;
+                height: 100%;
+            }
+
+            & .line-chart {
+                list-style: none;
+                margin: 0;
+                padding: 0;
+            }
+
+            & .data-point {
+                background-color: var(--clr-btn);
+                border: 2px solid var(--clr-primary-100);
+                border-radius: 50%;
+                height: .6em;
+                position: absolute;
+                width: .6em;
+                left: var(--left);
+                bottom: calc(var(--bottom) + .15em);
+                z-index: 4;
+
+                & span {
+                    position: absolute;
+                    bottom: .9em;
+                    color: var(--clr-text-secondary);
+                }
+            }
+
+            & .x-scale-value {
+                position: absolute;
+
+                & .dash {
+                    width: .5em;
+                    margin-top: .55em;
+                    margin-left: .2em;
+                    border-top: 1px solid var(--clr-focus);
+                }
+            }
+
+            & .y-scale-value {
+                position: absolute;
+                display: flex;
+                flex-direction: column;
+                width: 2.6em;
+                align-items: center;
+
+                & .dash {
+                    height: .5em;
+                    margin-top: .2em;
+                    margin-right: auto;
+                    margin-left: auto;
+                    border-right: 1px solid var(--clr-focus);
+                }
+
+                & .date {
+                    font-size: .7em;
+                }
+            }
+
+            & .graph-line-box {
+                position: absolute;
+                container-type: size;
+
+                & .diagonal-box {
+                    height: 100%;
+                    width: 100%;
+                    min-height: 2px;
+                }
+
+                & .graph-line {
+                    position: absolute;
+                    width: hypot(100cqw, 100cqh);
+                    height: 2px;
+                    background-color: var(--clr-primary-100);
+                    opacity: 0.5;
+                    transform-origin: bottom left;
+                }
             }
         }
     }
