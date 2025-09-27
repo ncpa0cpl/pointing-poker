@@ -172,6 +172,7 @@ function Graph(
           const oneMonth = 2.628e+9;
           const oneDay = 8.64e+7;
           const today = new Date();
+          today.setHours(0, 0, 1);
           let date = new Date(Date.now() - oneMonth);
 
           while (today >= date) {
