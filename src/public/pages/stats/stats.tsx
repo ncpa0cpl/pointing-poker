@@ -262,8 +262,8 @@ function Graph(
           // draw a legend on the left of the graph
           for (let i = 0; i <= max; i++) {
             if (max > 8) {
-              let breakpoint = Math.ceil(max / 8);
-              breakpoint = breakpoint - (breakpoint % 5);
+              let breakpoint = Math.round(max / 10);
+              breakpoint = Math.max(1, breakpoint - (breakpoint % 5));
 
               if (i % breakpoint != 0) {
                 continue;
