@@ -1,6 +1,6 @@
 # Pointing Poker Web App
 
-Check it out here: [pointingpoker.site](https://pointingpoker.work)
+Check it out here: [pointingpoker.work](https://pointingpoker.work)
 
 ## Setup
 
