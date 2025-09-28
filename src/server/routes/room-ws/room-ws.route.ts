@@ -38,59 +38,6 @@ const parseMessage = createWsMsgParser(
   DTRoomWSIncomingMessage,
 );
 
-class PingPong {
-  private timeout: Timer | null = null;
-  private pingThrottle: Timer | null = null;
-  private stopped = false;
-
-  public constructor(private readonly ws: ServerWebSocket<unknown>) {}
-
-  public ping() {
-    if (this.stopped) {
-      return;
-    }
-
-    // send ping after 60 seconds
-    this.pingThrottle = setTimeout(() => {
-      this.pingThrottle = null;
-
-      // wait for 10 seconds for the pong message
-      this.timeout = setTimeout(() => {
-        this.ws.close();
-      }, 10 * 1000);
-
-      this.ws.send(JSON.stringify({ type: OutgoingMessageType.PING }));
-    }, 60 * 1000);
-  }
-
-  public pong() {
-    if (this.stopped) {
-      return;
-    }
-
-    if (this.timeout) {
-      clearTimeout(this.timeout);
-      this.timeout = null;
-    }
-
-    this.ping();
-  }
-
-  public stop() {
-    this.stopped = true;
-
-    if (this.timeout) {
-      clearTimeout(this.timeout);
-      this.timeout = null;
-    }
-
-    if (this.pingThrottle) {
-      clearTimeout(this.pingThrottle);
-      this.pingThrottle = null;
-    }
-  }
-}
-
 class RoomWsHandler {
   private static connectionCount = 0;
 
@@ -103,15 +50,14 @@ class RoomWsHandler {
 
   public static open(ws: ServerWebSocket<unknown>) {
     RoomWsHandler.connectionCount++;
-    return new RoomWsHandler(new PingPong(ws));
+    return new RoomWsHandler();
   }
 
   private intervalTimer;
   private onclosecb: (() => void) | undefined = undefined;
   private readonly msgsReceived = new Map<string, number>();
 
-  public constructor(private pingPong: PingPong) {
-    this.pingPong.ping();
+  public constructor() {
     this.intervalTimer = setInterval(() => {
       const now = Date.now();
       for (const [key, receivedAt] of [...this.msgsReceived.entries()]) {
@@ -125,7 +71,6 @@ class RoomWsHandler {
 
   public close(ws: ServerWebSocket<unknown>) {
     RoomWsHandler.connectionCount--;
-    this.pingPong!.stop();
     this.onclosecb?.();
     clearInterval(this.intervalTimer);
     usage.logEnd("CONNECTION_OPENED");
@@ -172,9 +117,6 @@ class RoomWsHandler {
           break;
         case IncomingMessageType.ROOM_DISCONNECT:
           this.handleCloseRoomConnection(ws, data);
-          break;
-        case IncomingMessageType.PONG:
-          this.pingPong!.pong();
           break;
       }
     } catch (e) {

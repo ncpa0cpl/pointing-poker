@@ -305,12 +305,6 @@ export class PokerRoomService {
       this.reconcileChatMessages(data.chatMessages);
     });
 
-    this.#connection.on(OutgoingMessageType.PING, () => {
-      this.#connection.sendSimple({
-        type: IncomingMessageType.PONG,
-      });
-    });
-
     this.#connection.on(OutgoingMessageType.ROOM_CLOSED, () => {
       this.onRoomClosed?.();
       this.disconnectFromRoom();

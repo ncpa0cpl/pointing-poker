@@ -4,8 +4,6 @@ import { Omit, Type } from "dilswer";
 export enum OutgoingMessageType {
   /** A message notifiying about an error that occured while processing an incoming message. */
   ERROR = "connection:error",
-  /** A message sent to the client to check if the connection is still alive. */
-  PING = "connection:ping",
   /** A message sent back to the client when the client has successfully joined the room requested. */
   ROOM_CONNECTED = "room:connected",
   /** A message sent back to the client when the Room owner has changed. */
@@ -111,10 +109,6 @@ export const DTErrorMessage = Type.Record({
   causedBy: Type.String,
 });
 
-export const DTPingMessage = Type.Record({
-  type: Type.EnumMember(OutgoingMessageType.PING),
-});
-
 export const DTMessageReceivedMessage = Type.Record({
   type: Type.EnumMember(OutgoingMessageType.MESSAGE_RECEIVED),
   messageID: Type.String,
@@ -134,7 +128,6 @@ export const DTRoomWSOutgoingMessage = Type.OneOf(
   DTRoomUpdateOutgoingMessage,
   DTRoomParticipantsUpdateOutgoingMessage,
   DTErrorMessage,
-  DTPingMessage,
   DTMessageReceivedMessage,
 );
 

@@ -2,8 +2,6 @@ import type { Infer } from "dilswer";
 import { Type } from "dilswer";
 
 export enum IncomingMessageType {
-  /** A message sent to the client to check if the connection is still alive. */
-  PONG = "connection:pong",
   /** A message sent by the client to request joining a room. */
   ROOM_CONNECT = "room:connect",
   /** A message sent by the client to request leaving a room. */
@@ -94,11 +92,6 @@ export const DTCloseRoomConnectionIncomingMessage = Type.Record({
   userID: Type.String,
 });
 
-export const DTPongIncomingMessage = Type.Record({
-  type: Type.EnumMember(IncomingMessageType.PONG),
-  messageID: Type.Option(Type.Undefined),
-});
-
 export const DTRoomWSIncomingMessage = Type.OneOf(
   DTRoomOpenConnectionIncomingMessage,
   DTRoomCreateNewRoundOutgoingMessage,
@@ -109,7 +102,6 @@ export const DTRoomWSIncomingMessage = Type.OneOf(
   DTChangeRoomOwnerIncomingMessage,
   DTFinishLastRoundIncomingMessage,
   DTCloseRoomConnectionIncomingMessage,
-  DTPongIncomingMessage,
 );
 
 // TS types

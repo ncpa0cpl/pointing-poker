@@ -15,7 +15,7 @@
 .join-room-page {
     & .alert.delayed {
         animation-name: delayed-view;
-        animation-duration: 2.5s;
+        animation-duration: 5s;
         animation-fill-mode: forwards;
     }
 
