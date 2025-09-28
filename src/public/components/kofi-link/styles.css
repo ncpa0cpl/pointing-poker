@@ -5,8 +5,9 @@ a.kofi-link {
         display: flex;
         align-items: center;
 
-        & img {
+        & svg {
             height: 1.5em;
+            width: 1.5em;
             margin-left: .5em;
         }
     }

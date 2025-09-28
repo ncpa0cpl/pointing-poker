@@ -1,5 +1,5 @@
 import { Button } from "adwavecss";
-import coffe from "../../assets/coffe.svg";
+import CoffeSvg from "../../assets/coffe.svg";
 import "./styles.css";
 import { KofiService } from "../../services/kofi/kofi-service";
 
@@ -18,7 +18,7 @@ export const KofiLink = () => {
         }}
       >
         Send me a ko-fi
-        <img src={coffe} alt="coffe" />
+        <CoffeSvg alt="coffe" />
       </button>
     </a>
   );

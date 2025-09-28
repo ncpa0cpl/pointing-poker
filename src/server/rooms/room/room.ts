@@ -370,6 +370,7 @@ export class Room {
         if (this.isOwner(userID)) {
           RoomService.removeRoom(this.id);
         }
+        break;
       }
       case "setoptions": {
         if (this.isOwner(userID)) {
@@ -378,6 +379,7 @@ export class Room {
             return new RoundOption(optLabel);
           }));
         }
+        break;
       }
       case "addoption": {
         if (this.isOwner(userID)) {
@@ -387,6 +389,7 @@ export class Room {
             this.defaultOptions.concat(option),
           );
         }
+        break;
       }
     }
   }

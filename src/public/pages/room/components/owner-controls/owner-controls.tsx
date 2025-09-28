@@ -23,13 +23,7 @@ export const OwnerControls = () => {
     },
   );
 
-  const isOwner = sig.derive(
-    PokerRoomService.publicUserID,
-    PokerRoomService.roomOwner,
-    (userID, owner) => {
-      return userID === owner.publicID;
-    },
-  );
+  const isOwner = PokerRoomService.isCurrentUserTheOwner;
 
   const endRound = () => {
     if (!disableAll.get()) {

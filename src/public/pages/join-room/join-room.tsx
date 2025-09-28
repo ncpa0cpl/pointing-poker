@@ -46,7 +46,7 @@ export const JoinRoom = () => {
         {PokerRoomService.socketOpened.derive(open => {
           if (!open) {
             return (
-              <div class={[Alert.alert, Alert.error]}>
+              <div class={[Alert.alert, Alert.error, "delayed"]}>
                 There is an issue with the connection. We are unable to create
                 new rooms or join existing ones.
               </div>

@@ -7,6 +7,7 @@ import fs from "fs/promises";
 import path from "path";
 import { fileURLToPath, URL } from "url";
 import { buildStaticPages } from "./generate-index.mjs";
+import { svgPlugin } from "./svg-loader.mjs";
 const js = dedent;
 
 const __dirname = fileURLToPath(new URL(".", import.meta.url));
@@ -17,9 +18,7 @@ const watch = process.argv.includes("--watch");
 const serve = process.argv.includes("--serve");
 const dev = process.argv.includes("--dev");
 
-const packageJson = JSON.parse(
-  fsSync.readFileSync(p("package.json"), { encoding: "utf-8" }),
-);
+const packageJson = JSON.parse(fsSync.readFileSync(p("package.json"), { encoding: "utf-8" }));
 
 const gitHash = new TextDecoder().decode(execSync("git rev-parse HEAD")).trim();
 
@@ -55,10 +54,10 @@ async function main() {
           minify: !dev,
           treeShaking: true,
           loader: {
-            ".svg": "file",
             ".webp": "file",
           },
           publicPath: "/public/esm",
+          plugins: [svgPlugin()],
         },
         compileVendors: ["@sentry/browser"],
         watch,
@@ -67,8 +66,7 @@ async function main() {
           "@Root/*": "./*",
         },
         replaceImports: {
-          "@ncpa0cpl/vanilla-jsx/signals":
-            "@Root/../../node_modules/@ncpa0cpl/vanilla-jsx/dist/esm/signals/signal",
+          "@ncpa0cpl/vanilla-jsx/signals": "@Root/../../node_modules/@ncpa0cpl/vanilla-jsx/dist/esm/signals/signal",
         },
         onBuildComplete() {
           postBuild();
@@ -155,13 +153,9 @@ function runServer() {
   if (serve) {
     try {
       console.log("Starting server...");
-      const proc = spawn(
-        "bun",
-        ["--hot", p("src/server/start.ts"), "--debug"],
-        {
-          stdio: "inherit",
-        },
-      );
+      const proc = spawn("bun", ["--hot", p("src/server/start.ts"), "--debug"], {
+        stdio: "inherit",
+      });
 
       const cleanup = () => {
         try {

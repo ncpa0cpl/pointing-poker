@@ -27,7 +27,9 @@ export const UpsideDownScrollView = $component<UpsideDownScrollViewProps>((
   }, [dep]);
 
   const elem = (
-    <Into class={[props.class, "scrollview", Box.box]}>
+    <Into
+      class={[props.class, "upside-down-scrollview", "scrollview", Box.box]}
+    >
       {children}
     </Into>
   );

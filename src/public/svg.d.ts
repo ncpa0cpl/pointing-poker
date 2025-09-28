@@ -1,4 +1,4 @@
 declare module "*.svg" {
-  const assetPath: string;
+  const assetPath: () => JSX.Element;
   export default assetPath;
 }

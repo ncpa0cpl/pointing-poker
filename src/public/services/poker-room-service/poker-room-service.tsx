@@ -1,5 +1,6 @@
 import type { ReadonlySignal, Signal } from "@ncpa0cpl/vanilla-jsx/signals";
 import { sig } from "@ncpa0cpl/vanilla-jsx/signals";
+import { compileFastValidator, Type } from "dilswer";
 import { DateTime } from "luxon";
 import { marked } from "marked";
 import { v4 } from "uuid";
@@ -9,6 +10,7 @@ import type {
   DefaultOption,
 } from "../../../shared/websockets-messages/room-websocket-outgoing-message-types";
 import { OutgoingMessageType } from "../../../shared/websockets-messages/room-websocket-outgoing-message-types";
+import { SentryService } from "../sentry-service/sentry-service";
 import { UserService } from "../user-service/user-service";
 import { WsConnection } from "./socket-connection";
 import type { PokerRoomRound } from "./types";
@@ -31,6 +33,9 @@ type ClientChatMessage = {
 window.stubVotes = () => {
   PokerRoomService.stubVotes();
 };
+
+const PresetOptionsType = Type.Array(Type.String);
+const validatePresetOptions = compileFastValidator(PresetOptionsType);
 
 export class PokerRoomService {
   public static stubVotes() {
@@ -132,6 +137,14 @@ export class PokerRoomService {
   static #lastRound = this.#rounds.derive((rounds) => {
     return rounds.at(-1);
   });
+
+  static isCurrentUserTheOwner = sig.derive(
+    this.#publicUserID,
+    this.#roomOwner,
+    (userID, owner) => {
+      return userID === owner.publicID;
+    },
+  );
 
   public static onRoomClosed?: Function;
 
@@ -332,6 +345,19 @@ export class PokerRoomService {
           data.room.chatMessages.map((msg) => sig(this.mapChatMsg(msg))),
         );
         this.selectedRound.dispatch("");
+
+        const presetOptions = localStorage.getItem("vote-options-preset");
+        if (presetOptions) {
+          try {
+            const parsed = JSON.parse(presetOptions);
+            if (validatePresetOptions(parsed)) {
+              this.setOptions(parsed)?.catch(err => SentryService.error(err));
+            }
+          } catch (err) {
+            console.error(err);
+            SentryService.error(err);
+          }
+        }
       })
       .catch((err) => {
         this.#roomID.dispatch(null);
@@ -354,6 +380,16 @@ export class PokerRoomService {
     this.#options.dispatch([]);
     this.#chatMessages.dispatch([]);
     this.selectedRound.dispatch("");
+  }
+
+  public static setOptions(options: string[]) {
+    const optionsStr = options
+      .sort((a, b) => a.localeCompare(b, "en", { numeric: true }))
+      .join(" ");
+
+    return PokerRoomService.postChatMessage(
+      `/setoptions ${optionsStr}`,
+    );
   }
 
   public static async createRoom() {

@@ -20,9 +20,7 @@ function addMissingGlobals() {
     send() {}
   };
 
-  globalThis.DOMParser = class {
-    parseFromString() {}
-  };
+  globalThis.DOMParser = global.DOMParser = window.DOMParser;
 
   // window.history.pushState = function() {};
 

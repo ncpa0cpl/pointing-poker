@@ -29,7 +29,7 @@
   },
   "dependencies": {
     "@ncpa0cpl/mutex.js": "^1.0.1",
-    "@ncpa0cpl/vanilla-jsx": "^0.0.1-alpha.43",
+    "@ncpa0cpl/vanilla-jsx": "^0.0.1-alpha.44",
     "@ncpa0cpl/vrouter": "^0.0.14",
     "@sentry/browser": "^8.47.0",
     "adwavecss": "^0.1.1",
@@ -55,12 +55,12 @@
     "@types/reflect-metadata": "^0.1.0",
     "@types/uuid": "^9.0.7",
     "crc-32": "^1.2.2",
-    "dedent": "^1.5.3",
+    "dedent": "^1.7.0",
     "dprint": "^0.45.0",
     "esbuild": "^0.24.00",
     "git-hook-tasks": "git+https://github.com/ncpa0cpl/git-hook-tasks",
     "husky": "^8.0.3",
-    "jsdom": "^24.0.0",
+    "jsdom": "^27.0.0",
     "typescript": "latest"
   },
   "packageManager": "yarn@1.22.22+sha1.ac34549e6aa8e7ead463a7407e1c7390f61a6610"

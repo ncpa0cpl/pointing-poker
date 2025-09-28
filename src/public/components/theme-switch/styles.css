@@ -14,7 +14,7 @@
         align-items: center;
     }
 
-    & img {
+    & svg {
         width: 1.5em;
         height: 1.5em;
     }

@@ -5,6 +5,11 @@
     max-height: 100vh;
     padding-block: 1em;
     box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    overflow-x: hidden;
+    background-color: transparent;
 
     & > * {
         margin-top: auto;

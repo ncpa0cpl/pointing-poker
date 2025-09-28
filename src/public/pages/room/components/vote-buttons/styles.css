@@ -1,13 +1,104 @@
-.vote-buttons-container {
-    flex-wrap: wrap;
-    justify-content: center;
-    margin-top: 0.5em;
+.vote-btns {
+    & .vote-buttons-container {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
 
-    & .btn {
-        margin-top: 0.5em;
+    & .btn.btn.btn {
+        margin-top: 1em;
         width: 2.5em;
         margin-right: 0.5em;
-        padding: 0.5em;
+        padding: 0px;
         min-width: max-content;
+        height: 2.3em;
+        justify-content: center;
+        align-items: center;
+    }
+
+    & .btn.settings-btn {
+        & svg {
+            margin-top: .2em;
+            width: 1.2em;
+            height: 1.2em;
+        }
+    }
+}
+
+.settings-modal-content.settings-modal-content {
+    display: flex;
+    flex-direction: column;
+    width: 35vw;
+    min-width: 18em;
+
+    & .dialog-header {
+        & .btn.btn.btn {
+            margin: unset;
+            padding-inline: 1em;
+        }
+    }
+
+    & .dialog-body {
+        max-height: 60vh;
+        flex-direction: column;
+        box-sizing: border-box;
+        justify-content: space-between;
+    }
+
+    & ul {
+        max-height: 100%;
+        overflow: auto;
+        list-style: none;
+        width: 100%;
+        box-sizing: border-box;
+        padding-left: 1.5em;
+
+        & li {
+            display: flex;
+            justify-content: flex-start;
+            align-items: center;
+
+            & .btn.btn.btn {
+                margin-top: .5em;
+                margin-left: unset;
+                margin-right: unset;
+            }
+
+            & .btn.btn.btn.opt-value-preview {
+                width: 5em;
+            }
+        }
+    }
+
+    & .close-btn.close-btn svg {
+        height: 1.5em;
+        width: 1.5em;
+    }
+
+    & input.input {
+        height: 2.2em;
+        box-sizing: border-box;
+    }
+
+    & .bottom-controls {
+        margin-top: .5em;
+        margin-inline: 1.5em;
+        margin-bottom: 1em;
+        justify-content: space-between;
+    }
+
+    & .add-btn.add-btn.add-btn.add-btn {
+        margin: unset;
+        height: 2.2em;
+        box-sizing: border-box;
+
+        & svg {
+            height: .8em;
+            width: .8em;
+        }
+    }
+
+    & .btn.btn.save-preset-btn {
+        margin: unset;
+        padding: 0.5em 1em;
     }
 }

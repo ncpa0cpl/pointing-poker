@@ -1,7 +1,7 @@
-.scrollview {
+.upside-down-scrollview.scrollview {
     display: flex;
     flex-direction: column;
     overflow-y: auto;
     overflow-x: hidden;
-    background-color: transparent !important;
+    background-color: transparent;
 }

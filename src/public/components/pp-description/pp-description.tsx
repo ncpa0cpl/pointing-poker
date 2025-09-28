@@ -1,5 +1,5 @@
 import { Button, Typography } from "adwavecss";
-import Questionmark from "../../assets/questionmark.svg";
+import QuestionmarkSvg from "../../assets/questionmark.svg";
 import "./styles.css";
 import { Router } from "../../pages/routes";
 import { Link } from "../link/link";
@@ -13,8 +13,7 @@ export const PointingPokerDescription = ({ endMsg }: { endMsg: string }) => {
           to={Router.nav.about}
           class={[Button.button, Button.flat]}
         >
-          <img
-            src={Questionmark}
+          <QuestionmarkSvg
             alt="More about Pointing Poker"
             title="More about Pointing Poker"
           />
