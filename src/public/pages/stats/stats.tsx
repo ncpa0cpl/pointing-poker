@@ -215,10 +215,16 @@ function Graph(
           );
 
           const elems = statsHistory.map((entry, idx) => {
+            const left = idx * 3;
+            let bottom = 0.9 * 100 * entry.value / max;
+
+            if (max === 0) {
+              bottom = 0;
+            }
+
             return (
               <li
-                style={`--bottom: ${(0.9 * 100 * entry.value / max) + "%"};
-                 --left: ${(idx * 3) + "%"}`}
+                style={`--bottom: ${bottom}%; --left: ${left}%;`}
               >
                 <div
                   class="data-point"
@@ -239,11 +245,16 @@ function Graph(
             const entry = statsHistory[i]!;
             const nextEntry = statsHistory[i + 1]!;
 
-            const y1 = 0.9 * 100 * entry.value / max;
+            let y1 = 0.9 * 100 * entry.value / max;
             const x1 = i * 3;
 
-            const y2 = 0.9 * 100 * nextEntry.value / max;
+            let y2 = 0.9 * 100 * nextEntry.value / max;
             const x2 = (i + 1) * 3;
+
+            if (max === 0) {
+              y1 = 0;
+              y2 = 0;
+            }
 
             grapDecorations.push(
               <div
@@ -261,28 +272,43 @@ function Graph(
           }
 
           // draw a legend on the left of the graph
-          for (let i = 0; i <= max; i++) {
-            if (max > 8) {
-              let breakpoint = Math.round(max / 10);
-              breakpoint = Math.max(1, breakpoint - (breakpoint % 5));
-
-              if (i % breakpoint != 0) {
-                continue;
-              }
-            }
-
+          if (max === 0) {
             grapDecorations.push(
               <div
                 class="x-scale-value"
                 style={{
                   right: "calc(100% + .3em)",
-                  bottom: `${.9 * 100 * i / max}%`,
+                  bottom: "0%",
                 }}
               >
-                <span>{i}</span>
+                <span>0</span>
                 <div class="dash"></div>
               </div>,
             );
+          } else {
+            for (let i = 0; i <= max; i++) {
+              if (max > 8) {
+                let breakpoint = Math.round(max / 10);
+                breakpoint = Math.max(1, breakpoint - (breakpoint % 5));
+
+                if (i % breakpoint != 0) {
+                  continue;
+                }
+              }
+
+              grapDecorations.push(
+                <div
+                  class="x-scale-value"
+                  style={{
+                    right: "calc(100% + .3em)",
+                    bottom: `${.9 * 100 * i / max}%`,
+                  }}
+                >
+                  <span>{i}</span>
+                  <div class="dash"></div>
+                </div>,
+              );
+            }
           }
 
           return (
