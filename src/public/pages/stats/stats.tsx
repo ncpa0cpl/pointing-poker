@@ -6,6 +6,7 @@ import { PageLayout } from "../../components/page-layout/page-layout";
 import { SentryService } from "../../services/sentry-service/sentry-service";
 import "./styles.css";
 import { $component, If } from "@ncpa0cpl/vanilla-jsx";
+import { DateTime } from "luxon";
 import { Link } from "../../components/link/link";
 import { Router } from "../routes";
 
@@ -163,21 +164,18 @@ function Graph(
     <figure class="stat-graph">
       <div class="grap-content">
         {sig.derive(props.selectedGraph, props.stats, (selected, stats) => {
-          const grapDecorations: JSX.Element[] = [];
+          const graphDecorations: JSX.Element[] = [];
 
           const statsHistory: StatHistory = [];
           const statsData = stats[selected as Exclude<GraphType, null>]
             .slice();
 
-          const oneMonth = 2.628e+9;
-          const oneDay = 8.64e+7;
-          const today = new Date();
-          let date = new Date(Date.now() - oneMonth);
-          date.setHours(0, 0, 1);
+          const tmrw = DateTime.now().plus({ days: 1 }).startOf("day");
+          let date = DateTime.now().minus({ months: 1 }).startOf("day");
 
-          while (today >= date) {
-            const day = date.getDate();
-            const month = MONTHS[date.getMonth() + 1]!;
+          while (date < tmrw) {
+            const day = date.get("day");
+            const month = MONTHS[date.get("month")]!;
 
             const data = statsData.find(data =>
               data.month === month && data.day === day
@@ -192,7 +190,7 @@ function Graph(
 
             // draw a legend on the bottoms of the graph
             if (i % 3 == 0) {
-              grapDecorations.push(
+              graphDecorations.push(
                 <div
                   class="y-scale-value"
                   style={{
@@ -206,7 +204,7 @@ function Graph(
               );
             }
 
-            date = new Date(date.getTime() + oneDay);
+            date = date.plus({ days: 1 });
           }
 
           const max = statsHistory.reduce(
@@ -256,7 +254,7 @@ function Graph(
               y2 = 0;
             }
 
-            grapDecorations.push(
+            graphDecorations.push(
               <div
                 class="graph-line-box"
                 style={{
@@ -273,7 +271,7 @@ function Graph(
 
           // draw a legend on the left of the graph
           if (max === 0) {
-            grapDecorations.push(
+            graphDecorations.push(
               <div
                 class="x-scale-value"
                 style={{
@@ -289,14 +287,18 @@ function Graph(
             for (let i = 0; i <= max; i++) {
               if (max > 8) {
                 let breakpoint = Math.round(max / 10);
-                breakpoint = Math.max(1, breakpoint - (breakpoint % 5));
+                if (breakpoint > 5) {
+                  breakpoint = Math.max(1, breakpoint - (breakpoint % 5));
+                } else {
+                  breakpoint = 5;
+                }
 
                 if (i % breakpoint != 0) {
                   continue;
                 }
               }
 
-              grapDecorations.push(
+              graphDecorations.push(
                 <div
                   class="x-scale-value"
                   style={{
@@ -316,7 +318,7 @@ function Graph(
               <ul class="line-chart">
                 {elems}
               </ul>
-              {grapDecorations}
+              {graphDecorations}
             </>
           );
         })}
