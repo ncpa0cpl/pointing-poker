@@ -34,7 +34,7 @@ export const ThemeSwitch = () => {
 
   return (
     <div class="theme-switch-container">
-      <button class={Button.button} onclick={toggleTheme}>
+      <button class={[Button.button, Button.flat]} onclick={toggleTheme}>
         <ThemeSwitchSvg alt="Theme Switch" />
       </button>
     </div>
