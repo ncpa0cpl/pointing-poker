@@ -3,6 +3,7 @@ import { sig } from "@ncpa0cpl/vanilla-jsx/signals";
 import { Button } from "adwavecss";
 import { PokerRoomService } from "../../../../services/poker-room-service/poker-room-service";
 import "./styles.css";
+import { SettingsButton } from "./settings";
 
 export const OwnerControls = () => {
   const disableAll = sig(false);
@@ -60,7 +61,7 @@ export const OwnerControls = () => {
       into={<div class="room-controls center-h" />}
       condition={isOwner}
       then={() => (
-        <>
+        <div>
           <div class="linked">
             <button
               class={{
@@ -83,7 +84,8 @@ export const OwnerControls = () => {
               Start Next Round
             </button>
           </div>
-        </>
+          <SettingsButton />
+        </div>
       )}
     />
   );

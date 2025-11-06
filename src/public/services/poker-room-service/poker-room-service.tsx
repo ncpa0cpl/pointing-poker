@@ -8,6 +8,7 @@ import { IncomingMessageType } from "../../../shared";
 import type {
   ChatMessageView,
   DefaultOption,
+  RoomMode,
 } from "../../../shared/websockets-messages/room-websocket-outgoing-message-types";
 import { OutgoingMessageType } from "../../../shared/websockets-messages/room-websocket-outgoing-message-types";
 import { SentryService } from "../sentry-service/sentry-service";
@@ -50,51 +51,61 @@ export class PokerRoomService {
             publicUserID: "u1",
             username: "User 1",
             vote: "5",
+            hideUsername: false,
           },
           {
             publicUserID: "u2",
             username: "User 2",
             vote: "3",
+            hideUsername: false,
           },
           {
             publicUserID: "u3",
             username: "User 3",
             vote: "5",
+            hideUsername: false,
           },
           {
             publicUserID: "u4",
             username: "User 4",
             vote: "5",
+            hideUsername: false,
           },
           {
             publicUserID: "u5",
             username: "User 5",
             vote: "3",
+            hideUsername: false,
           },
           {
             publicUserID: "u6",
             username: "User 6",
             vote: "2",
+            hideUsername: false,
           },
           {
             publicUserID: "u7",
             username: "User 7",
             vote: "5",
+            hideUsername: false,
           },
           {
             publicUserID: "u8",
             username: "User 8",
             vote: "8",
+            hideUsername: false,
           },
           {
             publicUserID: "u9",
             username: "User 9",
             vote: "3",
+            hideUsername: false,
           },
           {
             publicUserID: "u10",
             username: "User 10",
             vote: "5",
+            hideUsername: false,
           },
         ],
         finalResult: {
@@ -118,6 +129,7 @@ export class PokerRoomService {
   static #participants = sig<Participant[]>([]);
   static #rounds = sig<PokerRoomRound[]>([]);
   static #options = sig<DefaultOption[]>([]);
+  static #mode = sig<RoomMode>("default");
   static #chatMessages = sig<Signal<ClientChatMessage>[]>([]);
   static #connection = new WsConnection();
 
@@ -174,6 +186,10 @@ export class PokerRoomService {
 
   public static get options(): ReadonlySignal<DefaultOption[]> {
     return PokerRoomService.#options;
+  }
+
+  public static get mode(): ReadonlySignal<RoomMode> {
+    return PokerRoomService.#mode;
   }
 
   public static get socketOpened(): ReadonlySignal<boolean> {
@@ -274,6 +290,7 @@ export class PokerRoomService {
       this.#participants.dispatch(data.participants);
       this.#rounds.dispatch(data.rounds);
       this.#options.dispatch(data.defaultOptions);
+      this.#mode.dispatch(data.mode);
     });
 
     this.#connection.on(
@@ -383,6 +400,12 @@ export class PokerRoomService {
 
     return PokerRoomService.postChatMessage(
       `/setoptions ${optionsStr}`,
+    );
+  }
+
+  public static setMode(mode: RoomMode) {
+    return PokerRoomService.postChatMessage(
+      `/setmode ${mode}`,
     );
   }
 

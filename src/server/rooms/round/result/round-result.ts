@@ -9,6 +9,7 @@ export class RoundResult {
     public readonly publicUserID: string,
     public readonly username: string,
     public readonly vote: string,
+    public readonly hideUsername: boolean,
   ) {
   }
 
@@ -17,6 +18,7 @@ export class RoundResult {
       vote: this.vote,
       username: this.username,
       publicUserID: this.publicUserID,
+      hideUsername: this.hideUsername,
     };
   }
 }

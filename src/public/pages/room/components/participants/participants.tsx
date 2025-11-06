@@ -5,6 +5,7 @@ import { PokerRoomService } from "../../../../services/poker-room-service/poker-
 import type { PokerRoomRound } from "../../../../services/poker-room-service/types";
 import { VoteHighlights } from "../../vote-higlights";
 import "./styles.css";
+import { StyleDict } from "@ncpa0cpl/vanilla-jsx/dist/types/jsx-namespace/jsx.types";
 
 const getUserVote = (
   results: PokerRoomRound["results"],
@@ -56,6 +57,22 @@ export const Participants = () => {
             return v;
           });
 
+        const hideUsername = sig.derive(
+          PokerRoomService.currentRound,
+          PokerRoomService.publicUserID,
+          (r, userID) => {
+            if (r) {
+              const userVote = getUserVote(r.results, participant.publicID);
+              if (
+                userVote && !r.isInProgress && userVote.publicUserID != userID
+              ) {
+                return userVote.hideUsername;
+              }
+            }
+            return false;
+          },
+        );
+
         return (
           <div
             class={{
@@ -64,6 +81,15 @@ export const Participants = () => {
               "disconnected": !participant.isActive,
               "highlight": sig.includes(VoteHighlights, participant.publicID),
             }}
+            style={hideUsername.derive((hide): StyleDict => {
+              if (hide) {
+                return {
+                  order: Math.round(Math.random() * 1000).toFixed(0),
+                };
+              }
+
+              return {};
+            })}
           >
             <p
               class={{
@@ -72,7 +98,12 @@ export const Participants = () => {
                 "inactive": !participant.isActive,
               }}
             >
-              {participant.username}
+              {hideUsername.derive(hide => {
+                if (hide) {
+                  return "Anonymous User";
+                }
+                return participant.username;
+              })}
             </p>
             <Switch value={badgeType} into={<div class="badge" />}>
               <Case match="awaiting-vote">

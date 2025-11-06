@@ -5,6 +5,7 @@ export type SerializedRoundResult = {
   username: string;
   userID: string;
   publicUserID: string;
+  hideUsername: boolean;
 };
 
 export class RoundResultSerializer {
@@ -14,6 +15,7 @@ export class RoundResultSerializer {
       username: roundResult.username,
       publicUserID: roundResult.publicUserID,
       userID: roundResult.userID,
+      hideUsername: roundResult.hideUsername,
     };
   }
 
@@ -25,6 +27,7 @@ export class RoundResultSerializer {
       serializedData.publicUserID,
       serializedData.username,
       serializedData.vote,
+      serializedData.hideUsername,
     );
   }
 }

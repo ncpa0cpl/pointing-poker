@@ -22,6 +22,11 @@ export enum OutgoingMessageType {
   MESSAGE_RECEIVED = "message:received",
 }
 
+export const DTRoomMode = Type.OneOf(
+  Type.Literal("private"),
+  Type.Literal("default"),
+);
+
 export const DTParticipant = Type.Record({
   isActive: Type.Boolean,
   publicID: Type.String,
@@ -56,6 +61,7 @@ export const DTRoundUpdateOutgoingMessage = Type.Record({
       publicUserID: Type.String,
       username: Type.String,
       vote: Type.String,
+      hideUsername: Type.Boolean,
     }),
   ),
   finalResult: Type.Option(
@@ -88,6 +94,7 @@ export const DTRoomUpdateOutgoingMessage = Type.Record({
   rounds: Type.Array(Omit(DTRoundUpdateOutgoingMessage, "type")),
   participants: Type.Array(DTParticipant),
   defaultOptions: Type.Array(DTDefaultOption),
+  mode: DTRoomMode,
 });
 
 export const DTRoomConnectionOpenedOutgoingMessage = Type.Record({
@@ -168,3 +175,5 @@ export type RoomWSOutgoingMessage = Infer<typeof DTRoomWSOutgoingMessage>;
 export type MessageReceivedOutgoingMessage = Infer<
   typeof DTMessageReceivedMessage
 >;
+
+export type RoomMode = Infer<typeof DTRoomMode>;

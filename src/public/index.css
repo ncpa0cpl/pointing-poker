@@ -159,6 +159,6 @@ dialog {
     background: transparent;
 
     &::backdrop {
-        background: rgba(0, 0, 0, 0.5);
+        background: rgb(62 62 62 / 56%);
     }
 }

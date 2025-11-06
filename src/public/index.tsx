@@ -1,5 +1,6 @@
 import { SentryService } from "./services/sentry-service/sentry-service";
 
+import "adwaveui/dist/esm/components/switch/switch";
 import { Box, Theme } from "adwavecss";
 import { KofiModal } from "./components/kofi-modal/kofi-modal";
 import { ThemeSwitch } from "./components/theme-switch/theme-switch";

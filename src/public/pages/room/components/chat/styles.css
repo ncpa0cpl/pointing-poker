@@ -81,6 +81,7 @@
         max-height: 8em;
         min-height: 1.3em;
         margin-bottom: 0.4em;
+        padding: .3em .4em;
     }
 
     & .chat-input-controls {

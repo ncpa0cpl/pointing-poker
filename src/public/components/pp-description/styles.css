@@ -16,9 +16,10 @@
         justify-content: center;
         align-items: center;
         width: 1em;
-        height: 1em;
         padding: .1em;
         margin-left: .2em;
+        height: -webkit-fill-available;
+        min-height: unset;
 
         & svg {
             width: 100%;

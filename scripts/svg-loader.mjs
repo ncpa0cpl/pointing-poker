@@ -17,7 +17,6 @@ export function svgPlugin() {
 
         const code = /* js */ `
           import { bindProps } from "@ncpa0cpl/vanilla-jsx";
-          import { jsx } from "jsxte/jsx-runtime";
 
           const svgXml = ${JSON.stringify(contents)};
           const svgDoc = new DOMParser().parseFromString(svgXml, "image/svg+xml");

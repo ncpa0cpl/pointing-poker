@@ -1,15 +1,20 @@
+import { validator } from "dilswer";
 import escapeHtml from "escape-html";
 import { StatusCodes } from "http-status-codes";
 import { DateTime } from "luxon";
 import type {
   RoomChatUpdateOutgoingMessage,
+  RoomMode,
   RoomOwnerUpdateOutgoingMessage,
   RoomParticipantsUpdateOutgoingMessage,
   RoomUpdateOutgoingMessage,
   RoomWSOutgoingMessage,
   RoundUpdateOutgoingMessage,
 } from "../../../shared/websockets-messages/room-websocket-outgoing-message-types";
-import { OutgoingMessageType } from "../../../shared/websockets-messages/room-websocket-outgoing-message-types";
+import {
+  DTRoomMode,
+  OutgoingMessageType,
+} from "../../../shared/websockets-messages/room-websocket-outgoing-message-types";
 import { usage } from "../../usage-log";
 import { Persistent } from "../../utilities/persistent-objects/persistent-decorator";
 import { PDependency } from "../../utilities/persistent-objects/persistent-property-dependency-decorator";
@@ -42,6 +47,8 @@ const generateRoomID = (): string => {
   return Math.random().toString(36).substring(2, 10);
 };
 
+const isRoomMode = validator(DTRoomMode);
+
 @Persistent
 export class Room {
   public static serializer = RoomSerializer;
@@ -56,6 +63,8 @@ export class Room {
   public ownerPublicID?: string;
   @PWatch()
   public ownerName: string;
+  @PWatch()
+  public mode: RoomMode;
   @PDependency()
   public rounds: Array<Round>;
   @PDependency()
@@ -75,6 +84,7 @@ export class Room {
       rounds?: Round[];
       defaultOptions?: RoundOption[];
       chatMessages?: ChatMessage[];
+      mode?: RoomMode;
     } = {},
   ) {
     this.ownerID = ownerID;
@@ -88,6 +98,7 @@ export class Room {
     this.rounds = overrides.rounds
       ?? [new Round(undefined, this.defaultOptions.slice())];
     this.chatMessages = overrides.chatMessages ?? [];
+    this.mode = overrides.mode ?? "default";
   }
 
   private getOption(optionID: string): RoundOption | RequestError {
@@ -147,6 +158,19 @@ export class Room {
 
   public countUsers() {
     return this.connections.length;
+  }
+
+  public setMode(mode: RoomMode): void {
+    this.lastActivity = DateTime.now();
+
+    this.mode = mode;
+
+    const roomOptionsUpdateMessage: RoomUpdateOutgoingMessage = {
+      type: OutgoingMessageType.ROOM_UPDATE,
+      ...this.toView(),
+    };
+
+    this.propagateMessage(roomOptionsUpdateMessage);
   }
 
   public setDefaultOptions(options: RoundOption[]): void {
@@ -232,7 +256,13 @@ export class Room {
     const conn = this.connections.find(c => c.isConnectionOwner(userID))!;
     const option = this.getOption(optionID);
     this.addVote(
-      new RoundResult(userID, publicUserID, conn.username, option.name),
+      new RoundResult(
+        userID,
+        publicUserID,
+        conn.username,
+        option.name,
+        this.mode === "private",
+      ),
     );
   }
 
@@ -360,6 +390,7 @@ export class Room {
                 conn.publicUserID!,
                 conn.username,
                 value,
+                this.mode === "private",
               ),
             );
           }
@@ -388,6 +419,15 @@ export class Room {
           this.setDefaultOptions(
             this.defaultOptions.concat(option),
           );
+        }
+        break;
+      }
+      case "setmode": {
+        if (this.isOwner(userID)) {
+          const mode = rest[0]!;
+          if (mode && isRoomMode(mode)) {
+            this.setMode(mode);
+          }
         }
         break;
       }
@@ -525,6 +565,7 @@ export class Room {
       ),
       ownerName: this.ownerName,
       ownerPublicID: this.ownerPublicID ?? "",
+      mode: this.mode,
     };
   }
 

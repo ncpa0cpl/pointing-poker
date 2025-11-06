@@ -11,12 +11,10 @@ export const PointingPokerDescription = ({ endMsg }: { endMsg: string }) => {
         Pointing Poker
         <Link
           to={Router.nav.about}
-          class={[Button.button, Button.flat]}
+          class={[Button.button, Button.flat, "learn-more-btn"]}
+          title="More about Pointing Poker"
         >
-          <QuestionmarkSvg
-            alt="More about Pointing Poker"
-            title="More about Pointing Poker"
-          />
+          <QuestionmarkSvg alt="More about Pointing Poker" />
         </Link>
       </h1>
       <p class={Typography.subtitle}>

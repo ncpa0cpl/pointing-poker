@@ -1,4 +1,5 @@
 import { DateTime } from "luxon";
+import type { RoomMode } from "../../../shared";
 import { RoomService } from "../room-sevice";
 import { RoundOption } from "../round/option/round-option";
 import type { SerializedRoundOption } from "../round/option/serializer";
@@ -18,6 +19,7 @@ type SerializedRoom = {
   ownerName: string;
   defaultOptions: SerializedRoundOption[];
   chatMessages: SerializedChatMessage[];
+  mode: RoomMode;
 };
 
 export class RoomSerializer {
@@ -29,6 +31,7 @@ export class RoomSerializer {
       ownerID: roomConnection.ownerID,
       ownerPublicID: roomConnection.ownerPublicID,
       ownerName: roomConnection.ownerName,
+      mode: roomConnection.mode,
       rounds: roomConnection.rounds.map((round) => {
         return Round.serializer.serialize(round);
       }),
@@ -48,6 +51,7 @@ export class RoomSerializer {
       createdAt: DateTime.fromISO(serializedData.createdAt),
       lastActivity: DateTime.fromISO(serializedData.lastActivity),
       ownerPublicID: serializedData.ownerPublicID,
+      mode: serializedData.mode,
       rounds: serializedData.rounds.map((round) => {
         return Round.serializer.deserialize(round);
       }),
