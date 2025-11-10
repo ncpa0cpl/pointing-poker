@@ -10,8 +10,9 @@ export function UserSettings() {
   const inputVal = sig(UserService.username().get());
 
   const save = () => {
-    if (inputVal.get() != "") {
-      UserService.changeName(inputVal.get());
+    const newname = inputVal.get().trim();
+    if (newname != "") {
+      UserService.changeName(newname);
     }
   };
 
