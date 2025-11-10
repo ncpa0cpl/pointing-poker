@@ -18,14 +18,37 @@ export function Link({ children, to, ...rest }: LinkProps) {
     }
   };
 
+  const handleKeydown = (e: KeyboardEvent) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      if ("$open" in to) {
+        to.$open();
+      } else {
+        to.get().$open();
+      }
+    }
+  };
+
   if ("$url" in to) {
     return (
-      <a {...rest} href={to.$url()} onmousedown={handleClick}>{children}</a>
+      <a
+        {...rest}
+        href={to.$url()}
+        onmousedown={handleClick}
+        onkeydown={handleKeydown}
+      >
+        {children}
+      </a>
     );
   }
 
   return (
-    <a {...rest} href={to.derive(n => n.$url())} onmousedown={handleClick}>
+    <a
+      {...rest}
+      href={to.derive(n => n.$url())}
+      onmousedown={handleClick}
+      onkeydown={handleKeydown}
+    >
       {children}
     </a>
   );

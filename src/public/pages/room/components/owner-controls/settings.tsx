@@ -2,10 +2,7 @@ import { ReadonlySignal, sig } from "@ncpa0cpl/vanilla-jsx/signals";
 import { Button } from "adwavecss";
 import { AdwSwitchChangeEvent } from "adwaveui";
 import { DefaultOption } from "../../../../../shared";
-import CloseSvg from "../../../../assets/close.svg";
-import CogwheelSvg from "../../../../assets/cogwheel.svg";
-import PlusSvg from "../../../../assets/plus.svg";
-import QuestionmarkSvg from "../../../../assets/questionmark.svg";
+import { Icon } from "../../../../assets/icons";
 import { PokerRoomService } from "../../../../services/poker-room-service/poker-room-service";
 
 export function SettingsButton() {
@@ -149,7 +146,7 @@ export function SettingsButton() {
             <span class="switch-label">
               Anonymous Mode
               <span title="When anonymous mode is active, votes placed will have the voter username hidden from all other participants.">
-                <QuestionmarkSvg alt="When anonymous mode is active, votes placed will have the voter username hidden from all other participants." />
+                <Icon.Questionmark alt="When anonymous mode is active, votes placed will have the voter username hidden from all other participants." />
               </span>
             </span>
             <adw-switch
@@ -172,7 +169,7 @@ export function SettingsButton() {
                     title="Remove"
                     onclick={() => handleRemove(idx)}
                   >
-                    <CloseSvg />
+                    <Icon.Close />
                   </button>
                   <button
                     class="btn disabled opt-value-preview"
@@ -198,7 +195,7 @@ export function SettingsButton() {
                   title="Add Option"
                   onclick={handleAdd}
                 >
-                  <PlusSvg />
+                  <Icon.Plus />
                 </button>
               </div>
               <button
@@ -221,7 +218,7 @@ export function SettingsButton() {
         class={[Button.button, "settings-btn"]}
         onclick={handleOpen}
       >
-        <CogwheelSvg alt="Settings" title="Settings" />
+        <Icon.Cogwheel alt="Settings" title="Settings" />
       </button>
       {dialog}
     </div>

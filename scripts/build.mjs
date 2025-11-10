@@ -123,6 +123,10 @@ async function postBuild() {
           name: "notfound.html",
           path: "/notfound",
         },
+        {
+          name: "user.html",
+          path: "/user",
+        },
       ],
     });
     console.log("Index page built.");

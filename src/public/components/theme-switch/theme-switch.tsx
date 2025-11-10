@@ -1,6 +1,6 @@
 import { Button, Theme } from "adwavecss";
-import ThemeSwitchSvg from "../../assets/theme-switch-icon.svg";
 import "./styles.css";
+import { Icon } from "../../assets/icons";
 
 const LS_THEME_KEY = "adw-theme";
 
@@ -35,7 +35,7 @@ export const ThemeSwitch = () => {
   return (
     <div class="theme-switch-container">
       <button class={[Button.button, Button.flat]} onclick={toggleTheme}>
-        <ThemeSwitchSvg alt="Theme Switch" />
+        <Icon.ThemeSwitch alt="Theme Switch" />
       </button>
     </div>
   );

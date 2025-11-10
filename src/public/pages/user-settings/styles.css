@@ -1,0 +1,21 @@
+.user-settings-page {
+    & > .card {
+        height: fit-content;
+        place-self: center;
+        display: flex;
+        flex-direction: column;
+    }
+
+    & .user-settings-form {
+        margin-top: 1em;
+        display: grid;
+        grid-template-columns: 1fr;
+        grid-gap: .6em;
+
+        & .buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-gap: .6em;
+        }
+    }
+}

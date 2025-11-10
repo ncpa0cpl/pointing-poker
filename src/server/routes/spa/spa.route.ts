@@ -16,6 +16,7 @@ const SPA_ROUTES = [
   "/privacy",
   "/error",
   "/roomclosed",
+  "/user",
 ];
 
 const isSpaRoute = (path: string) => {

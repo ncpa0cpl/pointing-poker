@@ -9,6 +9,7 @@ import "./styles.css";
 import { KofiLink } from "../../components/kofi-link/kofi-link";
 import { Link } from "../../components/link/link";
 import { PageLayout } from "../../components/page-layout/page-layout";
+import { UserBtn } from "../../components/user-button/user-button";
 import { PokerRoomService } from "../../services/poker-room-service/poker-room-service";
 import { Router } from "../routes";
 
@@ -43,6 +44,9 @@ export const JoinRoom = () => {
         </div>
         <RepoLink />
         <KofiLink />
+      </div>
+      <div class="topright-btns">
+        <UserBtn />
       </div>
       <div class="botleft-btns">
         <Link class="privacy-link blue-link" to={Router.nav.privacy}>

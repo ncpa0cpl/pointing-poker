@@ -57,6 +57,11 @@ h6 {
     margin: unset;
 }
 
+.linked {
+    justify-content: center;
+    align-items: center;
+}
+
 .column {
     flex-direction: column;
 }

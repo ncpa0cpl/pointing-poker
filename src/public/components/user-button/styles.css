@@ -1,0 +1,41 @@
+.user-btn {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    padding: .2em .8em;
+    border-radius: var(--border-radius);
+    border: 1px transparent solid;
+
+    & .name-preview {
+        max-width: 6em;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        text-wrap: nowrap;
+    }
+
+    & .user-icon {
+        margin-left: .6em;
+        width: 2em;
+        height: 2em;
+        border-radius: 999px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background-color: var(--clr-bg-5);
+        padding: .2em;
+
+        & svg {
+            width: 90%;
+            height: 90%;
+        }
+    }
+
+    &:hover {
+        background-color: var(--clr-btn);
+    }
+
+    &:focus-visible {
+        border-color: var(--clr-focus);
+    }
+}

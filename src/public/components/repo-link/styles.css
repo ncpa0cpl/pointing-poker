@@ -1,8 +1,5 @@
 a.repo-link {
     margin-top: 1.5em;
-
-    & button {
-        color: var(--link-clr);
-        text-decoration: underline;
-    }
+    color: var(--link-clr);
+    text-decoration: underline;
 }

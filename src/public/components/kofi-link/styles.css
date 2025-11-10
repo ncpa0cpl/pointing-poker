@@ -1,14 +1,12 @@
 a.kofi-link {
-    & button {
-        color: var(--link-clr);
-        text-decoration: underline;
-        display: flex;
-        align-items: center;
+    color: var(--link-clr);
+    text-decoration: underline;
+    display: flex;
+    align-items: center;
 
-        & svg {
-            height: 1.5em;
-            width: 1.5em;
-            margin-left: .5em;
-        }
+    & svg {
+        height: 1.5em;
+        width: 1.5em;
+        margin-left: .5em;
     }
 }

@@ -24,6 +24,10 @@ export class UserService {
     return this.#user.derive((user) => !!user);
   }
 
+  public static username(): ReadonlySignal<string> {
+    return this.#user.derive((user) => user?.name ?? "User");
+  }
+
   public static createNewUser(name: string): User {
     const user: User = {
       id: v4(),
@@ -35,6 +39,23 @@ export class UserService {
     UserService.#user.dispatch(user);
 
     return user;
+  }
+
+  public static changeName(name: string) {
+    const userData = this.#user.get();
+    if (userData) {
+      localStorage.setItem(
+        LOCAL_STORAGE_USER_KEY,
+        JSON.stringify({
+          ...userData,
+          name,
+        }),
+      );
+      UserService.#user.dispatch({
+        ...userData,
+        name,
+      });
+    }
   }
 
   private static loadUserFromStorage() {

@@ -42,11 +42,21 @@
         }
     }
 
+    & .topright-btns {
+        position: absolute;
+        top: .6em;
+        right: .6em;
+    }
+
     & .botleft-btns {
         margin: 0 1em;
 
         & .blue-link {
             margin-right: 1.2em;
+
+            &:focus-visible {
+                text-decoration: underline;
+            }
         }
     }
 }
