@@ -485,15 +485,23 @@ export class Room {
   }
 
   public isStale(): boolean {
-    const activityTsDiff = this.lastActivity.plus({ minutes: 5 }).diffNow();
+    const hasActiveConnections = this.connections.length > 0
+      && this.connections.some(c => c.isActive);
 
-    // if the room had seen some activity within last 5 minutes - it's not stale
-    if (activityTsDiff.milliseconds >= 0) {
+    // room has active connections, and an activity was detected within the last 12 hours
+    if (
+      hasActiveConnections && this.lastActivity.diffNow("hours").hours > -12
+    ) {
       return false;
     }
 
-    return this.connections.length === 0
-      || this.connections.every((c) => !c.isActive);
+    // if the room had seen some activity within last 5 minutes,
+    // though it may not have any active connections
+    if (this.lastActivity.diffNow("minutes").minutes >= -5) {
+      return false;
+    }
+
+    return true;
   }
 
   public isActiveRound(id: string): boolean {
