@@ -9,7 +9,7 @@ function createLogHistory<T extends string>(logs: LogLine<T>[]): StatHistory {
   const history = logs.reduce(
     (acc: StatHistory, log) => {
       const logDay = log.timestamp.getDate();
-      const logMonth = MONTHS[log.timestamp.getMonth() + 1]!;
+      const logMonth = MONTHS[log.timestamp.getMonth()]!;
 
       const sameDayStat = acc.find(s =>
         s.day === logDay && s.month === logMonth
