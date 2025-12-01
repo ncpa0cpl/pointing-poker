@@ -19,7 +19,7 @@ type GraphType =
 
 const validate = compileFastValidator(StatsType);
 
-export function StatsPage() {
+export const StatsPage = $component(function StatsPage(_, api) {
   const selectedGraph = sig<GraphType>(null);
   const error = sig<Error>();
   const stats = sig<Stats>({
@@ -67,14 +67,24 @@ export function StatsPage() {
     }
   };
 
-  getStats();
+  api.onMount(() => {
+    getStats();
+
+    const interval = setInterval(() => {
+      getStats();
+    }, 60_000);
+
+    return () => {
+      clearInterval(interval);
+    };
+  });
 
   return (
     <PageLayout class="stats-page">
       {error.derive(err => {
         if (err != null) {
           return (
-            <div class={[Alert.alert, Alert.error]}>
+            <div class={[Alert.alert, Alert.error, "stats-fetch-error-alert"]}>
               Due to an error it was not possible to get the stats.
             </div>
           );
@@ -152,7 +162,7 @@ export function StatsPage() {
       </div>
     </PageLayout>
   );
-}
+});
 
 function Graph(
   props: {

@@ -2,10 +2,15 @@
     justify-content: center;
     align-items: center;
 
+    & .stats-fetch-error-alert {
+        margin: 0 0 2em;
+    }
+
     & .stats-view {
         width: fit-content;
         min-width: 40vw;
         flex-direction: column;
+        margin: unset;
 
         & button {
             width: fit-content;
