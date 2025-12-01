@@ -185,7 +185,7 @@ function Graph(
 
           while (date < tmrw) {
             const day = date.get("day");
-            const month = MONTHS[date.get("month")]!;
+            const month = MONTHS[date.get("month") - 1]!;
 
             const data = statsData.find(data =>
               data.month === month && data.day === day
