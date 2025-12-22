@@ -2,6 +2,7 @@ import { sig } from "@ncpa0cpl/vanilla-jsx/signals";
 import { v4 } from "uuid";
 import type {
   MessageReceivedOutgoingMessage,
+  ParticipantRole,
   RoomConnectionInitiatedOutgoingMessage,
   RoomWSIncomingMessage,
   RoomWSOutgoingMessage,
@@ -21,6 +22,7 @@ type ConnectionParams = {
   publicUserID: string;
   username: string;
   connectionID?: string;
+  role?: ParticipantRole;
 };
 
 const noop = () => {};
@@ -293,9 +295,10 @@ export class WsConnection {
           };
 
           this.send({
+            ...connectionParams,
             type: IncomingMessageType.ROOM_CONNECT,
             messageID: v4(),
-            ...connectionParams,
+            role: connectionParams.role ?? "voter",
           });
         },
       );

@@ -16,12 +16,17 @@
     padding: unset;
 
     & .chat-message {
-        margin-top: .25em;
         display: flex;
         align-items: center;
+        padding: .3em .5em;
 
         & p {
             height: fit-content;
+        }
+
+        &:hover {
+            background-color: var(--clr-bg-5);
+            border-radius: var(--border-radius);
         }
     }
 

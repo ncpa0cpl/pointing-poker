@@ -27,10 +27,16 @@ export const DTRoomMode = Type.OneOf(
   Type.Literal("default"),
 );
 
+export const DTParticipantRole = Type.OneOf(
+  Type.Literal("voter"),
+  Type.Literal("viewer"),
+);
+
 export const DTParticipant = Type.Record({
   isActive: Type.Boolean,
   publicID: Type.String,
   username: Type.String,
+  role: DTParticipantRole,
 });
 
 export const DTDefaultOption = Type.Record({
@@ -83,6 +89,7 @@ export const DTRoomOwnerUpdateOutgoingMessage = Type.Record({
   type: Type.EnumMember(OutgoingMessageType.OWNER_UPDATE),
   ownerPublicID: Type.String,
   ownerName: Type.String,
+  ownerRole: DTParticipantRole,
 });
 
 export const DTRoomUpdateOutgoingMessage = Type.Record({
@@ -90,6 +97,7 @@ export const DTRoomUpdateOutgoingMessage = Type.Record({
   ownerPublicID: Type.String,
   ownerName: Type.String,
   roomID: Type.String,
+  ownerRole: DTParticipantRole,
   chatMessages: Type.Array(DTChatMessage),
   rounds: Type.Array(Omit(DTRoundUpdateOutgoingMessage, "type")),
   participants: Type.Array(DTParticipant),
@@ -177,3 +185,7 @@ export type MessageReceivedOutgoingMessage = Infer<
 >;
 
 export type RoomMode = Infer<typeof DTRoomMode>;
+
+export type ParticipantRole = Infer<typeof DTParticipantRole>;
+
+export type Participant = Infer<typeof DTParticipant>;

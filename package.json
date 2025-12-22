@@ -33,7 +33,7 @@
     "@ncpa0cpl/vrouter": "^0.0.14",
     "@sentry/browser": "^8.47.0",
     "adwavecss": "0.2.5",
-    "adwaveui": "^0.2.0",
+    "adwaveui": "^0.2.3",
     "dilswer": "^3.0.2",
     "escape-html": "^1.0.3",
     "http-status-codes": "^2.3.0",

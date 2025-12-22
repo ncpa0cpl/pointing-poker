@@ -224,14 +224,3 @@ export function SettingsButton() {
     </div>
   );
 }
-
-declare global {
-  namespace JSX {
-    interface IntrinsicElements {
-      "adw-switch": {
-        onchange?: (ev: AdwSwitchChangeEvent) => void;
-        active?: boolean | ReadonlySignal<boolean>;
-      };
-    }
-  }
-}

@@ -28,7 +28,7 @@ export class RoomService {
       }
     }
 
-    const room = new Room(ownerID, ownerName);
+    const room = new Room(ownerID, ownerName, "voter");
     usage.logStart("ROOM_CREATED");
     this.putRoom(room);
     return room;

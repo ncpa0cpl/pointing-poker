@@ -1,4 +1,5 @@
 import type { ServerWebSocket } from "bun";
+import { StatusCodes } from "http-status-codes";
 import { isTypedArray } from "util/types";
 import { createWsMsgParser } from "../../../shared/websockets-messages/parse-ws-message";
 import type {
@@ -184,6 +185,19 @@ class RoomWsHandler {
     ws: ServerWebSocket<unknown>,
     data: RoomOpenConnectionIncomingMessage,
   ) {
+    // validate username
+    if (data.username.replaceAll(" ", "").length === 0) {
+      ws.send(JSON.stringify(
+        <RoomWSOutgoingMessage> {
+          type: OutgoingMessageType.ERROR,
+          causedBy: data.messageID,
+          code: StatusCodes.UNPROCESSABLE_ENTITY,
+          message: "invalid username",
+        },
+      ));
+      return undefined;
+    }
+
     const room = RoomService.getRoom(data.roomID);
 
     if (RequestError.is(room)) {
@@ -202,6 +216,7 @@ class RoomWsHandler {
         data.userID,
         data.publicUserID,
         data.username,
+        data.role,
       );
     }
 
@@ -209,14 +224,14 @@ class RoomWsHandler {
       room.isOwner(data.userID)
       && connection.publicUserID !== room.ownerPublicID
     ) {
-      room.setOwner(data.userID, connection.publicUserID, data.username);
+      room.setOwner(connection);
     }
 
     const removeWs = connection.addWebSocket(ws);
 
     const response: RoomConnectionInitiatedOutgoingMessage = {
       type: OutgoingMessageType.ROOM_CONNECTED,
-      connectionID: connection.id,
+      connectionID: connection.connID,
       room: room.toView(),
       userPublicID: connection.publicUserID,
     };
@@ -353,7 +368,7 @@ class RoomWsHandler {
       return this.sendError(ws, data, user);
     }
 
-    room.setOwner(data.newOwnerID, user.publicUserID, user.username);
+    room.setOwner(user);
   }
 
   private handleFinishRound(

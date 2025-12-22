@@ -4,10 +4,11 @@ import { compileFastValidator, Type } from "dilswer";
 import { DateTime } from "luxon";
 import { marked } from "marked";
 import { v4 } from "uuid";
-import { IncomingMessageType } from "../../../shared";
+import { IncomingMessageType, Participant } from "../../../shared";
 import type {
   ChatMessageView,
   DefaultOption,
+  ParticipantRole,
   RoomMode,
 } from "../../../shared/websockets-messages/room-websocket-outgoing-message-types";
 import { OutgoingMessageType } from "../../../shared/websockets-messages/room-websocket-outgoing-message-types";
@@ -15,12 +16,6 @@ import { SentryService } from "../sentry-service/sentry-service";
 import { UserService } from "../user-service/user-service";
 import { WsConnection } from "./socket-connection";
 import type { PokerRoomRound } from "./types";
-
-type Participant = {
-  publicID: string;
-  username: string;
-  isActive: boolean;
-};
 
 type ClientChatMessage = {
   clientOnly?: boolean;
@@ -124,6 +119,7 @@ export class PokerRoomService {
     publicID: "",
     username: "",
     isActive: false,
+    role: "voter",
   });
   static #publicUserID = sig<string | null>(null);
   static #participants = sig<Participant[]>([]);
@@ -132,6 +128,16 @@ export class PokerRoomService {
   static #mode = sig<RoomMode>("default");
   static #chatMessages = sig<Signal<ClientChatMessage>[]>([]);
   static #connection = new WsConnection();
+
+  static isViewer = sig.derive(
+    PokerRoomService.#participants,
+    UserService.userOrNull,
+    (participants, currentUser) => {
+      if (!currentUser) return false;
+      const uConn = participants.find(u => u.publicID === currentUser.publicID);
+      return uConn?.role === "viewer";
+    },
+  );
 
   public static selectedRound = sig("");
   static #currentRound = sig.derive(
@@ -282,15 +288,18 @@ export class PokerRoomService {
       this.#roomOwner.dispatch({
         publicID: data.ownerPublicID,
         username: data.ownerName,
+        role: data.ownerRole,
         isActive: true,
       });
     });
 
     this.#connection.on(OutgoingMessageType.ROOM_UPDATE, (data) => {
+      sig.startBatch();
       this.#participants.dispatch(data.participants);
       this.#rounds.dispatch(data.rounds);
       this.#options.dispatch(data.defaultOptions);
       this.#mode.dispatch(data.mode);
+      sig.commitBatch();
     });
 
     this.#connection.on(
@@ -340,22 +349,26 @@ export class PokerRoomService {
         userID: user.id,
         publicUserID: user.publicID,
         username: user.name,
+        role: user.defaultRole,
       })
       .then((data) => {
+        sig.startBatch();
         this.#connected.dispatch(true);
+        this.#publicUserID.dispatch(data.userPublicID);
         this.#participants.dispatch(data.room.participants);
         this.#rounds.dispatch(data.room.rounds);
-        this.#publicUserID.dispatch(data.userPublicID);
         this.#options.dispatch(data.room.defaultOptions);
         this.#roomOwner.dispatch({
           publicID: data.room.ownerPublicID,
           username: data.room.ownerName,
+          role: data.room.ownerRole,
           isActive: true,
         });
         this.#chatMessages.dispatch(
           data.room.chatMessages.map((msg) => sig(this.mapChatMsg(msg))),
         );
         this.selectedRound.dispatch("");
+        sig.commitBatch();
 
         const presetOptions = localStorage.getItem("vote-options-preset");
         if (presetOptions) {
@@ -377,12 +390,14 @@ export class PokerRoomService {
   }
 
   public static disconnectFromRoom() {
+    sig.startBatch();
     this.#connected.dispatch(false);
     this.#roomID.dispatch(null);
     this.#roomOwner.dispatch({
       publicID: "",
       username: "",
       isActive: false,
+      role: "voter",
     });
     this.#connection.closeRoomConnection();
     this.#participants.dispatch([]);
@@ -391,6 +406,7 @@ export class PokerRoomService {
     this.#options.dispatch([]);
     this.#chatMessages.dispatch([]);
     this.selectedRound.dispatch("");
+    sig.commitBatch();
   }
 
   public static setOptions(options: string[]) {
@@ -406,6 +422,12 @@ export class PokerRoomService {
   public static setMode(mode: RoomMode) {
     return PokerRoomService.postChatMessage(
       `/setmode ${mode}`,
+    );
+  }
+
+  public static setRole(role: ParticipantRole) {
+    return PokerRoomService.postChatMessage(
+      `/setrole ${role}`,
     );
   }
 
@@ -450,10 +472,12 @@ export class PokerRoomService {
             Available commands:
             {"\n  "}/transfer [username]
             {"\n  "}/vote [value]
+            {"\n  "}/setoptions [...option]
+            {"\n  "}/addoption [option]
+            {"\n  "}/setrole [role]
+            {"\n  "}/setmode [mode]
             {"\n  "}/exit
             {"\n  "}/close
-            {"\n  "}/setoptions
-            {"\n  "}/addoption
             {"\n  "}
             {"\n  "}Use /help [command] for
             {"\n  "}more information.
@@ -530,11 +554,36 @@ export class PokerRoomService {
         case "/addoption":
           this.showSystemChatMsg(
             <pre class="nomargin">
-              /addoption [newoption]
+              /addoption [option]
               {"\n  "}Add a new option to the list of
               {"\n  "}available vote options for the
               {"\n  "}current and future rounds.
               {"\n  "}(e.g. `/addoption ?`)
+            </pre>,
+          );
+          break;
+        case "setrole":
+        case "/setrole":
+          this.showSystemChatMsg(
+            <pre class="nomargin">
+                /setrole [role]
+                {"\n  "}Change the room mode.
+                {"\n  "}Only availalbe to room owner,
+                {"\n  "}Available roles are 'private'
+                {"\n  "}and 'default'. In private mode
+                {"\n  "}all players are anonymous.
+            </pre>,
+          );
+          break;
+        case "setmode":
+        case "/setmode":
+          this.showSystemChatMsg(
+            <pre class="nomargin">
+                  /setmode [mode]
+                  {"\n  "}Change your current role.
+                  {"\n  "}Available roles are 'voter'
+                  {"\n  "}and 'viewer', a viewer does not
+                  {"\n  "}participate in voting.
             </pre>,
           );
           break;

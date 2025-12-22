@@ -57,6 +57,10 @@ h6 {
     margin: unset;
 }
 
+.hidden {
+    display: none;
+}
+
 .linked {
     justify-content: center;
     align-items: center;

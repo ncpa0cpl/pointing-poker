@@ -1,5 +1,6 @@
 import type { Infer } from "dilswer";
 import { Type } from "dilswer";
+import { DTParticipantRole } from "./room-websocket-outgoing-message-types";
 
 export enum IncomingMessageType {
   /** A message sent by the client to request joining a room. */
@@ -36,6 +37,7 @@ export const DTRoomOpenConnectionIncomingMessage = Type.Record({
   userID: Type.String,
   publicUserID: Type.String,
   username: Type.String,
+  role: DTParticipantRole,
 });
 
 export const DTSetRoomDefaultOptionsIncomingMessage = Type.Record({

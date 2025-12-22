@@ -34,7 +34,11 @@ export const VoteButtons = (props: { isSkeleton: ReadonlySignal<boolean> }) => {
       }}
       else={() => {
         return (
-          <div>
+          <div
+            class={{
+              hidden: PokerRoomService.isViewer,
+            }}
+          >
             <Range
               data={PokerRoomService.currentRound.derive(r => r?.options ?? [])}
               into={<div class="vote-buttons-container" />}

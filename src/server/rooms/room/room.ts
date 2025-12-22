@@ -3,6 +3,7 @@ import escapeHtml from "escape-html";
 import { StatusCodes } from "http-status-codes";
 import { DateTime } from "luxon";
 import type {
+  ParticipantRole,
   RoomChatUpdateOutgoingMessage,
   RoomMode,
   RoomOwnerUpdateOutgoingMessage,
@@ -12,6 +13,7 @@ import type {
   RoundUpdateOutgoingMessage,
 } from "../../../shared/websockets-messages/room-websocket-outgoing-message-types";
 import {
+  DTParticipantRole,
   DTRoomMode,
   OutgoingMessageType,
 } from "../../../shared/websockets-messages/room-websocket-outgoing-message-types";
@@ -48,6 +50,7 @@ const generateRoomID = (): string => {
 };
 
 const isRoomMode = validator(DTRoomMode);
+const isValidRole = validator(DTParticipantRole);
 
 @Persistent
 export class Room {
@@ -64,6 +67,8 @@ export class Room {
   @PWatch()
   public ownerName: string;
   @PWatch()
+  public ownerRole: ParticipantRole;
+  @PWatch()
   public mode: RoomMode;
   @PDependency()
   public rounds: Array<Round>;
@@ -76,6 +81,7 @@ export class Room {
   public constructor(
     ownerID: string,
     ownerName: string,
+    ownerRole: ParticipantRole,
     overrides: {
       id?: string;
       createdAt?: DateTime;
@@ -89,6 +95,7 @@ export class Room {
   ) {
     this.ownerID = ownerID;
     this.ownerName = ownerName;
+    this.ownerRole = ownerRole;
 
     this.ownerPublicID = overrides.ownerPublicID;
     this.id = overrides.id ?? generateRoomID();
@@ -112,7 +119,7 @@ export class Room {
     return option;
   }
 
-  private addSystemMessage(text: string): void {
+  public addSystemMessage(text: string): void {
     this.chatMessages = this.chatMessages.concat(
       new ChatMessage(
         text,
@@ -147,13 +154,7 @@ export class Room {
 
   private addRound(round: Round): void {
     this.rounds = [...this.rounds, round];
-
-    const roomUpdateMessage: RoomUpdateOutgoingMessage = {
-      type: OutgoingMessageType.ROOM_UPDATE,
-      ...this.toView(),
-    };
-
-    this.propagateMessage(roomUpdateMessage);
+    this.sendRoomUpdate();
   }
 
   public countUsers() {
@@ -162,15 +163,8 @@ export class Room {
 
   public setMode(mode: RoomMode): void {
     this.lastActivity = DateTime.now();
-
     this.mode = mode;
-
-    const roomOptionsUpdateMessage: RoomUpdateOutgoingMessage = {
-      type: OutgoingMessageType.ROOM_UPDATE,
-      ...this.toView(),
-    };
-
-    this.propagateMessage(roomOptionsUpdateMessage);
+    this.sendRoomUpdate();
   }
 
   public setDefaultOptions(options: RoundOption[]): void {
@@ -183,12 +177,7 @@ export class Room {
       lastRound.setOptions(options.slice());
     }
 
-    const roomOptionsUpdateMessage: RoomUpdateOutgoingMessage = {
-      type: OutgoingMessageType.ROOM_UPDATE,
-      ...this.toView(),
-    };
-
-    this.propagateMessage(roomOptionsUpdateMessage);
+    this.sendRoomUpdate();
   }
 
   public onConnectionStatusChange(): void {
@@ -215,7 +204,7 @@ export class Room {
   ): void {
     const idx = this.connections.findIndex((c) => {
       if (by.connectionID) {
-        return c.id === by.connectionID;
+        return c.connID === by.connectionID;
       }
       return c.userID === by.userID;
     });
@@ -229,7 +218,11 @@ export class Room {
     );
   }
 
-  private addVote(result: RoundResult) {
+  private addVote(conn: RoomConnection, result: RoundResult) {
+    if (conn.role !== "voter") {
+      return;
+    }
+
     const lastRound = this.getLastRound();
 
     if (lastRound.isInProgress) {
@@ -254,8 +247,10 @@ export class Room {
     this.lastActivity = DateTime.now();
 
     const conn = this.connections.find(c => c.isConnectionOwner(userID))!;
+
     const option = this.getOption(optionID);
     this.addVote(
+      conn,
       new RoundResult(
         userID,
         publicUserID,
@@ -282,12 +277,7 @@ export class Room {
         : "Round was cancelled.",
     );
 
-    const roomUpdateMessage: RoomUpdateOutgoingMessage = {
-      type: OutgoingMessageType.ROOM_UPDATE,
-      ...this.toView(),
-    };
-
-    this.propagateMessage(roomUpdateMessage);
+    this.sendRoomUpdate();
   }
 
   public startNewRound(userID: string): void {
@@ -309,24 +299,22 @@ export class Room {
         : "New round was started.",
     );
 
-    const roundUpdateMessage: RoomUpdateOutgoingMessage = {
-      type: OutgoingMessageType.ROOM_UPDATE,
-      ...this.toView(),
-    };
-
-    this.propagateMessage(roundUpdateMessage);
+    this.sendRoomUpdate();
   }
 
-  public setOwner(userID: string, publicID: string, username: string): void {
+  public setOwner(
+    user: RoomConnection,
+  ): void {
     this.lastActivity = DateTime.now();
 
-    this.ownerID = userID;
-    this.ownerPublicID = publicID;
+    this.ownerID = user.userID;
+    this.ownerPublicID = user.publicUserID;
 
     const roomOwnerChangeMessage: RoomOwnerUpdateOutgoingMessage = {
       type: OutgoingMessageType.OWNER_UPDATE,
-      ownerName: username,
-      ownerPublicID: publicID,
+      ownerName: user.username,
+      ownerPublicID: user.publicUserID,
+      ownerRole: user.role,
     };
 
     this.propagateMessage(roomOwnerChangeMessage);
@@ -351,10 +339,17 @@ export class Room {
     userID: string,
     publicUserID: string,
     username: string,
+    role: ParticipantRole,
   ): RoomConnection {
     this.lastActivity = DateTime.now();
 
-    const connection = new RoomConnection(this, userID, publicUserID, username);
+    const connection = new RoomConnection(
+      this,
+      userID,
+      publicUserID,
+      username,
+      role,
+    );
     this.connections.push(connection);
     this.addSystemMessage(
       `*${connection.username}* has joined.`,
@@ -374,7 +369,7 @@ export class Room {
         if (newOwnerName) {
           const conn = this.findConnectionByUsername(newOwnerName);
           if (conn) {
-            this.setOwner(conn.userID, conn.publicUserID!, conn.username);
+            this.setOwner(conn);
           }
         }
         break;
@@ -385,6 +380,7 @@ export class Room {
           const conn = this.findUserConnection(userID);
           if (conn) {
             this.addVote(
+              conn,
               new RoundResult(
                 conn.userID,
                 conn.publicUserID!,
@@ -431,6 +427,15 @@ export class Room {
         }
         break;
       }
+      case "setrole": {
+        const conn = this.findUserConnection(userID);
+        const [role] = rest;
+        if (conn && isValidRole(role)) {
+          conn.setRole(role);
+          this.sendRoomUpdate();
+        }
+        break;
+      }
     }
   }
 
@@ -465,23 +470,19 @@ export class Room {
     const connection = this.findUserConnection(userID);
 
     if (connection) {
-      this.removeConnection({ connectionID: connection.id });
+      this.removeConnection({ connectionID: connection.connID });
 
       if (connection.userID === this.ownerID) {
         const newOwner = this.connections[0];
         if (newOwner) {
-          this.setOwner(
-            newOwner.userID,
-            newOwner.publicUserID,
-            newOwner.username,
-          );
+          this.setOwner(newOwner);
         }
       }
     }
   }
 
-  public isOwner(id: string): boolean {
-    return this.ownerID === id;
+  public isOwner(userID: string): boolean {
+    return this.ownerID === userID;
   }
 
   public isStale(): boolean {
@@ -522,7 +523,7 @@ export class Room {
 
   public getConnection(id: string): RoomConnection | RequestError {
     const connection = this.connections.find(
-      (connection) => connection.id === id,
+      (connection) => connection.connID === id,
     );
 
     if (!connection) {
@@ -562,6 +563,15 @@ export class Room {
     return connection;
   }
 
+  private sendRoomUpdate() {
+    const roomUpdateMessage: RoomUpdateOutgoingMessage = {
+      type: OutgoingMessageType.ROOM_UPDATE,
+      ...this.toView(),
+    };
+
+    this.propagateMessage(roomUpdateMessage);
+  }
+
   public toView(): Omit<RoomUpdateOutgoingMessage, "type"> {
     return {
       roomID: this.id,
@@ -573,6 +583,7 @@ export class Room {
       ),
       ownerName: this.ownerName,
       ownerPublicID: this.ownerPublicID ?? "",
+      ownerRole: this.ownerRole,
       mode: this.mode,
     };
   }

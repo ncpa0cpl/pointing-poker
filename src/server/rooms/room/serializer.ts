@@ -1,5 +1,5 @@
 import { DateTime } from "luxon";
-import type { RoomMode } from "../../../shared";
+import type { ParticipantRole, RoomMode } from "../../../shared";
 import { RoomService } from "../room-sevice";
 import { RoundOption } from "../round/option/round-option";
 import type { SerializedRoundOption } from "../round/option/serializer";
@@ -17,6 +17,7 @@ type SerializedRoom = {
   ownerID: string;
   ownerPublicID?: string;
   ownerName: string;
+  ownerRole: ParticipantRole;
   defaultOptions: SerializedRoundOption[];
   chatMessages: SerializedChatMessage[];
   mode: RoomMode;
@@ -31,6 +32,7 @@ export class RoomSerializer {
       ownerID: roomConnection.ownerID,
       ownerPublicID: roomConnection.ownerPublicID,
       ownerName: roomConnection.ownerName,
+      ownerRole: roomConnection.ownerRole,
       mode: roomConnection.mode,
       rounds: roomConnection.rounds.map((round) => {
         return Round.serializer.serialize(round);
@@ -46,22 +48,27 @@ export class RoomSerializer {
   }
 
   public static deserialize(serializedData: SerializedRoom): Room {
-    const room = new Room(serializedData.ownerID, serializedData.ownerName, {
-      id: serializedData.id,
-      createdAt: DateTime.fromISO(serializedData.createdAt),
-      lastActivity: DateTime.fromISO(serializedData.lastActivity),
-      ownerPublicID: serializedData.ownerPublicID,
-      mode: serializedData.mode,
-      rounds: serializedData.rounds.map((round) => {
-        return Round.serializer.deserialize(round);
-      }),
-      defaultOptions: serializedData.defaultOptions.map((option) => {
-        return RoundOption.serializer.deserialize(option);
-      }),
-      chatMessages: serializedData.chatMessages.map((message) => {
-        return ChatMessage.serializer.deserialize(message);
-      }),
-    });
+    const room = new Room(
+      serializedData.ownerID,
+      serializedData.ownerName,
+      serializedData.ownerRole,
+      {
+        id: serializedData.id,
+        createdAt: DateTime.fromISO(serializedData.createdAt),
+        lastActivity: DateTime.fromISO(serializedData.lastActivity),
+        ownerPublicID: serializedData.ownerPublicID,
+        mode: serializedData.mode,
+        rounds: serializedData.rounds.map((round) => {
+          return Round.serializer.deserialize(round);
+        }),
+        defaultOptions: serializedData.defaultOptions.map((option) => {
+          return RoundOption.serializer.deserialize(option);
+        }),
+        chatMessages: serializedData.chatMessages.map((message) => {
+          return ChatMessage.serializer.deserialize(message);
+        }),
+      },
+    );
 
     RoomService.putRoom(room);
 

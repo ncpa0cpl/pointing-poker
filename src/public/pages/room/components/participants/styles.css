@@ -1,7 +1,13 @@
+.participant-wrapper {
+    flex-direction: column;
+    flex: 1;
+    overflow-y: auto;
+    margin-top: .4em;
+}
+
 .participants {
     margin-top: 1em;
     flex-direction: column;
-    overflow-y: auto;
 
     & .participant {
         align-items: center;
@@ -9,9 +15,27 @@
         justify-content: space-between;
         margin-bottom: 0.25em;
         border-radius: var(--border-radius);
-        padding: 0.1em 0.3em;
+        padding: 0.2em 0.5em;
+        min-height: 2.3em;
+        box-sizing: border-box;
 
-        &.highlight {
+        &:hover {
+            background-color: #96969626;
+        }
+
+        & .set-role-viewer-btn {
+            margin-inline: .5em;
+            width: 1.5em;
+            height: 1.5em;
+            min-height: unset;
+
+            & svg {
+                width: .8em;
+                height: .8em;
+            }
+        }
+
+        &.highlight.highlight {
             background-color: #9696964d;
         }
 
@@ -19,7 +43,7 @@
             opacity: 0.5;
         }
 
-        & p.username {
+        & .username {
             height: min-content;
         }
 
@@ -60,6 +84,24 @@
                 }
             }
         }
+    }
+}
+
+.set-role-voter-btn {
+    flex: 1;
+    margin-top: .8em;
+}
+
+.audience {
+    padding-top: .3em;
+    margin-top: auto;
+    flex-direction: column;
+    align-items: flex-end;
+
+    & .audience-list :not(:last-child)::after {
+        content: "|";
+        margin-inline: .4em;
+        color: var(--clr-dimmed);
     }
 }
 

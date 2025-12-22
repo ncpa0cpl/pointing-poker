@@ -3,22 +3,40 @@ import { Button, Card, Input, Typography } from "adwavecss";
 import { PageLayout } from "../../components/page-layout/page-layout";
 import { UserService } from "../../services/user-service/user-service";
 import "./styles.css";
+import { AdwSelectorChangeEvent } from "adwaveui";
+import { validator } from "dilswer";
+import { DTParticipantRole } from "../../../shared";
 import { Link } from "../../components/link/link";
 import { Router } from "../routes";
 
+const isValidRole = validator(DTParticipantRole);
+
 export function UserSettings() {
   const inputVal = sig(UserService.username().get());
+  const selectedRole = sig(UserService.defaultRole());
 
   const save = () => {
     const newname = inputVal.get().trim();
+    const defaultRole = selectedRole.get();
+
     if (newname != "") {
       UserService.changeName(newname);
+    }
+
+    if (defaultRole != UserService.defaultRole()) {
+      UserService.changeDefaultRole(defaultRole);
     }
   };
 
   const onKeydown = (e: KeyboardEvent) => {
     if (e.key === "Enter") {
       save();
+    }
+  };
+
+  const onRoleChange = (e: AdwSelectorChangeEvent) => {
+    if (isValidRole(e.value)) {
+      selectedRole.dispatch(e.value);
     }
   };
 
@@ -38,6 +56,17 @@ export function UserSettings() {
             oninput={e => inputVal.dispatch(e.target.value)}
             onkeydown={onKeydown}
           />
+          <label>
+            Default role:
+          </label>
+          <adw-selector value={selectedRole.get()} onchange={onRoleChange}>
+            <adw-option value="voter">
+              Voter
+            </adw-option>
+            <adw-option value="viewer">
+              Viewer
+            </adw-option>
+          </adw-selector>
           <div class="buttons">
             <Link
               class={Button.className({})}

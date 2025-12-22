@@ -3,6 +3,7 @@ import { DateTime } from "luxon";
 import * as uuid from "uuid";
 import {
   OutgoingMessageType,
+  type ParticipantRole,
   type RoomParticipantsUpdateOutgoingMessage,
   type RoomWSOutgoingMessage,
 } from "../../../shared/websockets-messages/room-websocket-outgoing-message-types";
@@ -10,12 +11,13 @@ import { WsReadyState } from "../../utilities/ws-utils";
 import type { Room } from "../room/room";
 
 export class RoomConnection {
-  public readonly id: string;
+  public readonly connID: string;
   public readonly createdAt: DateTime;
   public readonly room: Room;
   public readonly userID: string;
   public readonly username: string;
   public readonly publicUserID: string;
+  public role: ParticipantRole;
 
   public webSockets: ServerWebSocket<unknown>[] = [];
 
@@ -24,13 +26,15 @@ export class RoomConnection {
     userID: string,
     publicUserID: string,
     username: string,
+    role: ParticipantRole,
     overrides: { id?: string; createdAt?: DateTime } = {},
   ) {
     this.room = room;
     this.userID = userID;
     this.username = username;
     this.publicUserID = publicUserID;
-    this.id = overrides.id ?? uuid.v4();
+    this.role = role;
+    this.connID = overrides.id ?? uuid.v4();
     this.createdAt = overrides.createdAt ?? DateTime.now();
   }
 
@@ -60,14 +64,34 @@ export class RoomConnection {
     });
   }
 
-  close() {
+  public setRole(role: ParticipantRole) {
+    this.role = role;
+    if (this.room.isOwner(this.userID)) {
+      this.room.ownerRole = role;
+    }
+
+    switch (role) {
+      case "viewer":
+        this.room.addSystemMessage(
+          `**${this.username}** is now a viewer only.`,
+        );
+        break;
+      case "voter":
+        this.room.addSystemMessage(
+          `**${this.username}** is back to voting.`,
+        );
+        break;
+    }
+  }
+
+  public close() {
     this.propagateMessage({
       type: OutgoingMessageType.ROOM_CLOSED,
       roomID: this.room.id,
     });
     this.webSockets.splice(0, this.webSockets.length);
     this.room.removeConnection({
-      connectionID: this.id,
+      connectionID: this.connID,
     });
   }
 
@@ -79,6 +103,7 @@ export class RoomConnection {
       publicID: this.publicUserID,
       username: this.username,
       isActive: this.isActive,
+      role: this.role,
     };
   }
 }
