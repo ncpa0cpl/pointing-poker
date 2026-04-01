@@ -44,6 +44,9 @@ export function LogRequestMiddleware(): RequestMiddleware {
       referer: req.headers.get("Referer") ?? "NULL",
       user_agent: req.headers.get("User-Agent") ?? "NULL",
       sec_mobile: req.headers.get("Sec-Ch-Ua-Mobile") ?? "NULL",
+      forwarder_by: req.headers.get("X-Forwarded-By") ?? "NULL",
+      forwarder_for: req.headers.get("X-Forwarded-For") ?? "NULL",
+      host: req.headers.get("Host") ?? "NULL",
     };
 
     queueMicrotask(() => {
