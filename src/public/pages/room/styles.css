@@ -31,6 +31,10 @@
         &.voting-section {
             width: calc(var(--room-view-card-width) * 1.25);
         }
+
+        @media screen and (max-width: 1200px) {
+            height: 35em;
+        }
     }
 
     & .voting-section {
