@@ -87,6 +87,8 @@ class WsMessage {
   }
 }
 
+const roomNotFoundErrMsgReg = /Room with id .+? not found\./;
+
 export class WsConnection {
   #socket!: WebSocket;
   #isOpened = false;
@@ -101,7 +103,14 @@ export class WsConnection {
 
   public constructor() {
     this.on(OutgoingMessageType.ERROR, (errMsg) => {
-      SentryService.error(new Error(`Server error: ${errMsg.message}`), errMsg);
+      if (roomNotFoundErrMsgReg.test(errMsg.message)) {
+        return;
+      }
+
+      SentryService.error(
+        new Error(`Server error: ${errMsg.message}`),
+        errMsg,
+      );
     });
     this.createWs().catch(() => this.reportConnectionFailures());
   }
