@@ -48,6 +48,7 @@
   },
   "devDependencies": {
     "@ncpa0cpl/nodepack": "2.5.1",
+    "@sentry/cli": "^3.8.2",
     "@types/bun": "^1.4.4",
     "@types/escape-html": "^1.0.4",
     "@types/http-status-codes": "^1.2.0",
