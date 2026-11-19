@@ -42,7 +42,7 @@ export class WebsocketRoute<T> implements Route {
 
   public async handleRequest(
     request: RouterRequest,
-    bunServer: Server,
+    bunServer: Server<unknown>,
   ): Promise<RouterResponse | undefined> {
     if (this.beforeUpgrade) {
       const resp = await this.beforeUpgrade(request);

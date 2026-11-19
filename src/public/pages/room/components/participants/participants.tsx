@@ -1,23 +1,13 @@
-import { Case, If, Range, Switch } from "@ncpa0cpl/vanilla-jsx";
+import { Case, If, Switch } from "@ncpa0cpl/vanilla-jsx";
 import { sig } from "@ncpa0cpl/vanilla-jsx/signals";
 import { Box, Button, ScrollView, Typography } from "adwavecss";
+import { Icon } from "../../../../assets/icons";
 import { PokerRoomService } from "../../../../services/poker-room-service/poker-room-service";
 import type { PokerRoomRound } from "../../../../services/poker-room-service/types";
 import { VoteHighlights } from "../../vote-higlights";
 import "./styles.css";
-import { StyleDict } from "@ncpa0cpl/vanilla-jsx/dist/types/jsx-namespace/jsx.types";
-import { Icon } from "../../../../assets/icons";
 
 type BadgeType = "own-vote-result" | "vote-result" | "voted" | "awaiting-vote";
-
-const getUserVote = (
-  results: PokerRoomRound["results"],
-  publicUserID: string,
-) => {
-  const userResult = results.find(r => r.publicUserID === publicUserID);
-
-  return userResult;
-};
 
 function resolveBadgeType(
   round: PokerRoomRound,

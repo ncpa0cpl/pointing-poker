@@ -1,23 +1,32 @@
 {
   "languages": {
     "JavaScript": {
-      "language_servers": ["!eslint", "vtsls"]
+      "language_servers": ["typescript-ls"],
+      "code_actions_on_format": {
+        "source.organizeImports": true
+      },
     },
     "TypeScript": {
-      "language_servers": ["!eslint", "vtsls"],
+      "language_servers": ["typescript-ls"],
+      "code_actions_on_format": {
+        "source.organizeImports": true
+      },
       "formatter": {
         "external": {
-          "command": "bun",
-          "arguments": ["run", "dprint", "fmt", "--stdin", "{buffer_path}"]
+          "command": "dprint",
+          "arguments": ["fmt", "--stdin", "{buffer_path}"]
         }
       }
     },
     "TSX": {
-      "language_servers": ["!eslint", "vtsls"],
+      "language_servers": ["typescript-ls"],
+      "code_actions_on_format": {
+        "source.organizeImports": true
+      },
       "formatter": {
         "external": {
-          "command": "bun",
-          "arguments": ["run", "dprint", "fmt", "--stdin", "{buffer_path}"]
+          "command": "dprint",
+          "arguments": ["fmt", "--stdin", "{buffer_path}"]
         }
       }
     },

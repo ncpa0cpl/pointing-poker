@@ -1,14 +1,13 @@
 {
   "compilerOptions": {
-    "target": "es6",
+    "target": "es2025",
     "module": "ESNext",
-    "moduleResolution": "Node",
+    "moduleResolution": "bundler",
     "jsx": "react-jsx",
     "jsxImportSource": "@ncpa0cpl/vanilla-jsx",
     "declaration": true,
     "outDir": "./dist",
     "rootDir": "./src",
-    "downlevelIteration": true,
     "strict": true,
     "noUnusedLocals": true,
     "noUncheckedIndexedAccess": true,

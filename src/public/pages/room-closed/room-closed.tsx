@@ -1,7 +1,7 @@
 import { Button, Card, Typography } from "adwavecss";
-import { Router } from "../routes";
-import "./styles";
 import { PageLayout } from "../../components/page-layout/page-layout";
+import { Router } from "../routes";
+import "./styles.css";
 
 export function RoomClosed() {
   return (

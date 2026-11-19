@@ -1,13 +1,13 @@
 import type { ReadonlySignal } from "@ncpa0cpl/vanilla-jsx/signals";
 import { sig } from "@ncpa0cpl/vanilla-jsx/signals";
 import { Button, Card, Input } from "adwavecss";
+import { Link } from "../../components/link/link";
+import { PageLayout } from "../../components/page-layout/page-layout";
 import { PointingPokerDescription } from "../../components/pp-description/pp-description";
 import { RepoLink } from "../../components/repo-link/repo-link";
 import { UserService } from "../../services/user-service/user-service";
-import "./styles.css";
-import { Link } from "../../components/link/link";
-import { PageLayout } from "../../components/page-layout/page-layout";
 import { Router } from "../routes";
+import "./styles.css";
 
 export const RegisterPage = (props: {
   qparams: ReadonlySignal<{ roomID?: string }>;

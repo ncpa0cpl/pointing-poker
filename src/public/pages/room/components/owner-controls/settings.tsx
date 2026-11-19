@@ -1,6 +1,5 @@
-import { ReadonlySignal, sig } from "@ncpa0cpl/vanilla-jsx/signals";
+import { sig } from "@ncpa0cpl/vanilla-jsx/signals";
 import { Button } from "adwavecss";
-import { AdwSwitchChangeEvent } from "adwaveui";
 import { DefaultOption } from "../../../../../shared";
 import { Icon } from "../../../../assets/icons";
 import { PokerRoomService } from "../../../../services/poker-room-service/poker-room-service";

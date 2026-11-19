@@ -2,7 +2,7 @@ import type { Server } from "bun";
 import { CompiledPath } from "../compiled-path";
 import { Context } from "../context";
 import type { Route } from "../router";
-import { RouterRequest, routerRequest } from "../router-request";
+import { RouterRequest } from "../router-request";
 import { RouterResponse } from "../router-response";
 
 export type RouteHandler = (ctx: Context) => Context | Promise<Context>;
@@ -31,7 +31,7 @@ export class CustomRoute implements Route {
 
   public async handleRequest(
     request: RouterRequest,
-    bunServer: Server,
+    bunServer: Server<any>,
     url: URL,
   ): Promise<RouterResponse | undefined> {
     const parsedUrl = this.compiledPath.parse(url.pathname);

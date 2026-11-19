@@ -18,7 +18,9 @@ const watch = process.argv.includes("--watch");
 const serve = process.argv.includes("--serve");
 const dev = process.argv.includes("--dev");
 
-const packageJson = JSON.parse(fsSync.readFileSync(p("package.json"), { encoding: "utf-8" }));
+const packageJson = JSON.parse(
+  fsSync.readFileSync(p("package.json"), { encoding: "utf-8" }),
+);
 
 const gitHash = new TextDecoder().decode(execSync("git rev-parse HEAD")).trim();
 
@@ -41,7 +43,11 @@ async function main() {
             text: js`
               const ENVIRONMENT = "${dev ? "development" : "production"}";
               const RLS_VERSION = "${packageJson.version}#${gitHash}";
-              const SENTRY_DSN = ${process.env.SENTRY_DSN ? JSON.stringify(process.env.SENTRY_DSN) : "undefined"};
+              const SENTRY_DSN = ${
+                process.env.SENTRY_DSN
+                  ? JSON.stringify(process.env.SENTRY_DSN)
+                  : "undefined"
+              };
               `.trim(),
           },
         },
@@ -66,7 +72,8 @@ async function main() {
           "@Root/*": "./*",
         },
         replaceImports: {
-          "@ncpa0cpl/vanilla-jsx/signals": "@Root/../../node_modules/@ncpa0cpl/vanilla-jsx/dist/esm/signals/signal",
+          "@ncpa0cpl/vanilla-jsx/signals":
+            "@Root/../../node_modules/@ncpa0cpl/vanilla-jsx/dist/esm/signals/signal",
         },
         onBuildComplete() {
           postBuild();
@@ -157,9 +164,13 @@ function runServer() {
   if (serve) {
     try {
       console.log("Starting server...");
-      const proc = spawn("bun", ["--hot", p("src/server/start.ts"), "--debug"], {
-        stdio: "inherit",
-      });
+      const proc = spawn(
+        "bun",
+        ["--hot", p("src/server/start.ts"), "--debug"],
+        {
+          stdio: "inherit",
+        },
+      );
 
       const cleanup = () => {
         try {

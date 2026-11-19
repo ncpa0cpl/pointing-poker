@@ -114,7 +114,10 @@ export class ServeHandler {
     return response;
   }
 
-  private async respondToOptionsRequest(request: Request, bunServer: Server) {
+  private async respondToOptionsRequest(
+    request: Request,
+    bunServer: Server<any>,
+  ) {
     if (this.options.forceHttps && !this.isHttps(request)) {
       const response = await this.redirectToHttps(request);
       return response;
@@ -221,7 +224,7 @@ export class ServeHandler {
 
   public async respond(
     request: RouterRequest,
-    bunServer: Server,
+    bunServer: Server<any>,
   ): Promise<RouterResponse | undefined> {
     if (request.method !== "GET") {
       const origin = request.headers.get("Origin");
@@ -280,7 +283,7 @@ export class ServeHandler {
     }
   }
 
-  public async fetch(request: Request, bunServer: Server) {
+  public async fetch(request: Request, bunServer: Server<any>) {
     if (request.method === "OPTIONS") {
       return this.respondToOptionsRequest(request, bunServer);
     }

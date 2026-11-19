@@ -48,7 +48,7 @@ export class RouterResponse extends Response {
     init?: ResponseInit,
     comesFrom?: RouterResponse,
   ) {
-    super(_arrBuff, init);
+    super(_arrBuff as any, init);
     if (comesFrom) {
       this.logData = { ...comesFrom.logData };
     }

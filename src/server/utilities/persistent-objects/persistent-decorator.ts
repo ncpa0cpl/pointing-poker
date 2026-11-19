@@ -22,10 +22,10 @@ function applyWatchers(
   for (const key of Object.keys(instance)) {
     const isWatched =
       Reflect.getMetadata(PersistentMetadataKeys.PAWTCH, instance, key)
-        === true;
+      === true;
     const isDependency =
       Reflect.getMetadata(PersistentMetadataKeys.DEPENDENCY, instance, key)
-        === true;
+      === true;
 
     if (isWatched || isDependency) {
       const box = { value: instance[key] };

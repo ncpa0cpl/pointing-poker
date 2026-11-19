@@ -6,7 +6,7 @@ export interface Route {
   matches(method: string, url: string): boolean;
   handleRequest(
     request: RouterRequest,
-    bunServer: Server,
+    bunServer: Server<any>,
     url: URL,
   ): RouterResponse | Promise<RouterResponse | undefined> | undefined;
   toView(): any;

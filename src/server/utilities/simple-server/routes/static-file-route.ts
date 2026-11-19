@@ -3,7 +3,7 @@ import path from "node:path";
 import { CompiledPath } from "../compiled-path";
 import { Context } from "../context";
 import type { Route } from "../router";
-import { RouterRequest, routerRequest } from "../router-request";
+import { RouterRequest } from "../router-request";
 import { RouterResponse } from "../router-response";
 
 export class StaticFileRoute implements Route {
@@ -31,7 +31,7 @@ export class StaticFileRoute implements Route {
 
   public async handleRequest(
     request: RouterRequest,
-    bunServer: Server,
+    bunServer: Server<any>,
     url: URL,
   ): Promise<RouterResponse | undefined> {
     const result = this.compiledPath.parse(url.pathname);

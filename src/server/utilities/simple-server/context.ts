@@ -70,7 +70,7 @@ export class Context {
 
   public constructor(
     public readonly request: RouterRequest,
-    public readonly bunServer: Server,
+    public readonly bunServer: Server<any>,
     public readonly url: URL,
     public readonly params: Record<string, string>,
     public readonly wildcardValue: null | string,

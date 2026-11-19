@@ -1,6 +1,11 @@
 import fs from "fs";
 import globalizeJSDOM from "jsdom-global";
-import { isMainThread, Worker, parentPort, workerData } from "node:worker_threads";
+import {
+  isMainThread,
+  parentPort,
+  Worker,
+  workerData,
+} from "node:worker_threads";
 
 let root;
 
@@ -27,6 +32,14 @@ function addMissingGlobals() {
   globalThis.URL = window.URL;
 
   window.scrollTo = () => {};
+
+  // jsdom-global copies these onto globalThis unbound, and jsdom 27+ brand-checks
+  // the receiver, so `globalThis.addEventListener(...)` (Sentry calls it) throws
+  // "'addEventListener' called on an object that is not a valid instance of
+  // EventTarget".
+  globalThis.addEventListener = window.addEventListener.bind(window);
+  globalThis.removeEventListener = window.removeEventListener.bind(window);
+  globalThis.dispatchEvent = window.dispatchEvent.bind(window);
 }
 
 /**

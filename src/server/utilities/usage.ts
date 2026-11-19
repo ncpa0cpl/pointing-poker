@@ -26,6 +26,10 @@ export class Usage<Type extends string> {
     }, Time.MINUTE);
   }
 
+  stop() {
+    clearInterval(this.interval);
+  }
+
   private createWriteStream() {
     return fs.createWriteStream(
       this.file,

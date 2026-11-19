@@ -36,7 +36,7 @@ export interface HttpServerOptions {
 export interface RequestMiddleware {
   (
     request: RouterRequest,
-    server: Server,
+    server: Server<any>,
   ): MaybePromise<RouterResponse | Request | void>;
 }
 
@@ -44,7 +44,7 @@ export interface ResponseMiddleware {
   (
     response: RouterResponse,
     request: RouterRequest,
-    server: Server,
+    server: Server<any>,
   ): MaybePromise<RouterResponse>;
 }
 

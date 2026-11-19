@@ -7,7 +7,10 @@ export interface RouterRequest extends Request {
 
 const ROUTER_REQUEST_SYMBOL = Symbol("RouterRequest");
 
-export function routerRequest(server: Server, request: Request): RouterRequest {
+export function routerRequest(
+  server: Server<any>,
+  request: Request,
+): RouterRequest {
   const kvStore = new RequestKvStore();
 
   function getRequestClientIp(): string | undefined {

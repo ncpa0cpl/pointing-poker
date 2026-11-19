@@ -5,7 +5,7 @@ import { RouterResponse } from "../simple-server/router-response";
 
 const gzip = (data: Buffer): Promise<Buffer> => {
   return new Promise<Buffer>((resolve, reject) => {
-    zlib.gzip(data, (err, buff) => {
+    zlib.gzip(data as any, (err, buff) => {
       if (err) {
         reject(err);
       } else {
