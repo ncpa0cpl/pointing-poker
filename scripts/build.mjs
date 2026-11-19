@@ -1,5 +1,5 @@
 import { build } from "@ncpa0cpl/nodepack";
-import SentryCli from "@sentry/cli";
+import { SentryCli } from "@sentry/cli";
 import { execSync, spawn } from "child_process";
 import dedent from "dedent";
 import fsSync from "fs";
@@ -196,7 +196,8 @@ async function uploadSourcemapsToSentry(result) {
     const cli = new SentryCli();
 
     await cli.releases.new(release);
-    await cli.releases.uploadSourcemaps(sourcemapDir, {
+    await cli.releases.uploadSourceMaps(release, {
+      include: [sourcemapDir],
       ext: ["js", "mjs", "css", "map"],
       // Bundles are served from /public/esm; artifacts must match that URL.
       urlPrefix: "/public/esm",
