@@ -37,7 +37,7 @@
     "@sentry/browser": "^11.14.0",
     "adwavecss": "0.4.1",
     "adwaveui": "^0.4.1",
-    "dilswer": "^3.2.2",
+    "dilswer": "^3.2.3",
     "escape-html": "^1.0.3",
     "http-status-codes": "^2.3.0",
     "jsdom-global": "^3.0.2",
@@ -47,7 +47,7 @@
     "uuid": "^9.0.1"
   },
   "devDependencies": {
-    "@ncpa0cpl/nodepack": "2.5.0",
+    "@ncpa0cpl/nodepack": "2.5.1",
     "@types/bun": "^1.4.4",
     "@types/escape-html": "^1.0.4",
     "@types/http-status-codes": "^1.2.0",

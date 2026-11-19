@@ -1,6 +1,5 @@
 import { build } from "@ncpa0cpl/nodepack";
 import { execSync, spawn } from "child_process";
-import crc32 from "crc-32";
 import dedent from "dedent";
 import fsSync from "fs";
 import fs from "fs/promises";
@@ -18,72 +17,64 @@ const watch = process.argv.includes("--watch");
 const serve = process.argv.includes("--serve");
 const dev = process.argv.includes("--dev");
 
-const packageJson = JSON.parse(
-  fsSync.readFileSync(p("package.json"), { encoding: "utf-8" }),
-);
+const packageJson = JSON.parse(fsSync.readFileSync(p("package.json"), { encoding: "utf-8" }));
 
 const gitHash = new TextDecoder().decode(execSync("git rev-parse HEAD")).trim();
 
 async function main() {
   try {
-    await fs.mkdir(p("dist/public/esm"), { recursive: true });
+    await fs.mkdir(p("dist/public"), { recursive: true });
 
-    await Promise.all([
-      build({
-        bundle: true,
-        entrypoint: p("src/public/index.tsx"),
-        srcDir: p("src/public"),
-        outDir: p("dist/public"),
-        tsConfig: p("tsconfig.json"),
-        formats: ["esm"],
-        target: "ES2022",
-        exclude: [/\/server\//],
-        banner: {
-          index: {
-            text: js`
-              const ENVIRONMENT = "${dev ? "development" : "production"}";
-              const RLS_VERSION = "${packageJson.version}#${gitHash}";
-              const SENTRY_DSN = ${
-                process.env.SENTRY_DSN
-                  ? JSON.stringify(process.env.SENTRY_DSN)
-                  : "undefined"
-              };
-              `.trim(),
-          },
+    const result = await build({
+      bundle: true,
+      entrypoint: p("src/public/index.tsx"),
+      srcDir: p("src/public"),
+      outDir: p("dist/public"),
+      tsConfig: p("tsconfig.json"),
+      formats: ["esm"],
+      target: "ES2022",
+      exclude: [/\/server\//],
+      banner: {
+        index: {
+          text: js`
+            const ENVIRONMENT = "${dev ? "development" : "production"}";
+            const RLS_VERSION = "${packageJson.version}#${gitHash}";
+            const SENTRY_DSN = ${process.env.SENTRY_DSN ? JSON.stringify(process.env.SENTRY_DSN) : "undefined"};
+            `.trim(),
         },
-        esbuildOptions: {
-          platform: "browser",
-          jsxImportSource: "@ncpa0cpl/vanilla-jsx",
-          jsx: "transform",
-          keepNames: true,
-          sourcemap: dev ? "inline" : "external",
-          minify: !dev,
-          treeShaking: true,
-          loader: {
-            ".webp": "file",
-          },
-          publicPath: "/public/esm",
-          plugins: [svgPlugin()],
+      },
+      esbuildOptions: {
+        platform: "browser",
+        jsxImportSource: "@ncpa0cpl/vanilla-jsx",
+        jsx: "transform",
+        keepNames: true,
+        sourcemap: dev ? "linked" : "external",
+        minify: !dev,
+        treeShaking: true,
+        loader: {
+          ".webp": "file",
         },
-        compileVendors: ["@sentry/browser"],
-        watch,
-        parsableExtensions: [".css"],
-        pathAliases: {
-          "@Root/*": "./*",
-        },
-        replaceImports: {
-          "@ncpa0cpl/vanilla-jsx/signals":
-            "@Root/../../node_modules/@ncpa0cpl/vanilla-jsx/dist/esm/signals/signal",
-        },
-        onBuildComplete() {
-          postBuild();
-          return runServer();
-        },
-      }),
-    ]);
+        publicPath: "/public",
+        plugins: [svgPlugin()],
+      },
+      compileVendors: ["@sentry/browser"],
+      watch,
+      parsableExtensions: [".css"],
+      bundleOutfile: "[name].[hash][ext]",
+      pathAliases: {
+        "@Root/*": "./*",
+      },
+      replaceImports: {
+        "@ncpa0cpl/vanilla-jsx/signals": "@Root/../../node_modules/@ncpa0cpl/vanilla-jsx/dist/esm/signals/signal",
+      },
+      onBuildComplete(result) {
+        postBuild(result);
+        return runServer();
+      },
+    });
 
     if (!watch) {
-      await postBuild();
+      await postBuild(result);
     }
 
     process.exit(0);
@@ -93,16 +84,27 @@ async function main() {
   }
 }
 
-async function postBuild() {
+/**
+ *
+ * @param {undefined | { outputs: string[] }} result
+ */
+async function postBuild(result) {
+  const script = result.outputs.find((f) => f.endsWith(".mjs"));
+  const scriptSourcemap = result.outputs.find((f) => f.endsWith(".mjs.map"));
+  const stylesheet = result.outputs.find((f) => f.endsWith(".css"));
+  const stylesheetSourcemap = result.outputs.find((f) => f.endsWith(".css.map"));
+
   try {
-    const stylesheet = await hashFileName(p("dist/public/esm/index.css"));
-    const script = await hashFileName(p("dist/public/esm/index.mjs"));
-    if (!dev) {
-      await fs.rename(p("dist/public/esm/index.css.map"), `${stylesheet}.map`);
-      await fs.rename(p("dist/public/esm/index.mjs.map"), `${script}.map`);
+    console.log("Building index page...");
+
+    if (!script) {
+      throw new Error("couldn't find the JavaScript bundle in the output files");
     }
 
-    console.log("Building index page...");
+    if (!stylesheet) {
+      throw new Error("couldn't find the CSS bundle in the output files");
+    }
+
     await buildStaticPages({
       entrypointPath: script,
       htmlTemplatePath: p("src/public/index.html"),
@@ -142,35 +144,13 @@ async function postBuild() {
   }
 }
 
-/**
- * @param {string} file
- */
-async function hashFileName(file) {
-  const fileContent = await fs.readFile(file);
-  const hash = crc32.buf(fileContent).toString(16);
-
-  const basename = path.basename(file, path.extname(file));
-  const hashedName = `${basename}_${hash}${path.extname(file)}`;
-  const newFilePath = path.join(path.dirname(file), hashedName);
-  if (fsSync.existsSync(newFilePath)) {
-    await fs.unlink(newFilePath);
-  }
-  await fs.rename(file, newFilePath);
-
-  return newFilePath;
-}
-
 function runServer() {
   if (serve) {
     try {
       console.log("Starting server...");
-      const proc = spawn(
-        "bun",
-        ["--hot", p("src/server/start.ts"), "--debug"],
-        {
-          stdio: "inherit",
-        },
-      );
+      const proc = spawn("bun", ["--hot", p("src/server/start.ts"), "--debug"], {
+        stdio: "inherit",
+      });
 
       const cleanup = () => {
         try {
