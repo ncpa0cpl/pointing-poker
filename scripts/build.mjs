@@ -181,8 +181,11 @@ async function uploadSourcemapsToSentry(result) {
     return;
   }
 
-  const sourcemap = result?.outputs.find((f) => f.endsWith(".mjs.map"));
-  if (!sourcemap) {
+  // The output dir keeps bundles from earlier builds.
+  const uploadFiles = (result?.outputs ?? []).filter((f) =>
+    /\.(mjs|css)(\.map)?$/.test(f)
+  );
+  if (uploadFiles.length === 0) {
     console.warn(
       "No sourcemaps found in the build output, skipping Sentry upload.",
     );
@@ -190,7 +193,6 @@ async function uploadSourcemapsToSentry(result) {
   }
 
   const release = RELEASE;
-  const sourcemapDir = path.dirname(sourcemap);
 
   try {
     console.log(`Uploading sourcemaps to Sentry (release ${release})...`);
@@ -199,7 +201,7 @@ async function uploadSourcemapsToSentry(result) {
 
     await cli.releases.new(release);
     await cli.releases.uploadSourceMaps(release, {
-      include: [sourcemapDir],
+      include: [{ paths: uploadFiles }],
       ext: ["js", "mjs", "css", "map"],
       // Bundles are served from /public/esm; artifacts must match that URL.
       urlPrefix: "/public/esm",
