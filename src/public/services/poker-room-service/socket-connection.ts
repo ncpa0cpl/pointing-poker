@@ -91,6 +91,7 @@ export class WsConnection {
   #socket!: WebSocket;
   #isOpened = false;
   #attemptingConnection = false;
+  #consecutiveFailures = 0;
   #connectionParams: null | ConnectionParams = null;
   #eventEmitter = new EventTarget();
   private onopen = noop;
@@ -102,7 +103,19 @@ export class WsConnection {
     this.on(OutgoingMessageType.ERROR, (errMsg) => {
       SentryService.error(new Error(`Server error: ${errMsg.message}`), errMsg);
     });
-    this.createWs().catch(() => {});
+    this.createWs().catch(() => this.reportConnectionFailures());
+  }
+
+  private reportConnectionFailures() {
+    this.#consecutiveFailures++;
+    // report once, at the 2nd failure, and stay silent until a connection succeeds
+    if (this.#consecutiveFailures !== 2) {
+      return;
+    }
+    SentryService.error(
+      new Error("WebSocket connection keeps failing"),
+      { failures: this.#consecutiveFailures },
+    );
   }
 
   private setOpened(opened: boolean) {
@@ -118,6 +131,7 @@ export class WsConnection {
         this.#socket = new WebSocket(`${protocol}://${location.host}/ws/room`);
 
         this.#socket.onopen = () => {
+          this.#consecutiveFailures = 0;
           this.#socket.onerror = (err) => {
             console.error(err);
             if (
@@ -200,6 +214,7 @@ export class WsConnection {
         })
         .catch(() => {
           retryEntry[2] = false;
+          this.reportConnectionFailures();
           this.tryReconnect();
         });
     };
