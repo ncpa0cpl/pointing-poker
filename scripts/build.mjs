@@ -24,6 +24,9 @@ const packageJson = JSON.parse(
 
 const gitHash = new TextDecoder().decode(execSync("git rev-parse HEAD")).trim();
 
+// "#" breaks Sentry's release lookup; keep the version URL-safe.
+const RELEASE = `${packageJson.version}+${gitHash}`;
+
 async function main() {
   try {
     await fs.mkdir(p("dist/public"), { recursive: true });
@@ -41,7 +44,7 @@ async function main() {
         index: {
           text: js`
             const ENVIRONMENT = "${dev ? "development" : "production"}";
-            const RLS_VERSION = "${packageJson.version}#${gitHash}";
+            const RLS_VERSION = "${RELEASE}";
             const SENTRY_DSN = ${
               process.env.SENTRY_DSN
                 ? JSON.stringify(process.env.SENTRY_DSN)
@@ -186,8 +189,7 @@ async function uploadSourcemapsToSentry(result) {
     return;
   }
 
-  // Must match the release the browser SDK reports (RLS_VERSION banner).
-  const release = `${packageJson.version}#${gitHash}`;
+  const release = RELEASE;
   const sourcemapDir = path.dirname(sourcemap);
 
   try {
