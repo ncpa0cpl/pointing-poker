@@ -1,4 +1,5 @@
 import type { Server, ServerWebSocket } from "bun";
+import { logger } from "../../../app-logger";
 import { CompiledPath } from "../compiled-path";
 import { MaybePromise } from "../http-server";
 import type { Route } from "../router";
@@ -56,6 +57,11 @@ export class WebsocketRoute<T> implements Route {
     if (ok) {
       return;
     }
+
+    logger.warn(
+      "Failed to upgrade request to a websocket connection, request was not a valid websocket upgrade request.",
+      request,
+    );
 
     return RouterResponse.from("Internal server error", {
       status: 500,
