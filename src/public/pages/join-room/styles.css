@@ -13,6 +13,8 @@
 }
 
 .join-room-page {
+    flex-direction: column;
+
     & .alert.delayed {
         animation-name: delayed-view;
         animation-duration: 5s;
@@ -25,6 +27,28 @@
         align-items: center;
         height: fit-content;
         place-self: center;
+
+        & .room-create-form {
+            flex-direction: column;
+
+            & .create-room-btn {
+                flex: 1;
+            }
+
+            & .persistent-toggle {
+                font-size: .7em;
+                margin: .4em .8em;
+                display: flex;
+                place-self: flex-start;
+                align-items: center;
+                gap: .8em;
+
+                & .persistent-label {
+                    user-select: none;
+                    cursor: help;
+                }
+            }
+        }
 
         & .join-form {
             margin: 0.5em 0;

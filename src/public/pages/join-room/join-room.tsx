@@ -1,17 +1,17 @@
 import { sig } from "@ncpa0cpl/vanilla-jsx/signals";
 import { Alert, Card, Typography } from "adwavecss";
-import { PointingPokerDescription } from "../../components/pp-description/pp-description";
-import { RepoLink } from "../../components/repo-link/repo-link";
-import { UserService } from "../../services/user-service/user-service";
-import { RoomConnectionForm } from "./components/room-connection-form/room-connection-form";
-import { RoomCreateForm } from "./components/room-create-form/room-create-form";
-import "./styles.css";
 import { KofiLink } from "../../components/kofi-link/kofi-link";
 import { Link } from "../../components/link/link";
 import { PageLayout } from "../../components/page-layout/page-layout";
+import { PointingPokerDescription } from "../../components/pp-description/pp-description";
+import { RepoLink } from "../../components/repo-link/repo-link";
 import { UserBtn } from "../../components/user-button/user-button";
 import { PokerRoomService } from "../../services/poker-room-service/poker-room-service";
+import { UserService } from "../../services/user-service/user-service";
 import { Router } from "../routes";
+import { RoomConnectionForm } from "./components/room-connection-form/room-connection-form";
+import { RoomCreateForm } from "./components/room-create-form/room-create-form";
+import "./styles.css";
 
 export const JoinRoom = () => {
   const userExists = UserService.userExists();

@@ -126,6 +126,7 @@ export class PokerRoomService {
   static #rounds = sig<PokerRoomRound[]>([]);
   static #options = sig<DefaultOption[]>([]);
   static #mode = sig<RoomMode>("default");
+  static #persistent = sig(false);
   static #chatMessages = sig<Signal<ClientChatMessage>[]>([]);
   static #connection = new WsConnection();
 
@@ -196,6 +197,10 @@ export class PokerRoomService {
 
   public static get mode(): ReadonlySignal<RoomMode> {
     return PokerRoomService.#mode;
+  }
+
+  public static get persistent(): ReadonlySignal<boolean> {
+    return PokerRoomService.#persistent;
   }
 
   public static get socketOpened(): ReadonlySignal<boolean> {
@@ -299,6 +304,11 @@ export class PokerRoomService {
       this.#rounds.dispatch(data.rounds);
       this.#options.dispatch(data.defaultOptions);
       this.#mode.dispatch(data.mode);
+      this.#persistent.dispatch(data.persistent);
+      const selected = this.selectedRound.get();
+      if (selected.length > 0 && !data.rounds.some((r) => r.id === selected)) {
+        this.selectedRound.dispatch("");
+      }
       sig.commitBatch();
     });
 
@@ -364,6 +374,7 @@ export class PokerRoomService {
           role: data.room.ownerRole,
           isActive: true,
         });
+        this.#persistent.dispatch(data.room.persistent);
         this.#chatMessages.dispatch(
           data.room.chatMessages.map((msg) => sig(this.mapChatMsg(msg))),
         );
@@ -404,6 +415,8 @@ export class PokerRoomService {
     this.#rounds.dispatch([]);
     this.#publicUserID.dispatch(null);
     this.#options.dispatch([]);
+    this.#mode.dispatch("default");
+    this.#persistent.dispatch(false);
     this.#chatMessages.dispatch([]);
     this.selectedRound.dispatch("");
     sig.commitBatch();
@@ -431,7 +444,19 @@ export class PokerRoomService {
     );
   }
 
-  public static async createRoom() {
+  public static resetRounds() {
+    return PokerRoomService.postChatMessage("/reset");
+  }
+
+  public static clearChat() {
+    return PokerRoomService.postChatMessage("/clearchat");
+  }
+
+  public static closeRoom() {
+    return PokerRoomService.postChatMessage("/close");
+  }
+
+  public static async createRoom(persistent = false) {
     const user = UserService.user.get();
 
     const { roomID } = await fetch("/api/room", {
@@ -439,6 +464,7 @@ export class PokerRoomService {
       body: JSON.stringify({
         userID: user.id,
         username: user.name,
+        persistent,
       }),
     })
       .then(resp => resp.json() as Promise<{ roomID: string }>);
@@ -476,6 +502,8 @@ export class PokerRoomService {
             {"\n  "}/addoption [option]
             {"\n  "}/setrole [role]
             {"\n  "}/setmode [mode]
+            {"\n  "}/reset
+            {"\n  "}/clearchat
             {"\n  "}/exit
             {"\n  "}/close
             {"\n  "}
@@ -584,6 +612,27 @@ export class PokerRoomService {
                   {"\n  "}Available roles are 'voter'
                   {"\n  "}and 'viewer', a viewer does not
                   {"\n  "}participate in voting.
+            </pre>,
+          );
+          break;
+        case "reset":
+        case "/reset":
+          this.showSystemChatMsg(
+            <pre class="nomargin">
+              /reset
+              {"\n  "}Delete all previous rounds
+              {"\n  "}and start a new empty round.
+              {"\n  "}Only available to the owner.
+            </pre>,
+          );
+          break;
+        case "clearchat":
+        case "/clearchat":
+          this.showSystemChatMsg(
+            <pre class="nomargin">
+              /clearchat
+              {"\n  "}Clear the room chat history.
+              {"\n  "}Only available to the owner.
             </pre>,
           );
           break;

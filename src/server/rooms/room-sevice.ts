@@ -20,10 +20,30 @@ export class RoomService {
     this.rooms.push(room);
   }
 
-  public static createRoom(ownerID: string, ownerName: string): Room | null {
-    if (this.rooms.length >= MAX_ACTIVE_ROOMS) {
+  public static createRoom(
+    ownerID: string,
+    ownerName: string,
+    persistent = false,
+  ): Room | null {
+    if (persistent) {
+      // persistent rooms are never purged, so they bypass the active rooms cap
+      const room = new Room(ownerID, ownerName, "voter", {
+        persistent: true,
+      });
+      usage.logStart("ROOM_CREATED");
+      this.putRoom(room);
+      return room;
+    }
+
+    const activeRoomsCount = this.rooms.filter((room) => !room.persistent)
+      .length;
+
+    if (activeRoomsCount >= MAX_ACTIVE_ROOMS) {
       this.purgeStaleRooms();
-      if (this.rooms.length >= MAX_ACTIVE_ROOMS) {
+      if (
+        this.rooms.filter((room) => !room.persistent).length
+        >= MAX_ACTIVE_ROOMS
+      ) {
         return null;
       }
     }

@@ -13,7 +13,11 @@ export function addCreateRoomRoute(server: HttpServer) {
       return ctx.send(createResponse(400));
     }
 
-    const room = RoomService.createRoom(body.userID, body.username);
+    const room = RoomService.createRoom(
+      body.userID,
+      body.username,
+      body.persistent ?? false,
+    );
 
     if (!room) {
       return ctx.sendStatus(503, "Too many rooms.");

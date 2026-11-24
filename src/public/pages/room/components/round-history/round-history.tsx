@@ -1,6 +1,6 @@
 import { If, Range } from "@ncpa0cpl/vanilla-jsx";
 import type { ReadonlySignal } from "@ncpa0cpl/vanilla-jsx/signals";
-import { Box, NavSidebar, Typography } from "adwavecss";
+import { Box, Button, NavSidebar, Typography } from "adwavecss";
 import { UpsideDownScrollView } from "../../../../components/upside-down-scrollview/upside-down-scrollview";
 import { PokerRoomService } from "../../../../services/poker-room-service/poker-room-service";
 import type { PokerRoomRound } from "../../../../services/poker-room-service/types";
@@ -16,6 +16,21 @@ export const RoundHistory = (props: {
     (rounds): PokerRoomRoundWithId[] =>
       rounds.map((r, idx) => ({ ...r, idx: idx + 1 })),
   );
+
+  const handleResetRounds = () => {
+    if (
+      !window.confirm(
+        "This will delete all previous rounds and start a new empty round. Continue?",
+      )
+    ) {
+      return;
+    }
+    PokerRoomService.resetRounds()?.catch(() => {
+      PokerRoomService.showSystemChatMsg(
+        "ERROR: Unable to reset the rounds, due to connection issues.",
+      );
+    });
+  };
 
   const renderRoundBtn = (round: PokerRoomRoundWithId) => (
     <button
@@ -74,6 +89,22 @@ export const RoundHistory = (props: {
           }}
         />
       </UpsideDownScrollView>
+      <If
+        into={<div class="reset-rounds-container" />}
+        condition={PokerRoomService.isCurrentUserTheOwner}
+        then={() => (
+          <button
+            class={{
+              "reset-rounds-btn": true,
+              [Button.button]: true,
+            }}
+            title="Delete all previous rounds and start a new empty round."
+            onclick={handleResetRounds}
+          >
+            Reset Rounds
+          </button>
+        )}
+      />
     </div>
   );
 };

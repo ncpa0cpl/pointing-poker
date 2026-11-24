@@ -109,6 +109,42 @@ export function SettingsButton() {
     localStorage.setItem("vote-options-preset", JSON.stringify(opts));
   };
 
+  const handleClearChat = async () => {
+    if (
+      !window.confirm("This will clear the entire chat history. Continue?")
+    ) {
+      return;
+    }
+
+    try {
+      inProgress.dispatch(true);
+      await PokerRoomService.clearChat();
+    } catch (err) {
+      window.alert(
+        "There was an error when trying to clear the chat history.",
+      );
+    }
+    inProgress.dispatch(false);
+  };
+
+  const handleCloseRoom = async () => {
+    if (
+      !window.confirm(
+        "This will permanently close the room and disconnect all players from it. Continue?",
+      )
+    ) {
+      return;
+    }
+
+    try {
+      inProgress.dispatch(true);
+      await PokerRoomService.closeRoom();
+    } catch (err) {
+      window.alert("There was an error when trying to close the room.");
+    }
+    inProgress.dispatch(false);
+  };
+
   const dialog = (
     <dialog
       class="settings-modal"
@@ -157,6 +193,20 @@ export function SettingsButton() {
               onclick={() => visiblePanel.dispatch("vote-editor")}
             >
               Modify Vote Options
+            </button>
+            <button
+              class="btn open-vote-editor-btn"
+              title="Clear the room chat history."
+              onclick={handleClearChat}
+            >
+              Clear Chat
+            </button>
+            <button
+              class="btn danger open-vote-editor-btn"
+              title="Permanently close the room and disconnect all players from it."
+              onclick={handleCloseRoom}
+            >
+              Close Room
             </button>
           </div>
           <div class="vote-options-editor">

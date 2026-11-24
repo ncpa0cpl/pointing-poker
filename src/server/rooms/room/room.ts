@@ -29,6 +29,7 @@ import { RoundOption } from "../round/option/round-option";
 import { RoundResult } from "../round/result/round-result";
 import { Round } from "../round/round";
 import { ChatMessage } from "./chat-message/chat-message";
+import { Encoder } from "./custom-encoder";
 import { RoomSerializer } from "./serializer";
 
 const getDefaultOptions = () => [
@@ -49,6 +50,12 @@ const generateRoomID = (): string => {
   return Math.random().toString(36).substring(2, 10);
 };
 
+const generatePersistentRoomID = (): string => {
+  // timestamp prefix lowers the odds of id collisions between long-lived rooms
+  const timestamp = Encoder.encode(Date.now());
+  return `${timestamp}${generateRoomID()}`;
+};
+
 const isRoomMode = validator(DTRoomMode);
 const isValidRole = validator(DTParticipantRole);
 
@@ -57,6 +64,7 @@ export class Room {
   public static serializer = RoomSerializer;
 
   public readonly id: string;
+  public readonly persistent: boolean;
   public readonly createdAt: DateTime;
   public lastActivity: DateTime;
 
@@ -91,6 +99,7 @@ export class Room {
       defaultOptions?: RoundOption[];
       chatMessages?: ChatMessage[];
       mode?: RoomMode;
+      persistent?: boolean;
     } = {},
   ) {
     this.ownerID = ownerID;
@@ -98,7 +107,9 @@ export class Room {
     this.ownerRole = ownerRole;
 
     this.ownerPublicID = overrides.ownerPublicID;
-    this.id = overrides.id ?? generateRoomID();
+    this.persistent = overrides.persistent ?? false;
+    this.id = overrides.id
+      ?? (this.persistent ? generatePersistentRoomID() : generateRoomID());
     this.createdAt = overrides.createdAt ?? DateTime.now();
     this.lastActivity = overrides.lastActivity ?? this.createdAt;
     this.defaultOptions = overrides.defaultOptions ?? getDefaultOptions();
@@ -280,6 +291,36 @@ export class Room {
     this.sendRoomUpdate();
   }
 
+  public resetRounds(userID: string): void {
+    this.lastActivity = DateTime.now();
+
+    this.rounds = [new Round(undefined, this.defaultOptions.slice())];
+
+    const username = this.getUsername(userID);
+    this.addSystemMessage(
+      username
+        ? `All previous rounds were deleted by ${username}.`
+        : "All previous rounds were deleted.",
+    );
+
+    this.sendRoomUpdate();
+  }
+
+  public clearChat(userID: string): void {
+    this.lastActivity = DateTime.now();
+
+    this.chatMessages = [];
+
+    const username = this.getUsername(userID);
+    this.addSystemMessage(
+      username
+        ? `Chat history was cleared by ${username}.`
+        : "Chat history was cleared.",
+    );
+
+    this.sendRoomUpdate();
+  }
+
   public startNewRound(userID: string): void {
     this.lastActivity = DateTime.now();
 
@@ -399,6 +440,18 @@ export class Room {
         }
         break;
       }
+      case "reset": {
+        if (this.isOwner(userID)) {
+          this.resetRounds(userID);
+        }
+        break;
+      }
+      case "clearchat": {
+        if (this.isOwner(userID)) {
+          this.clearChat(userID);
+        }
+        break;
+      }
       case "setoptions": {
         if (this.isOwner(userID)) {
           const options = rest.filter(Boolean);
@@ -486,6 +539,10 @@ export class Room {
   }
 
   public isStale(): boolean {
+    if (this.persistent) {
+      return false;
+    }
+
     const hasActiveConnections = this.connections.length > 0
       && this.connections.some(c => c.isActive);
 
@@ -585,6 +642,7 @@ export class Room {
       ownerPublicID: this.ownerPublicID ?? "",
       ownerRole: this.ownerRole,
       mode: this.mode,
+      persistent: this.persistent,
     };
   }
 

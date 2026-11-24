@@ -1,6 +1,7 @@
 .round-history {
     margin-top: 1em;
     overflow-y: auto;
+    height: -webkit-fill-available;
 
     & .nav-sidebar {
         flex-grow: 1;
@@ -10,6 +11,15 @@
             justify-content: space-between;
             overflow: hidden;
         }
+    }
+
+    & .reset-rounds-container {
+        padding-top: .5em;
+        margin-top: auto;
+    }
+
+    & .reset-rounds-btn {
+        width: 100%;
     }
 }
 

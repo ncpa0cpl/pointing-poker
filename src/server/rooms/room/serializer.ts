@@ -21,6 +21,7 @@ type SerializedRoom = {
   defaultOptions: SerializedRoundOption[];
   chatMessages: SerializedChatMessage[];
   mode: RoomMode;
+  persistent: boolean;
 };
 
 export class RoomSerializer {
@@ -43,6 +44,7 @@ export class RoomSerializer {
       chatMessages: roomConnection.chatMessages.map((message) => {
         return ChatMessage.serializer.serialize(message);
       }),
+      persistent: roomConnection.persistent,
     };
     return serializedData;
   }
@@ -67,6 +69,7 @@ export class RoomSerializer {
         chatMessages: serializedData.chatMessages.map((message) => {
           return ChatMessage.serializer.deserialize(message);
         }),
+        persistent: serializedData.persistent,
       },
     );
 

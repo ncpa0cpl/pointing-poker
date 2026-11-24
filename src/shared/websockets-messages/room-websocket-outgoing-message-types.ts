@@ -103,6 +103,7 @@ export const DTRoomUpdateOutgoingMessage = Type.Record({
   participants: Type.Array(DTParticipant),
   defaultOptions: Type.Array(DTDefaultOption),
   mode: DTRoomMode,
+  persistent: Type.Boolean,
 });
 
 export const DTRoomConnectionOpenedOutgoingMessage = Type.Record({
