@@ -3,7 +3,7 @@
 import { Settings as LuxonSettings } from "luxon";
 import "reflect-metadata";
 import { logger } from "./app-logger";
-import { Room } from "./rooms/room/room";
+import { RoomService } from "./rooms/room-sevice";
 import { addRoutes } from "./routes/add-routes";
 import { CacheMiddleware } from "./utilities/middleware/cache-middleware";
 import { GzipMiddleware } from "./utilities/middleware/gzip-middleware";
@@ -12,7 +12,6 @@ import {
   LogResponseMiddleware,
 } from "./utilities/middleware/log-middleware";
 import { LimiterMiddleware } from "./utilities/middleware/protection-middleware";
-import { deserializeClassInstancesFromPersistentStorage } from "./utilities/persistent-objects/deserialize-class-instances-from-persistent-storage";
 import { HttpServer } from "./utilities/simple-server/http-server";
 import { RouterResponse } from "./utilities/simple-server/router-response";
 
@@ -53,7 +52,7 @@ logger.info(
 `,
 );
 
-deserializeClassInstancesFromPersistentStorage(Room).catch((e) => {
+RoomService.loadRoomsFromDisk().catch((e) => {
   logger.error({
     message: "Deserialization of persisted class instances failed.",
     error: e,

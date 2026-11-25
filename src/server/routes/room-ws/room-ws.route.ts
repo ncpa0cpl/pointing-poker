@@ -77,7 +77,7 @@ class RoomWsHandler {
     usage.logEnd("CONNECTION_OPENED");
   }
 
-  public message(
+  public async message(
     ws: ServerWebSocket<unknown>,
     message: string | Buffer,
   ) {
@@ -89,6 +89,12 @@ class RoomWsHandler {
           return;
         }
         this.msgsReceived.set(data.messageID, Date.now());
+      }
+
+      // the handlers below look rooms up synchronously, so a retired room has
+      // to be brought back into memory before any of them runs
+      if (RoomService.isRetired(data.roomID)) {
+        await RoomService.loadRetiredRoom(data.roomID);
       }
 
       switch (data.type) {

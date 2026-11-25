@@ -9,7 +9,7 @@ import { ChatMessage } from "./chat-message/chat-message";
 import type { SerializedChatMessage } from "./chat-message/serializer";
 import { Room } from "./room";
 
-type SerializedRoom = {
+export type SerializedRoom = {
   id: string;
   createdAt: string;
   lastActivity: string;

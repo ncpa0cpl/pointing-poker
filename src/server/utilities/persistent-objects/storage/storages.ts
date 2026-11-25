@@ -44,4 +44,15 @@ export class Storages {
     const allEntries: object[] = await storage.getAll();
     return allEntries;
   }
+
+  public static async get(
+    storageName: string,
+    id: string,
+  ): Promise<object | null> {
+    const storage = await Storages.getStorage(storageName);
+    if (await storage.has(id)) {
+      return storage.get(id);
+    }
+    return null;
+  }
 }

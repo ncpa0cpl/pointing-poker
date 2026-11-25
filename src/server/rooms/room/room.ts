@@ -59,6 +59,9 @@ const generatePersistentRoomID = (): string => {
 const isRoomMode = validator(DTRoomMode);
 const isValidRole = validator(DTParticipantRole);
 
+// persistent rooms retire to disk-only storage after this much inactivity
+export const PERSISTENT_ROOM_RETIRE_AFTER_HOURS = 1;
+
 @Persistent
 export class Room {
   public static serializer = RoomSerializer;
@@ -538,17 +541,20 @@ export class Room {
     return this.ownerID === userID;
   }
 
+  private hasActiveConnections(): boolean {
+    return this.connections.length > 0
+      && this.connections.some(c => c.isActive);
+  }
+
   public isStale(): boolean {
     if (this.persistent) {
       return false;
     }
 
-    const hasActiveConnections = this.connections.length > 0
-      && this.connections.some(c => c.isActive);
-
     // room has active connections, and an activity was detected within the last 12 hours
     if (
-      hasActiveConnections && this.lastActivity.diffNow("hours").hours > -12
+      this.hasActiveConnections()
+      && this.lastActivity.diffNow("hours").hours > -12
     ) {
       return false;
     }
@@ -560,6 +566,18 @@ export class Room {
     }
 
     return true;
+  }
+
+  public isRetirable(): boolean {
+    if (!this.persistent) {
+      return false;
+    }
+
+    const hasActiveConnections = this.hasActiveConnections();
+    const inactiveForHours = this.lastActivity.diffNow("hours").hours;
+
+    return !hasActiveConnections
+      && inactiveForHours <= -PERSISTENT_ROOM_RETIRE_AFTER_HOURS;
   }
 
   public isActiveRound(id: string): boolean {
