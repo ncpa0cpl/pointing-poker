@@ -1,0 +1,38 @@
+name: server tests
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+concurrency:
+  group: server-tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  server-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.4.5"
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Start the test stack (app + nginx proxy)
+        run: docker compose -f docker-compose.test.yml up -d --build --wait
+
+      - name: Run server tests
+        run: bun run test:server
+
+      - name: Dump container logs on failure
+        if: failure()
+        run: |
+          echo "--- app container ---"
+          docker logs pointing-poker-test 2>&1 | tail -200
+          echo "--- proxy container ---"
+          docker logs pointing-poker-proxy-test 2>&1 | tail -100
