@@ -10,8 +10,6 @@ import {
 
 const TIMEOUT = 15_000;
 
-type Matcher = Parameters<RoomClient["waitFor"]>[0];
-
 const clients: RoomClient[] = [];
 const rooms: {
   roomID: string;
@@ -67,23 +65,6 @@ function waitForChatEndingWith(
       m.type === OutgoingMessageType.ROOM_CHAT_UPDATE
       && m.chatMessages.at(-1)?.text === text,
     timeoutMs,
-  );
-}
-
-/** asserts that NO message matching the matcher arrives within the timeout */
-async function expectNoMessage(
-  client: RoomClient,
-  matcher: Matcher,
-  timeoutMs = 1500,
-): Promise<void> {
-  let received: unknown;
-  try {
-    received = await client.waitFor(matcher, timeoutMs);
-  } catch {
-    return; // nothing arrived — as expected
-  }
-  throw new Error(
-    `expected no matching message, but received: ${JSON.stringify(received)}`,
   );
 }
 
@@ -664,14 +645,8 @@ describe("live: chat messages and chat commands", () => {
   );
 
   // NOTE: this test destroys its room, so it must run LAST in this file.
-  //
-  // NOTE (SERVER BUG, asserted as observed): room.dispose() iterates
-  // this.connections while conn.close() splices entries out of that same
-  // array — so only every SECOND participant (indices 0, 2, 4, ...) receives
-  // room:closed. The remaining sockets are silently left connected to a room
-  // that no longer exists.
   test(
-    "/close by the owner destroys the room (notification only reaches every second participant)",
+    "/close by the owner destroys the room and notifies every participant",
     async () => {
       const { roomID, owner } = await newRoom("close-owner");
       const userA = track(await connectToRoom({ roomID, username: "close-a" }));
@@ -680,28 +655,25 @@ describe("live: chat messages and chat commands", () => {
 
       postChat(owner.client, roomID, owner.userID, "/close");
 
-      // connections at indices 0 and 2 are notified ...
       const ownerClosed = await owner.client.waitFor(
         OutgoingMessageType.ROOM_CLOSED,
       );
       expect(ownerClosed.roomID).toBe(roomID);
+      const aClosed = await userA.client.waitFor(
+        OutgoingMessageType.ROOM_CLOSED,
+      );
+      expect(aClosed.roomID).toBe(roomID);
       const bClosed = await userB.client.waitFor(
         OutgoingMessageType.ROOM_CLOSED,
       );
       expect(bClosed.roomID).toBe(roomID);
-
-      // ... while connections at indices 1 and 3 are NOT
-      await expectNoMessage(
-        userA.client,
-        (m) => m.type === OutgoingMessageType.ROOM_CLOSED,
+      const cClosed = await userC.client.waitFor(
+        OutgoingMessageType.ROOM_CLOSED,
       );
-      await expectNoMessage(
-        userC.client,
-        (m) => m.type === OutgoingMessageType.ROOM_CLOSED,
-      );
+      expect(cClosed.roomID).toBe(roomID);
 
-      // the room is gone from the service either way: reconnecting to it
-      // answers with room:closed
+      // the room is gone from the service: reconnecting to it answers with
+      // room:closed
       const late = await RoomClient.connect();
       clients.push(late);
       late.send({

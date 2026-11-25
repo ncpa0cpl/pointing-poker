@@ -107,26 +107,6 @@ async function expect400(
   expect(res.status).toBe(400);
 }
 
-/**
- * Same as expect400 but for payloads the server unexpectedly accepts that
- * must still be cleaned up afterwards (observed-200 cases).
- */
-async function expectAcceptedAndClose(
-  res: Response,
-  label: string,
-  payload: Record<string, unknown>,
-): Promise<{ roomID: string }> {
-  expect(res.status).toBe(200);
-  const body = (await res.json()) as { roomID: string };
-  expect(typeof body.roomID).toBe("string");
-  const ownerID = typeof payload.userID === "string"
-    ? payload.userID
-    : uniqueId("leak-owner");
-  await closeRoom(body.roomID, ownerID);
-  void label;
-  return body;
-}
-
 /** json body used for every valid-room request in the validation suites */
 function validBody(
   extra: Record<string, unknown> = {},
@@ -267,22 +247,13 @@ describe("POST /api/room", () => {
       await expect400(res, _label, payload as Record<string, unknown>);
     }, 30_000);
 
-    // NOTE: observed discrepancy — the source's dilswer schema (Type.String)
-    // accepts empty strings, so the server creates a room for them (200)
-    // even though the empty userID/username case was expected to be a 400.
-    test(
-      "observed: empty-string userID and username are ACCEPTED (200)",
-      async () => {
-        const res1 = await postRoomJson({ userID: "", username: "x" });
-        await expectAcceptedAndClose(res1, "empty userID", { userID: "" });
+    test("empty-string userID and username are rejected with 400", async () => {
+      const res1 = await postRoomJson({ userID: "", username: "x" });
+      await expect400(res1, "empty userID", { userID: "" });
 
-        const res2 = await postRoomJson({ userID: "some-user", username: "" });
-        await expectAcceptedAndClose(res2, "empty username", {
-          userID: "some-user",
-        });
-      },
-      30_000,
-    );
+      const res2 = await postRoomJson({ userID: "some-user", username: "" });
+      await expect400(res2, "empty username", { userID: "some-user" });
+    }, 30_000);
 
     test(
       "does not validate unknown extra properties (observed: 200)",
@@ -304,23 +275,16 @@ describe("POST /api/room", () => {
       30_000,
     );
 
-    // NOTE: observed discrepancy — bodies that fail JSON.parse throw inside
-    // ctx.body("json") BEFORE the schema validator runs, so the framework's
-    // error handler answers 500 "Internal server error" instead of 400.
     test.each([
       ["empty body", ""],
       ["whitespace-only body", "   "],
       ["malformed json", "{\"userID\": \"x\", "],
       ["non-json text", "hello world"],
       ["form-encoded", "userID=x&username=y"],
-    ])(
-      "observed: %s → 500 (parse error bypasses validation)",
-      async (_label, raw) => {
-        const res = await postRoom(raw);
-        expect(res.status).toBe(500);
-      },
-      30_000,
-    );
+    ])("rejects %s with 400", async (_label, raw) => {
+      const res = await postRoom(raw);
+      await expect400(res, _label);
+    }, 30_000);
 
     test.each([
       ["json string", "\"just a string\""],

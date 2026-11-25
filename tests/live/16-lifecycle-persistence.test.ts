@@ -106,19 +106,6 @@ async function tryConnect(opts: {
   return { ok: false };
 }
 
-/** runs `fn`, retrying once after cleaning up (for environment interference) */
-async function withRetry(fn: () => Promise<void>): Promise<void> {
-  try {
-    await fn();
-  } catch (e) {
-    for (const client of allClients.splice(0, allClients.length)) {
-      await closeQuietly(client);
-    }
-    await ensureUp();
-    await fn();
-  }
-}
-
 /**
  * Seeds a room with a finished round (1 vote) and a chat message. The
  * clients are returned still open so the persistence check below can nudge
@@ -251,16 +238,11 @@ async function readPersistedSnapshot(
 }
 
 /**
- * The server serializes every room to disk through a 25ms debounced write
- * that is SHARED between all rooms — a state change in another room within
- * that window cancels this room's pending write (and a room that is updated
- * frequently enough can starve every OTHER room's updates indefinitely).
- *
- * We therefore poll until the seeded state reaches the disk, re-posting a
- * chat message (which re-triggers serialization) when the write was
- * cancelled, but only for a bounded time: if other suites keep the shared
- * debounce busy, we proceed with whichever snapshot did land and assert the
- * restored room against that exact snapshot instead.
+ * Polls until the room's finished-round state and chat message have reached
+ * the disk snapshot. Posting a chat message re-triggers the room's
+ * serialization (the server's debounced write can be cancelled by a
+ * concurrent state change), so we nudge when the snapshot is still stale.
+ * Returns false when the state never landed within the timeout.
  */
 async function waitForPersistedState(
   roomID: string,
@@ -299,10 +281,7 @@ async function waitForPersistedState(
 
 /**
  * Asserts that the restored room view matches the snapshot that was on disk
- * right before the restart. When the finished-round state made it to disk
- * (the normal case on an idle server) this covers finalResult, votes and
- * chat; if the shared-debounce starvation above kicked in, it still fully
- * verifies that whatever WAS persisted is restored faithfully.
+ * right before the restart.
  */
 function assertRoomMatchesSnapshot(
   room: ConnectedUser["response"]["room"],
@@ -356,62 +335,60 @@ describe("room lifecycle (no restart)", () => {
   test(
     "room:disconnect removes the participant, posts a system chat message, and later messages from that userID fail with 404",
     async () => {
-      await withRetry(async () => {
-        const { roomID, owner } = await setupRoom({ username: "lc-owner" });
-        const voter = await connectToRoom({ roomID, username: "lc-voter" });
-        track(voter.client);
+      const { roomID, owner } = await setupRoom({ username: "lc-owner" });
+      const voter = await connectToRoom({ roomID, username: "lc-voter" });
+      track(voter.client);
 
-        // sanity: both participants are present after the join (the owner
-        // also receives a participants-change for its OWN join, so match on 2)
-        const joined = await owner.client.waitFor(
-          (m) =>
-            m.type === OutgoingMessageType.ROOM_PARTICIPANTS_UPDATE
-            && m.participants.length === 2
-            && m.participants.some((p) => p.publicID === voter.publicUserID),
-        );
-        expect(joined.participants.length).toBe(2);
+      // sanity: both participants are present after the join (the owner
+      // also receives a participants-change for its OWN join, so match on 2)
+      const joined = await owner.client.waitFor(
+        (m) =>
+          m.type === OutgoingMessageType.ROOM_PARTICIPANTS_UPDATE
+          && m.participants.length === 2
+          && m.participants.some((p) => p.publicID === voter.publicUserID),
+      );
+      expect(joined.participants.length).toBe(2);
 
-        voter.client.send({
-          type: IncomingMessageType.ROOM_DISCONNECT,
-          roomID,
-          userID: voter.userID,
-        });
-
-        // the voter is gone from the participants list
-        const gone = await owner.client.waitFor(
-          (m) =>
-            m.type === OutgoingMessageType.ROOM_PARTICIPANTS_UPDATE
-            && !m.participants.some((p) => p.publicID === voter.publicUserID),
-        );
-        expect(gone.participants.length).toBe(1);
-        expect(gone.participants[0]!.publicID).toBe(owner.publicUserID);
-
-        // ...and a "*<username>* has left." system chat message was posted
-        const chat = await owner.client.waitFor(
-          (m) =>
-            m.type === OutgoingMessageType.ROOM_CHAT_UPDATE
-            && m.chatMessages.some(
-              (c) => c.text === `*${voter.username}* has left.`,
-            ),
-        );
-        expect(chat.chatMessages.at(-1)!.text).toBe(
-          `*${voter.username}* has left.`,
-        );
-
-        // the socket itself stays open, but the server no longer knows the user
-        const voteMsgID = voter.client.send({
-          type: IncomingMessageType.ADD_ROUND_VOTE,
-          roomID,
-          userID: voter.userID,
-          roundID: owner.response.room.rounds.at(-1)!.id,
-          optionRef: owner.response.room.defaultOptions[0]!.id,
-        });
-        const err = await voter.client.expectError(voteMsgID);
-        expect(err.code).toBe(404);
-
-        await closeQuietly(owner.client);
-        await closeQuietly(voter.client);
+      voter.client.send({
+        type: IncomingMessageType.ROOM_DISCONNECT,
+        roomID,
+        userID: voter.userID,
       });
+
+      // the voter is gone from the participants list
+      const gone = await owner.client.waitFor(
+        (m) =>
+          m.type === OutgoingMessageType.ROOM_PARTICIPANTS_UPDATE
+          && !m.participants.some((p) => p.publicID === voter.publicUserID),
+      );
+      expect(gone.participants.length).toBe(1);
+      expect(gone.participants[0]!.publicID).toBe(owner.publicUserID);
+
+      // ...and a "*<username>* has left." system chat message was posted
+      const chat = await owner.client.waitFor(
+        (m) =>
+          m.type === OutgoingMessageType.ROOM_CHAT_UPDATE
+          && m.chatMessages.some(
+            (c) => c.text === `*${voter.username}* has left.`,
+          ),
+      );
+      expect(chat.chatMessages.at(-1)!.text).toBe(
+        `*${voter.username}* has left.`,
+      );
+
+      // the socket itself stays open, but the server no longer knows the user
+      const voteMsgID = voter.client.send({
+        type: IncomingMessageType.ADD_ROUND_VOTE,
+        roomID,
+        userID: voter.userID,
+        roundID: owner.response.room.rounds.at(-1)!.id,
+        optionRef: owner.response.room.defaultOptions[0]!.id,
+      });
+      const err = await voter.client.expectError(voteMsgID);
+      expect(err.code).toBe(404);
+
+      await closeQuietly(owner.client);
+      await closeQuietly(voter.client);
     },
     15_000,
   );
@@ -419,47 +396,45 @@ describe("room lifecycle (no restart)", () => {
   test(
     "plain socket close keeps the participant but marks it inactive; reconnecting with the same userID re-attaches to the same connectionID",
     async () => {
-      await withRetry(async () => {
-        const { roomID, owner } = await setupRoom({ username: "lc-owner2" });
-        const voter = await connectToRoom({ roomID, username: "lc-voter2" });
-        track(voter.client);
+      const { roomID, owner } = await setupRoom({ username: "lc-owner2" });
+      const voter = await connectToRoom({ roomID, username: "lc-voter2" });
+      track(voter.client);
 
-        // hard-close the socket without room:disconnect
-        await voter.client.close();
+      // hard-close the socket without room:disconnect
+      await voter.client.close();
 
-        // the connection REMAINS in the participants list, inactive
-        const inactive = await owner.client.waitFor(
-          (m) =>
-            m.type === OutgoingMessageType.ROOM_PARTICIPANTS_UPDATE
-            && m.participants.some(
-              (p) => p.publicID === voter.publicUserID && p.isActive === false,
-            ),
-        );
-        expect(inactive.participants.length).toBe(2);
+      // the connection REMAINS in the participants list, inactive
+      const inactive = await owner.client.waitFor(
+        (m) =>
+          m.type === OutgoingMessageType.ROOM_PARTICIPANTS_UPDATE
+          && m.participants.some(
+            (p) => p.publicID === voter.publicUserID && p.isActive === false,
+          ),
+      );
+      expect(inactive.participants.length).toBe(2);
 
-        // reconnecting with the same userID re-attaches to the SAME connection
-        const reattached = await connectToRoom({
-          roomID,
-          userID: voter.userID,
-          username: voter.username,
-        });
-        track(reattached.client);
-        expect(reattached.connectionID).toBe(voter.connectionID);
-        expect(reattached.publicUserID).toBe(voter.publicUserID);
-
-        // ...and the participant is active again
-        const active = await owner.client.waitFor(
-          (m) =>
-            m.type === OutgoingMessageType.ROOM_PARTICIPANTS_UPDATE
-            && m.participants.some(
-              (p) => p.publicID === voter.publicUserID && p.isActive === true,
-            ),
-        );
-        expect(active.participants.length).toBe(2);
-
-        await closeQuietly(owner.client);
-        await closeQuietly(reattached.client);
+      // reconnecting with the same userID re-attaches to the SAME connection
+      const reattached = await connectToRoom({
+        roomID,
+        userID: voter.userID,
+        username: voter.username,
       });
+      track(reattached.client);
+      expect(reattached.connectionID).toBe(voter.connectionID);
+      expect(reattached.publicUserID).toBe(voter.publicUserID);
+
+      // ...and the participant is active again
+      const active = await owner.client.waitFor(
+        (m) =>
+          m.type === OutgoingMessageType.ROOM_PARTICIPANTS_UPDATE
+          && m.participants.some(
+            (p) => p.publicID === voter.publicUserID && p.isActive === true,
+          ),
+      );
+      expect(active.participants.length).toBe(2);
+
+      await closeQuietly(owner.client);
+      await closeQuietly(reattached.client);
     },
     15_000,
   );
@@ -467,45 +442,43 @@ describe("room lifecycle (no restart)", () => {
   test(
     "owner disconnect transfers ownership to the first remaining participant, who can then perform owner actions",
     async () => {
-      await withRetry(async () => {
-        const { roomID, owner } = await setupRoom({ username: "lc-owner3" });
-        const first = await connectToRoom({ roomID, username: "lc-first" });
-        track(first.client);
-        const second = await connectToRoom({ roomID, username: "lc-second" });
-        track(second.client);
+      const { roomID, owner } = await setupRoom({ username: "lc-owner3" });
+      const first = await connectToRoom({ roomID, username: "lc-first" });
+      track(first.client);
+      const second = await connectToRoom({ roomID, username: "lc-second" });
+      track(second.client);
 
-        owner.client.send({
-          type: IncomingMessageType.ROOM_DISCONNECT,
-          roomID,
-          userID: owner.userID,
-        });
-
-        // ownership falls to the first remaining participant (join order)
-        const ownerChange = await first.client.waitFor(
-          (m) =>
-            m.type === OutgoingMessageType.OWNER_UPDATE
-            && m.ownerPublicID === first.publicUserID,
-        );
-        expect(ownerChange.ownerName).toBe(first.username);
-
-        // the new owner can perform owner actions (round:create)
-        const createMsgID = first.client.send({
-          type: IncomingMessageType.CREATE_NEW_ROUND,
-          roomID,
-          userID: first.userID,
-        });
-        await first.client.expectAck(createMsgID);
-
-        const roomUpdate = await second.client.waitFor(
-          (m) => m.type === OutgoingMessageType.ROOM_UPDATE,
-        );
-        // 1 initial round + the newly created one
-        expect(roomUpdate.rounds.length).toBe(2);
-        expect(roomUpdate.ownerPublicID).toBe(first.publicUserID);
-
-        await closeQuietly(first.client);
-        await closeQuietly(second.client);
+      owner.client.send({
+        type: IncomingMessageType.ROOM_DISCONNECT,
+        roomID,
+        userID: owner.userID,
       });
+
+      // ownership falls to the first remaining participant (join order)
+      const ownerChange = await first.client.waitFor(
+        (m) =>
+          m.type === OutgoingMessageType.OWNER_UPDATE
+          && m.ownerPublicID === first.publicUserID,
+      );
+      expect(ownerChange.ownerName).toBe(first.username);
+
+      // the new owner can perform owner actions (round:create)
+      const createMsgID = first.client.send({
+        type: IncomingMessageType.CREATE_NEW_ROUND,
+        roomID,
+        userID: first.userID,
+      });
+      await first.client.expectAck(createMsgID);
+
+      const roomUpdate = await second.client.waitFor(
+        (m) => m.type === OutgoingMessageType.ROOM_UPDATE,
+      );
+      // 1 initial round + the newly created one
+      expect(roomUpdate.rounds.length).toBe(2);
+      expect(roomUpdate.ownerPublicID).toBe(first.publicUserID);
+
+      await closeQuietly(first.client);
+      await closeQuietly(second.client);
     },
     15_000,
   );
@@ -513,34 +486,32 @@ describe("room lifecycle (no restart)", () => {
   test(
     "when the last participant leaves, the room keeps no participants and the join/leave chat trail survives",
     async () => {
-      await withRetry(async () => {
-        const { roomID, owner } = await setupRoom({
-          username: "lc-last-owner",
-        });
-
-        owner.client.send({
-          type: IncomingMessageType.ROOM_DISCONNECT,
-          roomID,
-          userID: owner.userID,
-        });
-
-        // a fresh join sees an (effectively) empty participants list: only
-        // itself
-        const next = await connectToRoom({ roomID, username: "lc-next" });
-        track(next.client);
-        expect(next.response.room.participants.length).toBe(1);
-        expect(next.response.room.participants[0]!.publicID).toBe(
-          next.publicUserID,
-        );
-
-        // the previous owner's leave message is in the chat history
-        const chat = next.response.room.chatMessages;
-        expect(
-          chat.some((c) => c.text === `*${owner.username}* has left.`),
-        ).toBe(true);
-
-        await closeQuietly(next.client);
+      const { roomID, owner } = await setupRoom({
+        username: "lc-last-owner",
       });
+
+      owner.client.send({
+        type: IncomingMessageType.ROOM_DISCONNECT,
+        roomID,
+        userID: owner.userID,
+      });
+
+      // a fresh join sees an (effectively) empty participants list: only
+      // itself
+      const next = await connectToRoom({ roomID, username: "lc-next" });
+      track(next.client);
+      expect(next.response.room.participants.length).toBe(1);
+      expect(next.response.room.participants[0]!.publicID).toBe(
+        next.publicUserID,
+      );
+
+      // the previous owner's leave message is in the chat history
+      const chat = next.response.room.chatMessages;
+      expect(
+        chat.some((c) => c.text === `*${owner.username}* has left.`),
+      ).toBe(true);
+
+      await closeQuietly(next.client);
     },
     15_000,
   );
@@ -550,65 +521,60 @@ describe("room persistence across server restart/recreate", () => {
   test(
     "persistent room survives docker compose restart (rounds, finalResult, votes, chat)",
     async () => {
-      await withRetry(async () => {
-        const { roomID, owner, voter, option, chatText } = await seedRoomState({
-          persistent: true,
-          suffix: `persistent-${Date.now().toString(36)}`,
-        });
-        const nudger = makeNudger(roomID, owner.userID, owner.username);
-
-        try {
-          // give the finished-round state a chance to reach the disk
-          await waitForPersistedState(roomID, chatText, nudger.nudge);
-        } finally {
-          await nudger.close();
-        }
-
-        await closeQuietly(owner.client);
-        await closeQuietly(voter.client);
-
-        // whatever is on disk NOW is what must come back after the restart
-        const snapshot = await readPersistedSnapshot(roomID);
-
-        await restartServer();
-        await ensureUp();
-
-        // reconnect the original owner userID
-        const ownerReconnect = await tryConnect({
-          roomID,
-          userID: owner.userID,
-          username: owner.username,
-        });
-        expect(ownerReconnect.ok).toBe(true);
-        if (!ownerReconnect.ok) {
-          throw new Error("persistent room was not available after restart");
-        }
-        const user = ownerReconnect.user;
-
-        const room = user.response.room;
-        expect(room.persistent).toBe(true);
-        // ownership survives the restart via the persisted ownerID — the
-        // reconnecting original owner is still treated as the room owner
-        expect(room.ownerName).toBe(owner.username);
-        expect(room.ownerPublicID).toBe(user.publicUserID);
-
-        // the whole room state is restored from the disk snapshot — with the
-        // finished round (finalResult + votes) when it had reached the disk
-        assertRoomMatchesSnapshot(room, snapshot);
-        if (snapshot.rounds[0]?.finalResult != null) {
-          expect(snapshot.rounds[0]!.results.length).toBe(1);
-          expect(snapshot.rounds[0]!.results[0]!.vote).toBe(option.name);
-          expect(room.chatMessages.some((c) => c.text === chatText)).toBe(true);
-        } else {
-          // NOTE: observed discrepancy — the room's serialization is driven
-          // by ONE 25ms debounced write shared by ALL rooms; under concurrent
-          // suite activity the finished-round state may be starved out of the
-          // snapshot (only the initial snapshot is guaranteed to be written).
-          // The restored room is still asserted against the exact snapshot.
-        }
-
-        await closeQuietly(user.client);
+      const { roomID, owner, voter, option, chatText } = await seedRoomState({
+        persistent: true,
+        suffix: `persistent-${Date.now().toString(36)}`,
       });
+      const nudger = makeNudger(roomID, owner.userID, owner.username);
+
+      try {
+        // give the finished-round state a chance to reach the disk
+        const persisted = await waitForPersistedState(
+          roomID,
+          chatText,
+          nudger.nudge,
+        );
+        expect(persisted).toBe(true);
+      } finally {
+        await nudger.close();
+      }
+
+      await closeQuietly(owner.client);
+      await closeQuietly(voter.client);
+
+      // whatever is on disk NOW is what must come back after the restart
+      const snapshot = await readPersistedSnapshot(roomID);
+
+      await restartServer();
+      await ensureUp();
+
+      // reconnect the original owner userID
+      const ownerReconnect = await tryConnect({
+        roomID,
+        userID: owner.userID,
+        username: owner.username,
+      });
+      expect(ownerReconnect.ok).toBe(true);
+      if (!ownerReconnect.ok) {
+        throw new Error("persistent room was not available after restart");
+      }
+      const user = ownerReconnect.user;
+
+      const room = user.response.room;
+      expect(room.persistent).toBe(true);
+      // ownership survives the restart via the persisted ownerID — the
+      // reconnecting original owner is still treated as the room owner
+      expect(room.ownerName).toBe(owner.username);
+      expect(room.ownerPublicID).toBe(user.publicUserID);
+
+      // the whole room state is restored from the disk snapshot, including
+      // the finished round
+      assertRoomMatchesSnapshot(room, snapshot);
+      expect(snapshot.rounds[0]!.results.length).toBe(1);
+      expect(snapshot.rounds[0]!.results[0]!.vote).toBe(option.name);
+      expect(room.chatMessages.some((c) => c.text === chatText)).toBe(true);
+
+      await closeQuietly(user.client);
     },
     90_000,
   );
@@ -616,59 +582,62 @@ describe("room persistence across server restart/recreate", () => {
   test(
     "regular (non-persistent) room also survives docker compose restart",
     async () => {
-      await withRetry(async () => {
-        const { roomID, owner, voter, chatText } = await seedRoomState({
-          persistent: false,
-          suffix: `regular-${Date.now().toString(36)}`,
-        });
-        const nudger = makeNudger(roomID, owner.userID, owner.username);
-
-        try {
-          await waitForPersistedState(roomID, chatText, nudger.nudge);
-        } finally {
-          await nudger.close();
-        }
-
-        await closeQuietly(owner.client);
-        await closeQuietly(voter.client);
-
-        const snapshot = await readPersistedSnapshot(roomID);
-
-        await restartServer();
-        await ensureUp();
-
-        const ownerReconnect = await tryConnect({
-          roomID,
-          userID: owner.userID,
-          username: owner.username,
-        });
-        expect(ownerReconnect.ok).toBe(true);
-        if (!ownerReconnect.ok) {
-          throw new Error("regular room was not available after restart");
-        }
-        const user = ownerReconnect.user;
-
-        const room = user.response.room;
-        // NOTE: observed behavior — non-persistent rooms are persisted to
-        // disk and reloaded on startup too, exactly like persistent ones.
-        expect(room.persistent).toBe(false);
-        expect(room.ownerName).toBe(owner.username);
-
-        assertRoomMatchesSnapshot(room, snapshot);
-
-        // the original voter can reconnect too
-        const voterReconnect = await tryConnect({
-          roomID,
-          userID: voter.userID,
-          username: voter.username,
-        });
-        expect(voterReconnect.ok).toBe(true);
-        if (voterReconnect.ok) {
-          await closeQuietly(voterReconnect.user.client);
-        }
-
-        await closeQuietly(user.client);
+      const { roomID, owner, voter, chatText } = await seedRoomState({
+        persistent: false,
+        suffix: `regular-${Date.now().toString(36)}`,
       });
+      const nudger = makeNudger(roomID, owner.userID, owner.username);
+
+      try {
+        const persisted = await waitForPersistedState(
+          roomID,
+          chatText,
+          nudger.nudge,
+        );
+        expect(persisted).toBe(true);
+      } finally {
+        await nudger.close();
+      }
+
+      await closeQuietly(owner.client);
+      await closeQuietly(voter.client);
+
+      const snapshot = await readPersistedSnapshot(roomID);
+
+      await restartServer();
+      await ensureUp();
+
+      const ownerReconnect = await tryConnect({
+        roomID,
+        userID: owner.userID,
+        username: owner.username,
+      });
+      expect(ownerReconnect.ok).toBe(true);
+      if (!ownerReconnect.ok) {
+        throw new Error("regular room was not available after restart");
+      }
+      const user = ownerReconnect.user;
+
+      const room = user.response.room;
+      // NOTE: observed behavior — non-persistent rooms are persisted to
+      // disk and reloaded on startup too, exactly like persistent ones.
+      expect(room.persistent).toBe(false);
+      expect(room.ownerName).toBe(owner.username);
+
+      assertRoomMatchesSnapshot(room, snapshot);
+
+      // the original voter can reconnect too
+      const voterReconnect = await tryConnect({
+        roomID,
+        userID: voter.userID,
+        username: voter.username,
+      });
+      expect(voterReconnect.ok).toBe(true);
+      if (voterReconnect.ok) {
+        await closeQuietly(voterReconnect.user.client);
+      }
+
+      await closeQuietly(user.client);
     },
     90_000,
   );
@@ -676,29 +645,27 @@ describe("room persistence across server restart/recreate", () => {
   test(
     "recreateServer wipes the filesystem: previously-existing roomID becomes unknown (room:closed)",
     async () => {
-      await withRetry(async () => {
-        const { roomID, owner } = await setupRoom({
-          username: "recreate-owner",
-        });
-        await closeQuietly(owner.client);
-
-        await recreateServerWithRetry();
-        // keep the server healthy for subsequent suites
-        await ensureServer();
-        await ensureUp();
-
-        const result = await tryConnect({
-          roomID,
-          userID: owner.userID,
-          username: owner.username,
-          retries: 1,
-        });
-        expect(result.ok).toBe(false);
-
-        // the server is back up and serving new rooms
-        const fresh = await setupRoom({ username: "post-recreate-owner" });
-        await closeQuietly(fresh.owner.client);
+      const { roomID, owner } = await setupRoom({
+        username: "recreate-owner",
       });
+      await closeQuietly(owner.client);
+
+      await recreateServerWithRetry();
+      // keep the server healthy for subsequent suites
+      await ensureServer();
+      await ensureUp();
+
+      const result = await tryConnect({
+        roomID,
+        userID: owner.userID,
+        username: owner.username,
+        retries: 1,
+      });
+      expect(result.ok).toBe(false);
+
+      // the server is back up and serving new rooms
+      const fresh = await setupRoom({ username: "post-recreate-owner" });
+      await closeQuietly(fresh.owner.client);
     },
     90_000,
   );

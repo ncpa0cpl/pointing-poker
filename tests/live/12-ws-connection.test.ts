@@ -170,32 +170,40 @@ describe("WS connection protocol", () => {
   );
 
   test(
-    "malformed input -> 500 'Internal server error.' causedBy 'unknown'",
+    "malformed input -> 4xx connection:error; causedBy echoes messageID when one was sent",
     async () => {
       const client = await RoomClient.connect();
       sockets.push(client);
 
-      // raw non-JSON text
+      // raw non-JSON text — no messageID can be recovered, so causedBy stays
+      // "unknown", but the code must still be a 4xx, not a 500
       client.raw("this is not json at all");
       let err = await client.expectError("unknown");
-      expect(err.code).toBe(500);
-      expect(err.message).toBe("Internal server error.");
+      expect(err.code).toBeGreaterThanOrEqual(400);
+      expect(err.code).toBeLessThan(500);
 
-      // valid JSON but missing required fields
-      client.raw(JSON.stringify({ type: IncomingMessageType.ROOM_CONNECT }));
-      err = await client.expectError("unknown");
-      expect(err.code).toBe(500);
-      expect(err.message).toBe("Internal server error.");
+      // valid JSON with a messageID but missing required fields — the server
+      // must echo that messageID as causedBy
+      const missingFields = {
+        type: IncomingMessageType.ROOM_CONNECT,
+        messageID: nextMessageID(),
+      };
+      client.raw(JSON.stringify(missingFields));
+      err = await client.expectError(missingFields.messageID);
+      expect(err.code).toBeGreaterThanOrEqual(400);
+      expect(err.code).toBeLessThan(500);
 
-      // unknown message type
-      client.raw(
-        JSON.stringify({ type: "foo:bar", messageID: nextMessageID() }),
-      );
-      err = await client.expectError("unknown");
-      expect(err.code).toBe(500);
-      expect(err.message).toBe("Internal server error.");
+      // unknown message type, messageID present
+      const unknownType = {
+        type: "foo:bar",
+        messageID: nextMessageID(),
+      };
+      client.raw(JSON.stringify(unknownType));
+      err = await client.expectError(unknownType.messageID);
+      expect(err.code).toBeGreaterThanOrEqual(400);
+      expect(err.code).toBeLessThan(500);
 
-      // wrong field type (roomID as number)
+      // wrong field type (roomID as number), messageID present
       const badTypes = {
         type: IncomingMessageType.ROOM_CONNECT,
         messageID: nextMessageID(),
@@ -206,9 +214,9 @@ describe("WS connection protocol", () => {
         role: "voter",
       };
       client.raw(JSON.stringify(badTypes));
-      err = await client.expectError("unknown");
-      expect(err.code).toBe(500);
-      expect(err.message).toBe("Internal server error.");
+      err = await client.expectError(badTypes.messageID);
+      expect(err.code).toBeGreaterThanOrEqual(400);
+      expect(err.code).toBeLessThan(500);
 
       // NOTE: messages that fail JSON parsing / schema validation never
       // produce a message:received ack (the parsed `data` is undefined),

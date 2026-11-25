@@ -80,8 +80,9 @@ const FIXED_IP = randomIp();
  * - CONNECTION_OPENED (+2 users, +2 activeUsers while connected)
  * - VOTES_PLACED (+1)
  * - ROUND_COMPLETED (+1)
+ * Leaves both sockets open so the caller can observe the live gauges first.
  */
-async function generateActivity(): Promise<void> {
+async function generateActivity() {
   const { roomID, owner } = await setupRoom();
   const voter = await connectToRoom({ roomID });
 
@@ -110,8 +111,7 @@ async function generateActivity(): Promise<void> {
     (m) => m.type === OutgoingMessageType.ROUND_UPDATE && !m.isInProgress,
   );
 
-  await voter.client.close();
-  await owner.client.close();
+  return { roomID, owner, voter };
 }
 
 /** polls /api/stats until all delta predicates hold or the timeout expires */
@@ -186,7 +186,7 @@ describe("rate limiter middleware and /api/stats", () => {
       // shared between suites, so only deltas are asserted — never absolutes.
       const before = await fetchStats();
 
-      await generateActivity();
+      const { owner, voter } = await generateActivity();
 
       // usage-log writes are async — poll until the deltas show up
       const after = await waitForStatsDelta(before, [
@@ -221,26 +221,25 @@ describe("rate limiter middleware and /api/stats", () => {
         sumHistory(before.thisMonthVotesHistory) + 1,
       );
 
-      // live gauges reflect the still-open room and its two connections
-      expect(after.activeRooms).toBeGreaterThanOrEqual(before.activeRooms + 1);
-      expect(after.activeUsers).toBeGreaterThanOrEqual(before.activeUsers + 2);
-
-      // NOTE (observed behavior, differs from the "gauge drops on disconnect"
-      // expectation): merely closing the client sockets does NOT lower
-      // `activeUsers`. The WS close handler only detaches the raw socket from
-      // its RoomConnection (room-ws.route.ts -> removeWs); the RoomConnection
-      // object itself remains in room.connections until the room is disposed
-      // (stale purge after >=5 min of inactivity, or an explicit room close).
-      // RoomService.userCount() sums connections.length, so the gauge stays put
-      // short-term. Assert that observed behavior (tolerating a small decrease,
-      // which can only come from sibling sessions' rooms being purged):
-      const afterClose = await waitForStatsDelta(after, [
-        (s) => s.activeUsers <= after.activeUsers,
-      ], 8_000);
-      expect(afterClose.activeUsers).toBeGreaterThanOrEqual(
-        after.activeUsers - 2,
+      // the gauges must count only OPEN connections: while both sockets are
+      // still open, the room and its two users are live
+      const during = await fetchStats();
+      expect(during.activeRooms).toBeGreaterThanOrEqual(
+        before.activeRooms + 1,
       );
-      expect(afterClose.activeUsers).toBeLessThanOrEqual(after.activeUsers);
+      expect(during.activeUsers).toBeGreaterThanOrEqual(
+        before.activeUsers + 2,
+      );
+
+      // closing both sockets must drop the user gauge by at least 2
+      await voter.client.close();
+      await owner.client.close();
+      const afterClose = await waitForStatsDelta(during, [
+        (s) => s.activeUsers <= during.activeUsers - 2,
+      ], 8_000);
+      expect(afterClose.activeUsers).toBeLessThanOrEqual(
+        during.activeUsers - 2,
+      );
     },
     60_000,
   );

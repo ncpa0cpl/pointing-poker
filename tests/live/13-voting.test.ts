@@ -276,42 +276,36 @@ describe("live: round:add-vote (voting flow)", () => {
     15_000,
   );
 
-  test("vote with an invalid optionRef does not crash the server", async () => {
-    const { roomID, owner } = await newRoom();
-    const voter = await join(roomID, { username: "typo-voter" });
+  test(
+    "voting with an invalid optionRef is rejected with an error",
+    async () => {
+      const { roomID, owner } = await newRoom();
+      const voter = await join(roomID, { username: "typo-voter" });
 
-    const roundID = owner.response.room.rounds.at(-1)!.id;
-    const optID = owner.response.room.defaultOptions[3]!.id;
+      const roundID = owner.response.room.rounds.at(-1)!.id;
+      const optID = owner.response.room.defaultOptions[3]!.id;
 
-    const msgID = sendVote(voter, roomID, roundID, "no-such-option-id");
-    await voter.client.expectAck(msgID);
+      const msgID = sendVote(voter, roomID, roundID, "no-such-option-id");
+      await voter.client.expectAck(msgID);
 
-    // NOTE (observed): room.postUserVote calls room.getOption(optionID), which
-    // returns a RequestError for unknown ids; the code then unconditionally
-    // reads `option.name`. RequestError extends Error, so `.name` is the
-    // inherited "Error" string — the server emits a round:update whose vote
-    // value is literally "Error" instead of an error message.
-    const update = await owner.client.waitFor(roundUpdateMatcher(roundID));
-    expect(update.results).toHaveLength(1);
-    expect(update.results[0]!.vote).toBe("Error");
-    expect(update.results[0]!.username).toBe("typo-voter");
-    expect(update.results[0]!.hideUsername).toBe(false);
+      const err = await voter.client.expectError(msgID);
+      expect(err.code).toBe(404);
+      expect(err.message).toMatch(/no-such-option-id|Option/);
 
-    // no error message is sent for this
-    await expectSilence(
-      voter.client,
-      (msg) => msg.type === OutgoingMessageType.ERROR && msg.causedBy === msgID,
-    );
+      // the real round is untouched — no round:update for the bogus vote
+      await expectSilence(owner.client, roundUpdateMatcher(roundID));
 
-    // the server did not crash: a subsequent valid vote replaces the entry
-    const msg2 = sendVote(voter, roomID, roundID, optID);
-    await voter.client.expectAck(msg2);
-    const update2 = await owner.client.waitFor(roundUpdateMatcher(roundID));
-    expect(update2.results).toHaveLength(1);
-    expect(update2.results[0]!.vote).toBe(
-      owner.response.room.defaultOptions[3]!.name,
-    );
-  }, 15_000);
+      // the server did not crash: a subsequent valid vote registers normally
+      const msg2 = sendVote(voter, roomID, roundID, optID);
+      await voter.client.expectAck(msg2);
+      const update2 = await owner.client.waitFor(roundUpdateMatcher(roundID));
+      expect(update2.results).toHaveLength(1);
+      expect(update2.results[0]!.vote).toBe(
+        owner.response.room.defaultOptions[3]!.name,
+      );
+    },
+    15_000,
+  );
 
   test("viewers cannot vote (silently ignored)", async () => {
     const { roomID, owner } = await newRoom();
