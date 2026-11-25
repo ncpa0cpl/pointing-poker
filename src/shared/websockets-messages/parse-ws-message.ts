@@ -9,7 +9,7 @@ export const createWsMsgParser = <D extends AnyType>(
   return (msg) => {
     const strMsg = typeof msg === "string"
       ? msg
-      : new TextDecoder().decode(msg);
+      : new TextDecoder().decode(msg as any);
     const data = JSON.parse(strMsg);
     if (isValid(data)) {
       return data;

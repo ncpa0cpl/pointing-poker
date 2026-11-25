@@ -281,7 +281,7 @@ describe("nginx proxy — requests are forwarded to the app untouched", () => {
         body: JSON.stringify({ userID: "proxy-u2", username: "proxy-n2" }),
       });
       expect(res.status).toBe(200);
-      const body = await res.json();
+      const body: any = await res.json();
       expect(typeof body.roomID).toBe("string");
       expect(body.roomID.length).toBeGreaterThan(0);
     },
