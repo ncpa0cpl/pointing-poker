@@ -8,8 +8,19 @@ const validate = compileFastValidator(DTCreateRoomRequestData);
 
 export function addCreateRoomRoute(server: HttpServer) {
   server.post("/api/room", async (ctx) => {
-    const body = await ctx.body("json");
+    let body: unknown;
+    try {
+      body = await ctx.body("json");
+    } catch {
+      // ctx.body("json") throws on unparsable payloads; left uncaught it
+      // escapes the route handler and the error handler answers a 500
+      return ctx.sendStatus(400);
+    }
     if (!validate(body)) {
+      return ctx.send(createResponse(400));
+    }
+    // Type.String still accepts "", which is not a usable identifier
+    if (body.userID === "" || body.username === "") {
       return ctx.send(createResponse(400));
     }
 

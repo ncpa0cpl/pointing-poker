@@ -83,7 +83,37 @@ class RoomWsHandler {
   ) {
     let data: RoomWSIncomingMessage | undefined = undefined;
     try {
-      data = parseMessage(message);
+      try {
+        data = parseMessage(message);
+      } catch {
+        // a payload that fails JSON parsing or schema validation is a client
+        // error (4xx), not a server fault. The strict parser threw, so
+        // leniently re-parse the raw payload just to echo the messageID back.
+        let messageID = "unknown";
+        try {
+          const raw = JSON.parse(
+            typeof message === "string"
+              ? message
+              : new TextDecoder().decode(message),
+          );
+          if (raw && typeof raw.messageID === "string") {
+            messageID = raw.messageID;
+          }
+        } catch {
+          // payload wasn't JSON — causedBy stays "unknown"
+        }
+        ws.send(
+          JSON.stringify(
+            <ErrorMessage> {
+              type: OutgoingMessageType.ERROR,
+              code: 400,
+              message: "Invalid message.",
+              causedBy: messageID,
+            },
+          ),
+        );
+        return;
+      }
       if (data.messageID) {
         if (this.msgsReceived.has(data.messageID)) {
           return;
@@ -287,11 +317,14 @@ class RoomWsHandler {
     }
 
     if (room.isActiveRound(data.roundID)) {
-      room.postUserVote(
+      const err = room.postUserVote(
         data.userID,
         userConnection.publicUserID,
         data.optionRef,
       );
+      if (RequestError.is(err)) {
+        return this.sendError(ws, data, err);
+      }
     }
   }
 

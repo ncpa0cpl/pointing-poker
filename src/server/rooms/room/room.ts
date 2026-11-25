@@ -18,7 +18,10 @@ import {
   OutgoingMessageType,
 } from "../../../shared/websockets-messages/room-websocket-outgoing-message-types";
 import { usage } from "../../usage-log";
-import { Persistent } from "../../utilities/persistent-objects/persistent-decorator";
+import {
+  markPersistentInstanceDisposed,
+  Persistent,
+} from "../../utilities/persistent-objects/persistent-decorator";
 import { PDependency } from "../../utilities/persistent-objects/persistent-property-dependency-decorator";
 import { PWatch } from "../../utilities/persistent-objects/persistent-property-watcher-decorator";
 import { Storages } from "../../utilities/persistent-objects/storage/storages";
@@ -172,7 +175,9 @@ export class Room {
   }
 
   public countUsers() {
-    return this.connections.length;
+    // only open sockets count: closed-but-retained connections must not
+    // inflate the "active users" gauge until the room is purged
+    return this.connections.filter((c) => c.isActive).length;
   }
 
   public setMode(mode: RoomMode): void {
@@ -257,12 +262,16 @@ export class Room {
     userID: string,
     publicUserID: string,
     optionID: string,
-  ): void {
+  ): RequestError | undefined {
     this.lastActivity = DateTime.now();
 
     const conn = this.connections.find(c => c.isConnectionOwner(userID))!;
 
     const option = this.getOption(optionID);
+    if (RequestError.is(option)) {
+      return option;
+    }
+
     this.addVote(
       conn,
       new RoundResult(
@@ -665,7 +674,11 @@ export class Room {
   }
 
   public dispose() {
-    for (const conn of this.connections) {
+    markPersistentInstanceDisposed(this);
+
+    // conn.close() splices this.connections via removeConnection, so iterate
+    // a copy — otherwise every second participant is skipped
+    for (const conn of [...this.connections]) {
       conn.close();
     }
 

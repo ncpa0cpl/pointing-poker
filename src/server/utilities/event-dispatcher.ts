@@ -13,7 +13,14 @@ export function createActionDispatcher() {
     }, 25);
   };
 
-  return { dispatch };
+  const cancel = () => {
+    if (lastTimeout !== undefined) {
+      clearTimeout(lastTimeout);
+      lastTimeout = undefined;
+    }
+  };
+
+  return { dispatch, cancel };
 }
 
 export type ActionDispatcher = ReturnType<typeof createActionDispatcher>;

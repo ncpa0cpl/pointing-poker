@@ -1,4 +1,7 @@
-import { createActionDispatcher } from "../event-dispatcher";
+import {
+  type ActionDispatcher,
+  createActionDispatcher,
+} from "../event-dispatcher";
 import { PersistentMetadataKeys } from "./metadata-keys";
 import { Storages } from "./storage/storages";
 
@@ -55,13 +58,35 @@ function applyWatchers(
   }
 }
 
+/**
+ * One dispatcher per Persistent INSTANCE: a shared debounced timer would let
+ * one instance's activity cancel every other instance's pending write,
+ * starving busy-and-idle rooms alike.
+ */
+const instanceStates = new WeakMap<
+  object,
+  { actions: ActionDispatcher; disposed: boolean }
+>();
+
+/**
+ * Stops further writes for the instance and drops its pending debounced one.
+ * Called when the instance is being destroyed so a late timer cannot
+ * resurrect a storage entry that removal is about to delete.
+ */
+export function markPersistentInstanceDisposed(instance: object): void {
+  const state = instanceStates.get(instance);
+  if (state) {
+    state.disposed = true;
+    state.actions.cancel();
+  }
+}
+
 export function Persistent<T>(
   constructor: (new(...args: any[]) => any) & {
     serializer: ClassSerializer<T>;
   },
 ): any {
   const name = constructor.name;
-  const actions = createActionDispatcher();
 
   const wrapper = {
     [name]: class extends constructor {
@@ -72,6 +97,10 @@ export function Persistent<T>(
       public constructor(...args: any[]) {
         super(...args);
 
+        const actions = createActionDispatcher();
+        const state = { actions, disposed: false };
+        instanceStates.set(this, state);
+
         const data = constructor.serializer.serialize(this as any as T);
         Storages.has(name, data.id).then(exists => {
           if (!exists) {
@@ -79,6 +108,9 @@ export function Persistent<T>(
           }
 
           const updatePersistentStorage = (): void => {
+            if (instanceStates.get(this)?.disposed) {
+              return;
+            }
             const data = constructor.serializer.serialize(this as any as T);
             Storages.update(name, data.id, data);
           };
