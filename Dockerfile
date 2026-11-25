@@ -11,7 +11,9 @@ RUN apt-get update \
 WORKDIR /app
 
 COPY package.json bun.lockb ./
-RUN bun install --frozen-lockfile
+# --ignore-scripts: the `prepare` script (husky) needs a .git checkout, and
+# no dependency in the image needs its install scripts
+RUN bun install --frozen-lockfile --ignore-scripts
 
 COPY . .
 
