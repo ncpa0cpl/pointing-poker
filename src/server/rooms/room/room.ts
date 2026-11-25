@@ -32,6 +32,7 @@ import { RoundOption } from "../round/option/round-option";
 import { RoundResult } from "../round/result/round-result";
 import { Round } from "../round/round";
 import { ChatMessage } from "./chat-message/chat-message";
+import { PERSISTENT_ROOM_RETIRE_AFTER_MIN } from "./constants";
 import { Encoder } from "./custom-encoder";
 import { RoomSerializer } from "./serializer";
 
@@ -61,9 +62,6 @@ const generatePersistentRoomID = (): string => {
 
 const isRoomMode = validator(DTRoomMode);
 const isValidRole = validator(DTParticipantRole);
-
-// persistent rooms retire to disk-only storage after this much inactivity
-export const PERSISTENT_ROOM_RETIRE_AFTER_HOURS = 1;
 
 @Persistent
 export class Room {
@@ -586,10 +584,10 @@ export class Room {
     }
 
     const hasActiveConnections = this.hasActiveConnections();
-    const inactiveForHours = this.lastActivity.diffNow("hours").hours;
+    const inactiveForMins = this.lastActivity.diffNow("minutes").minutes;
 
     return !hasActiveConnections
-      && inactiveForHours <= -PERSISTENT_ROOM_RETIRE_AFTER_HOURS;
+      && inactiveForMins <= -PERSISTENT_ROOM_RETIRE_AFTER_MIN;
   }
 
   public isActiveRound(id: string): boolean {

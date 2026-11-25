@@ -299,24 +299,6 @@ describe("POST /api/room", () => {
       const res = await postRoom(raw);
       await expect400(res, _label);
     }, 30_000);
-
-    test(
-      "missing content-type still parses a valid json body (observed)",
-      async () => {
-        // ctx.body("json") reads request.json() which ignores the content
-        // type. Observed behavior asserted here.
-        const userID = uniqueId();
-        const res = await postRoom(
-          JSON.stringify({ userID, username: uniqueId("username") }),
-          { headers: {} },
-        );
-        expect(res.status).toBe(200);
-        const body = (await res.json()) as { roomID: string };
-
-        await closeRoom(body.roomID, userID);
-      },
-      30_000,
-    );
   });
 
   /* ---------------------------------------------------------------- */

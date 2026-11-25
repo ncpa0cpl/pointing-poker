@@ -9,6 +9,7 @@
  */
 import { $ } from "bun";
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
+import { PERSISTENT_ROOM_RETIRE_AFTER_MIN } from "../../src/server/rooms/room/constants";
 import {
   ensureServer,
   restartServer,
@@ -109,12 +110,15 @@ async function waitForPersistedState(
  * Rewrites the on-disk snapshot's lastActivity to ~2 hours ago via a script
  * inside the container (the file is owned by the container user).
  */
-async function ageRoomOnDisk(roomID: string): Promise<void> {
+async function ageRoomOnDisk(
+  roomID: string,
+  ageBy = 2 * PERSISTENT_ROOM_RETIRE_AFTER_MIN * 60 * 1000,
+): Promise<void> {
   const script = `
 const fs = require("fs");
 const f = "/var/www/pointing-poker/dist/persistent-storage/Room/${roomID}.json";
 const data = JSON.parse(fs.readFileSync(f, "utf8"));
-data.lastActivity = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
+data.lastActivity = new Date(Date.now() - ${ageBy}).toISOString();
 fs.writeFileSync(f, JSON.stringify(data, null, 2));
 `;
   const proc = await $`docker exec pointing-poker-test bun -e ${script}`.quiet()
@@ -132,6 +136,7 @@ fs.writeFileSync(f, JSON.stringify(data, null, 2));
  * startup. Non-persistent rooms load regardless of age, so they don't count.
  */
 async function countDiskRooms(): Promise<{ total: number; retired: number }> {
+  const minAge = PERSISTENT_ROOM_RETIRE_AFTER_MIN * 60 * 1000;
   const script = `
 const fs = require("fs");
 const dir = "/var/www/pointing-poker/dist/persistent-storage/Room";
@@ -140,7 +145,7 @@ for (const f of fs.readdirSync(dir)) {
   if (!f.endsWith(".json")) continue;
   total++;
   const d = JSON.parse(fs.readFileSync(dir + "/" + f, "utf8"));
-  if (d.persistent && Date.now() - Date.parse(d.lastActivity) > 60 * 60 * 1000) {
+  if (d.persistent && Date.now() - Date.parse(d.lastActivity) > ${minAge}) {
     retired++;
   }
 }
@@ -286,7 +291,7 @@ describe("persistent-room retirement and on-demand reload", () => {
       await ageRoomOnDisk(roomID);
       const aged = await readPersistedRoom(roomID);
       const agedAge = Date.now() - Date.parse(aged.lastActivity);
-      expect(agedAge).toBeGreaterThan(90 * 60 * 1000);
+      expect(agedAge).toBeGreaterThan(10 * 60 * 1000);
 
       // ---- restart: the room must be retired, not loaded ----------------
       await restartServer();

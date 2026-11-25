@@ -3,7 +3,8 @@ import { DateTime } from "luxon";
 import { usage } from "../usage-log";
 import { Storages } from "../utilities/persistent-objects/storage/storages";
 import { RequestError } from "../utilities/request-error";
-import { PERSISTENT_ROOM_RETIRE_AFTER_HOURS, Room } from "./room/room";
+import { PERSISTENT_ROOM_RETIRE_AFTER_MIN } from "./room/constants";
+import { Room } from "./room/room";
 import type { SerializedRoom } from "./room/serializer";
 
 const MAX_ACTIVE_ROOMS = 100;
@@ -107,8 +108,8 @@ export class RoomService {
       // dormant persistent rooms are loaded from disk on demand, not at startup
       const lastActivity = DateTime.fromISO(room.lastActivity);
       if (
-        lastActivity.diffNow("hours").hours
-        > -PERSISTENT_ROOM_RETIRE_AFTER_HOURS
+        lastActivity.diffNow("minutes").minutes
+        > -PERSISTENT_ROOM_RETIRE_AFTER_MIN
       ) {
         Room.serializer.deserialize(room);
       } else {
