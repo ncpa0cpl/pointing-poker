@@ -353,6 +353,8 @@ export class Room {
 
     this.ownerID = user.userID;
     this.ownerPublicID = user.publicUserID;
+    this.ownerName = user.username;
+    this.ownerRole = user.role;
 
     const roomOwnerChangeMessage: RoomOwnerUpdateOutgoingMessage = {
       type: OutgoingMessageType.OWNER_UPDATE,

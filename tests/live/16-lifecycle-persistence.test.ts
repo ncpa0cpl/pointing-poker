@@ -654,11 +654,11 @@ describe("room lifecycle (no restart)", () => {
         username: "lc-reclaim2-observer",
       });
       track(contrastObserver.client);
-      // NOTE: ownership moves are observable via ownerPublicID — the room
-      // view's ownerName field keeps the ORIGINAL owner's name (setOwner
-      // never rewrites it; see the /transfer chat-command contract)
       expect(contrastObserver.response.room.ownerPublicID).toBe(
         contrastVoter.publicUserID,
+      );
+      expect(contrastObserver.response.room.ownerName).toBe(
+        contrastVoter.username,
       );
 
       const contrastDeniedMid = reconnect.client.send({
