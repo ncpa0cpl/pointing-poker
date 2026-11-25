@@ -517,8 +517,9 @@ describe("room lifecycle (no restart)", () => {
   );
 
   test(
-    "an owner who reconnects with a new publicUserID re-claims ownership: both peers get room:owner-change and owner powers move back",
+    "a plain socket close never transfers ownership and the owner reconnecting with the same userID+publicUserID re-attaches with powers intact; only an explicit room:disconnect transfers ownership for good (the previous owner cannot reclaim)",
     async () => {
+      // --- main case: plain close, no room:disconnect ---
       const { roomID, owner } = await setupRoom({
         username: "lc-reclaim-owner",
       });
@@ -528,65 +529,66 @@ describe("room lifecycle (no restart)", () => {
       });
       track(voter.client);
 
-      owner.client.send({
-        type: IncomingMessageType.ROOM_DISCONNECT,
-        roomID,
-        userID: owner.userID,
-      });
+      // hard-close the owner's socket WITHOUT room:disconnect
+      await owner.client.close();
 
-      // ownership transferred to the remaining participant
-      const transferred = await voter.client.waitFor(
+      // NO ownership transfer: no owner-change naming the voter arrives
+      let ownerChange: { type: string } | undefined;
+      try {
+        ownerChange = await voter.client.waitFor(
+          (m) =>
+            m.type === OutgoingMessageType.OWNER_UPDATE
+            && m.ownerPublicID === voter.publicUserID,
+          1500,
+        );
+      } catch {
+        // expected: no transfer on a plain close
+      }
+      expect(ownerChange).toBeUndefined();
+
+      // the owner is still the owner, just inactive; wait for the voter to
+      // observe the inactive mark so the fresh observer below cannot race it
+      const inactive = await voter.client.waitFor(
         (m) =>
-          m.type === OutgoingMessageType.OWNER_UPDATE
-          && m.ownerPublicID === voter.publicUserID,
+          m.type === OutgoingMessageType.ROOM_PARTICIPANTS_UPDATE
+          && m.participants.some(
+            (p) => p.publicID === owner.publicUserID && p.isActive === false,
+          ),
       );
-      expect(transferred.ownerName).toBe(voter.username);
+      expect(inactive.participants.length).toBe(2);
 
-      // the original owner reconnects with the same userID but a NEW
-      // publicUserID — the server must re-claim ownership for them
-      const newPublicUserID = uniqueId("pub");
-      const reconnected = track(await RoomClient.connect());
-      const reconnectMid = reconnected.send({
-        type: IncomingMessageType.ROOM_CONNECT,
+      const observer = await connectToRoom({
+        roomID,
+        username: "lc-reclaim-observer",
+      });
+      track(observer.client);
+      expect(observer.response.room.ownerName).toBe(owner.username);
+      expect(observer.response.room.ownerPublicID).toBe(owner.publicUserID);
+
+      // the owner reconnects with the same userID AND same publicUserID —
+      // reattaches to the SAME connection, publicUserID is kept, ownership
+      // unchanged
+      const reattached = await connectToRoom({
         roomID,
         userID: owner.userID,
-        publicUserID: newPublicUserID,
         username: owner.username,
-        role: "voter",
+        publicUserID: owner.publicUserID,
       });
-      const reconnectResponse = await reconnected.waitFor(
-        (msg) =>
-          msg.type === OutgoingMessageType.ROOM_CONNECTED
-          || msg.type === OutgoingMessageType.ROOM_CLOSED,
-      );
-      expect(reconnectResponse.type).toBe(
-        OutgoingMessageType.ROOM_CONNECTED,
-      );
-      reconnected.expectAck(reconnectMid).catch(() => {});
+      track(reattached.client);
+      expect(reattached.connectionID).toBe(owner.connectionID);
+      expect(reattached.publicUserID).toBe(owner.publicUserID);
+      expect(reattached.response.room.ownerName).toBe(owner.username);
+      expect(reattached.response.room.ownerPublicID).toBe(owner.publicUserID);
 
-      const reclaimedForVoter = await voter.client.waitFor(
-        (m) =>
-          m.type === OutgoingMessageType.OWNER_UPDATE
-          && m.ownerPublicID === newPublicUserID,
-      );
-      expect(reclaimedForVoter.ownerName).toBe(owner.username);
-
-      const reclaimedForOwner = await reconnected.waitFor(
-        (m) =>
-          m.type === OutgoingMessageType.OWNER_UPDATE
-          && m.ownerPublicID === newPublicUserID,
-      );
-      expect(reclaimedForOwner.ownerName).toBe(owner.username);
-
-      // the re-claimed owner can perform owner actions again...
-      const createMid = reconnected.send({
+      // the reconnected owner's powers are intact...
+      const createMid = reattached.client.send({
         type: IncomingMessageType.CREATE_NEW_ROUND,
         roomID,
         userID: owner.userID,
       });
-      await reconnected.expectAck(createMid);
+      await reattached.client.expectAck(createMid);
 
-      // ...while the interim owner lost them
+      // ...while the voter still has none
       const deniedMid = voter.client.send({
         type: IncomingMessageType.CREATE_NEW_ROUND,
         roomID,
@@ -595,8 +597,83 @@ describe("room lifecycle (no restart)", () => {
       const err = await voter.client.expectError(deniedMid);
       expect(err.code).toBe(401);
 
-      await closeQuietly(reconnected);
+      await closeQuietly(reattached.client);
+      await closeQuietly(observer.client);
       await closeQuietly(voter.client);
+
+      // --- contrast case: explicit room:disconnect transfers for good ---
+      const contrast = await setupRoom({
+        username: "lc-reclaim2-owner",
+      });
+      const contrastVoter = await connectToRoom({
+        roomID: contrast.roomID,
+        username: "lc-reclaim2-voter",
+      });
+      track(contrastVoter.client);
+
+      contrast.owner.client.send({
+        type: IncomingMessageType.ROOM_DISCONNECT,
+        roomID: contrast.roomID,
+        userID: contrast.owner.userID,
+      });
+
+      // ownership transferred to the remaining participant
+      const transferred = await contrastVoter.client.waitFor(
+        (m) =>
+          m.type === OutgoingMessageType.OWNER_UPDATE
+          && m.ownerPublicID === contrastVoter.publicUserID,
+      );
+      expect(transferred.ownerName).toBe(contrastVoter.username);
+
+      // the previous owner reconnects with the same userID/publicUserID but
+      // does NOT reclaim: no owner-change naming them, room still owned by
+      // the voter, and their owner actions are rejected
+      const reconnect = await connectToRoom({
+        roomID: contrast.roomID,
+        userID: contrast.owner.userID,
+        username: contrast.owner.username,
+        publicUserID: contrast.owner.publicUserID,
+      });
+      track(reconnect.client);
+
+      let reclaim: { type: string } | undefined;
+      try {
+        reclaim = await reconnect.client.waitFor(
+          (m) =>
+            m.type === OutgoingMessageType.OWNER_UPDATE
+            && m.ownerPublicID === reconnect.publicUserID,
+          1500,
+        );
+      } catch {
+        // expected: no silent reclaim after an explicit disconnect
+      }
+      expect(reclaim).toBeUndefined();
+
+      const contrastObserver = await connectToRoom({
+        roomID: contrast.roomID,
+        username: "lc-reclaim2-observer",
+      });
+      track(contrastObserver.client);
+      // NOTE: ownership moves are observable via ownerPublicID — the room
+      // view's ownerName field keeps the ORIGINAL owner's name (setOwner
+      // never rewrites it; see the /transfer chat-command contract)
+      expect(contrastObserver.response.room.ownerPublicID).toBe(
+        contrastVoter.publicUserID,
+      );
+
+      const contrastDeniedMid = reconnect.client.send({
+        type: IncomingMessageType.CREATE_NEW_ROUND,
+        roomID: contrast.roomID,
+        userID: reconnect.userID,
+      });
+      const contrastErr = await reconnect.client.expectError(
+        contrastDeniedMid,
+      );
+      expect(contrastErr.code).toBe(401);
+
+      await closeQuietly(contrastObserver.client);
+      await closeQuietly(reconnect.client);
+      await closeQuietly(contrastVoter.client);
     },
     30_000,
   );

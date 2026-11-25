@@ -33,29 +33,39 @@ import { RequestError } from "../../utilities/request-error";
 import { createResponse } from "../../utilities/response";
 import type { HttpServer } from "../../utilities/simple-server/http-server";
 
-const MAX_WS_CONNECTIONS = 2500;
+// the 2500 default is the production ceiling; the test env overrides it via WS_MAX_CONNECTIONS
+const MAX_WS_CONNECTIONS = Number(process.env.WS_MAX_CONNECTIONS ?? 2500);
 
 const parseMessage = createWsMsgParser(
   DTRoomWSIncomingMessage,
 );
 
 class RoomWsHandler {
-  private static connectionCount = 0;
+  /**
+   * Only sockets that have NOT joined a room count against the cap: the cap
+   * guards the upgrade path against floods of idle sockets, and a socket
+   * whose room:connect succeeded releases its slot to the room it joined.
+   * Counting room-affiliated sockets too would refuse legitimate
+   * participants whenever enough rooms are live, regardless of the cap's
+   * actual purpose.
+   */
+  private static idleConnectionCount = 0;
 
   public static beforeUpgrade() {
-    if (RoomWsHandler.connectionCount >= MAX_WS_CONNECTIONS) {
+    if (RoomWsHandler.idleConnectionCount >= MAX_WS_CONNECTIONS) {
       logger.info("too many connections, refusing WebSocket with 503");
       return createResponse(503, "Server is busy");
     }
   }
 
   public static open(ws: ServerWebSocket<unknown>) {
-    RoomWsHandler.connectionCount++;
+    RoomWsHandler.idleConnectionCount++;
     return new RoomWsHandler();
   }
 
   private intervalTimer;
   private onclosecb: (() => void) | undefined = undefined;
+  private joinedRoom = false;
   private readonly msgsReceived = new Map<string, number>();
 
   public constructor() {
@@ -71,7 +81,9 @@ class RoomWsHandler {
   }
 
   public close(ws: ServerWebSocket<unknown>) {
-    RoomWsHandler.connectionCount--;
+    if (!this.joinedRoom) {
+      RoomWsHandler.idleConnectionCount--;
+    }
     this.onclosecb?.();
     clearInterval(this.intervalTimer);
     usage.logEnd("CONNECTION_OPENED");
@@ -115,7 +127,11 @@ class RoomWsHandler {
         return;
       }
       if (data.messageID) {
-        if (this.msgsReceived.has(data.messageID)) {
+        const receivedAt = this.msgsReceived.get(data.messageID);
+        // a stored entry older than the 30s dedup window counts as absent:
+        // the sweep timer alone can leave an entry alive well past 30s,
+        // spuriously deduping a legitimate resend
+        if (receivedAt && Date.now() - receivedAt < 30_000) {
           return;
         }
         this.msgsReceived.set(data.messageID, Date.now());
@@ -128,9 +144,17 @@ class RoomWsHandler {
       }
 
       switch (data.type) {
-        case IncomingMessageType.ROOM_CONNECT:
-          this.onclosecb = this.handleRoomConnect(ws, data);
+        case IncomingMessageType.ROOM_CONNECT: {
+          const removeWs = this.handleRoomConnect(ws, data);
+          this.onclosecb = removeWs;
+          // a successful room:connect hands the socket over to the room —
+          // release its slot so live participants never trip the idle cap
+          if (removeWs !== undefined && !this.joinedRoom) {
+            this.joinedRoom = true;
+            RoomWsHandler.idleConnectionCount--;
+          }
           break;
+        }
         case IncomingMessageType.ADD_ROUND_VOTE:
           this.handleAddVote(ws, data);
           break;
@@ -443,6 +467,12 @@ class RoomWsHandler {
 
     room.closeUserConnection(data.userID);
     this.onclosecb?.();
+    // the socket itself stays open after room:disconnect — it occupies an
+    // idle slot again until it closes
+    if (this.joinedRoom) {
+      this.joinedRoom = false;
+      RoomWsHandler.idleConnectionCount++;
+    }
   }
 }
 

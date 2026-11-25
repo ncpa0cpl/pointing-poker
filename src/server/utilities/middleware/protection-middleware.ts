@@ -75,7 +75,6 @@ export function LimiterMiddleware(options?: {
     if (overallCounter >= maxOverallRequests) {
       return tooManyrequests("server overloaded");
     }
-
     const clientIp = req.headers.get("x-forwarded-for")
       ?? req.clientIp();
 
@@ -93,14 +92,16 @@ export function LimiterMiddleware(options?: {
     }, timeFrame);
 
     if (clientCounter.get() > requestThreshold) {
-      return tooManyrequests("too many requests from the same IP");
+      return tooManyrequests("Too many requests from the same IP");
     }
   };
 }
 
 function tooManyrequests(reason: string) {
   logger.warn("429 - server is receiving too many requests: " + reason);
-  return RouterResponse.from("Too many requests", {
+  // the reason doubles as the response body so per-IP and global limits are
+  // distinguishable to clients
+  return RouterResponse.from(reason, {
     status: 429,
     statusText: "Too Many Requests",
   });

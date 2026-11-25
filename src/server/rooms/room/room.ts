@@ -151,18 +151,6 @@ export class Room {
     this.propagateMessage(chatMessageUpdateMessage);
   }
 
-  private getLastRound(): Round {
-    const round = this.rounds[this.rounds.length - 1];
-
-    if (!round) {
-      const round = new Round(undefined, this.defaultOptions.slice());
-      this.addRound(round);
-      return round;
-    }
-
-    return round;
-  }
-
   private propagateMessage(message: RoomWSOutgoingMessage): void {
     this.connections.forEach((connection) => {
       connection.propagateMessage(message);
@@ -242,9 +230,10 @@ export class Room {
       return;
     }
 
-    const lastRound = this.getLastRound();
+    // no round (rounds can be empty) → the vote is silently ignored
+    const lastRound = this.rounds.at(-1);
 
-    if (lastRound.isInProgress) {
+    if (lastRound?.isInProgress) {
       lastRound.addVote(
         result,
       );
@@ -289,16 +278,20 @@ export class Room {
 
     const username = this.getUsername(userID);
 
-    const lastRound = this.rounds[this.rounds.length - 1];
-    if (lastRound?.isInProgress) {
-      this.rounds = this.rounds.slice(0, -1);
-    }
+    const lastRound = this.rounds.at(-1);
+    if (lastRound) {
+      if (lastRound.isInProgress) {
+        this.rounds = this.rounds.slice(0, -1);
+      }
 
-    this.addSystemMessage(
-      username
-        ? `Round was cancelled by ${username}.`
-        : "Round was cancelled.",
-    );
+      // only announce a cancel that actually removed/observed a round —
+      // cancelling an empty rounds list must not spam the chat
+      this.addSystemMessage(
+        username
+          ? `Round was cancelled by ${username}.`
+          : "Round was cancelled.",
+      );
+    }
 
     this.sendRoomUpdate();
   }
@@ -336,9 +329,9 @@ export class Room {
   public startNewRound(userID: string): void {
     this.lastActivity = DateTime.now();
 
-    const lastRound = this.getLastRound();
+    const lastRound = this.rounds.at(-1);
 
-    if (lastRound.isInProgress) {
+    if (lastRound?.isInProgress) {
       lastRound.finish();
     }
 
@@ -376,7 +369,11 @@ export class Room {
   public finishLastRound(): void {
     this.lastActivity = DateTime.now();
 
-    const lastRound = this.getLastRound();
+    // no round → nothing to finish, no broadcast, no usage logs
+    const lastRound = this.rounds.at(-1);
+    if (!lastRound) {
+      return;
+    }
 
     lastRound.finish();
 
@@ -466,20 +463,26 @@ export class Room {
       }
       case "setoptions": {
         if (this.isOwner(userID)) {
-          const options = rest.filter(Boolean);
-          this.setDefaultOptions(options.map(optLabel => {
-            return new RoundOption(optLabel);
-          }));
+          const options = rest.filter((opt) => opt.trim().length > 0);
+          // empty argument list must not wipe the option set
+          if (options.length > 0) {
+            this.setDefaultOptions(options.map(optLabel => {
+              return new RoundOption(optLabel);
+            }));
+          }
         }
         break;
       }
       case "addoption": {
         if (this.isOwner(userID)) {
           const optionLabel = rest.filter(Boolean).join(" ");
-          const option = new RoundOption(optionLabel);
-          this.setDefaultOptions(
-            this.defaultOptions.concat(option),
-          );
+          // empty label must not append a blank-named option
+          if (optionLabel) {
+            const option = new RoundOption(optionLabel);
+            this.setDefaultOptions(
+              this.defaultOptions.concat(option),
+            );
+          }
         }
         break;
       }
@@ -590,9 +593,7 @@ export class Room {
   }
 
   public isActiveRound(id: string): boolean {
-    const lastRound = this.getLastRound();
-
-    return lastRound.id === id;
+    return this.rounds.at(-1)?.id === id;
   }
 
   public findUserConnection(userID: string): RoomConnection | undefined {

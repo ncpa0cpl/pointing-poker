@@ -169,6 +169,11 @@ export class Round {
   }
 
   public finish(): void {
+    // a repeated finish must not recalculate or re-log usage counters
+    if (!this.isInProgress) {
+      return;
+    }
+
     this.isInProgress = false;
     this.finalResults = this.calculateFinalResults();
 
