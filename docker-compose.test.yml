@@ -1,0 +1,69 @@
+# Test container for the pointing-poker server — env mirrors production.
+#
+# Topology mirrors prod: the Bun app is NOT published to the host; every
+# request (HTTP and WebSocket) goes through the nginx reverse proxy, which
+# terminates TLS with the repo's test certificates (CA: tests/nginx/certs/ca.crt).
+#
+# usage:
+#   docker compose -f docker-compose.test.yml up -d --build --wait
+#   docker compose -f docker-compose.test.yml down
+#
+# TEST_PORT (default 6969) publishes nginx's 443; TEST_HTTP_PORT (default
+# 6968) publishes nginx's 80 (redirects / 444 behavior).
+
+name: pointing-poker-tests
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: pointing-poker-under-test:latest
+    container_name: pointing-poker-test
+    init: true
+    environment:
+      NODE_ENV: production
+      PORT: "6969"
+      # prod value plus the TLS browsing origin used in this test setup:
+      # nginx terminates TLS, so browsers send Origin https://localhost:6969
+      # (in prod the browsing origin is https://pointingpoker.work)
+      HOSTNAMES: https://pointingpoker.work,http://localhost:6969,https://localhost:6969
+      FORCE_TLS: "false"
+      TLS_CERT: ""
+      TLS_KEY: ""
+      LOG_DIR: /var/log/pp
+      DEBUG: "0"
+      LOGLEVEL: ""
+      SITEMAP_URL: https://pointingpoker.work
+      REQ_THRESHOLD: "1000"
+      REQ_LIMIT: "40000"
+      LIMIT_TIMEFRAME: "120000"
+      SENTRY_DSN: https://testkey@o000000.ingest.sentry.io/0000000
+      SENTRY_ORG: my-company-rb
+      SENTRY_PROJECT: ppoker
+    healthcheck:
+      test: ["CMD", "bun", "-e", "fetch('http://127.0.0.1:6969/api/stats').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 5s
+      timeout: 3s
+      start_period: 10s
+      retries: 12
+
+  proxy:
+    image: nginx:1.27-alpine
+    container_name: pointing-poker-proxy-test
+    depends_on:
+      app:
+        condition: service_healthy
+    ports:
+      - "${TEST_PORT:-6969}:443"
+      - "${TEST_HTTP_PORT:-6968}:80"
+    volumes:
+      - ./tests/nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./tests/nginx/certs/server.crt:/etc/nginx/certs/server.crt:ro
+      - ./tests/nginx/certs/server.key:/etc/nginx/certs/server.key:ro
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "--no-check-certificate", "https://127.0.0.1:443/api/stats"]
+      interval: 5s
+      timeout: 3s
+      start_period: 5s
+      retries: 12

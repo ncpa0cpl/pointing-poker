@@ -1,0 +1,12 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "rootDir": "..",
+    "types": ["bun"],
+    "lib": ["ESNext"],
+    // tests hand-write callbacks over JSON-parsed message payloads that the
+    // WSMessage index signature types as any; every other strict check stays on
+    "noImplicitAny": false
+  },
+  "include": ["./**/*.ts", "../src/shared", "../playwright.config.ts"]
+}

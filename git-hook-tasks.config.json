@@ -17,8 +17,8 @@
       },
       {
         "mustRunAlone": true,
-        "name": "Jest Tests",
-        "script": "test:jest"
+        "name": "Unit&Integration Tests",
+        "script": "test"
       }
     ],
     "pre-commit": [],
