@@ -6,10 +6,13 @@ const COMPOSE_FILE = "docker-compose.test.yml";
 let ensurePromise: Promise<void> | undefined;
 
 async function compose(...args: string[]): Promise<void> {
-  const proc = await $`docker compose -f ${COMPOSE_FILE} ${args}`.quiet().nothrow();
+  const proc = await $`docker compose -f ${COMPOSE_FILE} ${args}`.quiet()
+    .nothrow();
   if (proc.exitCode !== 0) {
     throw new Error(
-      `docker compose ${args.join(" ")} failed:\n${proc.stderr.toString()}\n${proc.stdout.toString()}`,
+      `docker compose ${
+        args.join(" ")
+      } failed:\n${proc.stderr.toString()}\n${proc.stdout.toString()}`,
     );
   }
 }

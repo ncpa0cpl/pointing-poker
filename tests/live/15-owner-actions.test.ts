@@ -1,12 +1,12 @@
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { ensureServer } from "../helpers/docker";
 import {
+  type ConnectedUser,
+  connectToRoom,
   IncomingMessageType,
   OutgoingMessageType,
   RoomClient,
-  connectToRoom,
   setupRoom,
-  type ConnectedUser,
 } from "../helpers/ws";
 
 const clients: RoomClient[] = [];
@@ -98,48 +98,56 @@ describe("owner-only actions and round statistics", () => {
       await owner.client.expectAck(mid);
     }, 15_000);
 
-    test("owner starting a round finishes the in-progress round first", async () => {
-      const { roomID, owner } = track(
-        await setupRoom({ username: "create-finish-owner" }),
-      );
-      const voter = track(await connectToRoom({ roomID, username: "cv-voter" }));
+    test(
+      "owner starting a round finishes the in-progress round first",
+      async () => {
+        const { roomID, owner } = track(
+          await setupRoom({ username: "create-finish-owner" }),
+        );
+        const voter = track(
+          await connectToRoom({ roomID, username: "cv-voter" }),
+        );
 
-      const roundID = owner.response.room.rounds.at(-1)!.id;
-      await castVote(roomID, roundID, voter, optionIDByName(owner, "8"));
-      await owner.client.waitFor(
-        (m) => m.type === OutgoingMessageType.ROUND_UPDATE && m.results.length === 1,
-      );
+        const roundID = owner.response.room.rounds.at(-1)!.id;
+        await castVote(roomID, roundID, voter, optionIDByName(owner, "8"));
+        await owner.client.waitFor(
+          (m) =>
+            m.type === OutgoingMessageType.ROUND_UPDATE
+            && m.results.length === 1,
+        );
 
-      const mid = owner.client.send({
-        type: IncomingMessageType.CREATE_NEW_ROUND,
-        roomID,
-        userID: owner.userID,
-      });
+        const mid = owner.client.send({
+          type: IncomingMessageType.CREATE_NEW_ROUND,
+          roomID,
+          userID: owner.userID,
+        });
 
-      const update = await voter.client.waitFor(
-        (m) => isRoomUpdate(m) && m.rounds.length === 2,
-      );
+        const update = await voter.client.waitFor(
+          (m) => isRoomUpdate(m) && m.rounds.length === 2,
+        );
 
-      // the previously in-progress round was finished, votes preserved
-      const finishedRound = update.rounds[0]!;
-      expect(finishedRound.isInProgress).toBe(false);
-      expect(finishedRound.finalResult).toEqual({
-        votes: 1,
-        mean: "8.00",
-        median: "8",
-        mode: "8",
-      });
+        // the previously in-progress round was finished, votes preserved
+        const finishedRound = update.rounds[0]!;
+        expect(finishedRound.isInProgress).toBe(false);
+        expect(finishedRound.finalResult).toEqual({
+          votes: 1,
+          mean: "8.00",
+          median: "8",
+          mode: "8",
+        });
 
-      // ...and a new empty round is now active
-      const newRound = update.rounds.at(-1)!;
-      expect(newRound.isInProgress).toBe(true);
-      expect(newRound.hasResults).toBe(false);
+        // ...and a new empty round is now active
+        const newRound = update.rounds.at(-1)!;
+        expect(newRound.isInProgress).toBe(true);
+        expect(newRound.hasResults).toBe(false);
 
-      // NOTE: unlike round:finish, round:create broadcasts no standalone
-      // round:update for the auto-finished round — the finished state is only
-      // visible inside the room:update payload.
-      await owner.client.expectAck(mid);
-    }, 15_000);
+        // NOTE: unlike round:finish, round:create broadcasts no standalone
+        // round:update for the auto-finished round — the finished state is only
+        // visible inside the room:update payload.
+        await owner.client.expectAck(mid);
+      },
+      15_000,
+    );
 
     test("non-owner gets 401", async () => {
       const { roomID } = track(
@@ -178,7 +186,8 @@ describe("owner-only actions and round statistics", () => {
       await castVote(roomID, roundID, voterB, optionIDByName(owner, "8"));
       await castVote(roomID, roundID, voterC, optionIDByName(owner, "13"));
       await owner.client.waitFor(
-        (m) => m.type === OutgoingMessageType.ROUND_UPDATE && m.results.length === 3,
+        (m) =>
+          m.type === OutgoingMessageType.ROUND_UPDATE && m.results.length === 3,
       );
 
       const mid = owner.client.send({
@@ -202,51 +211,57 @@ describe("owner-only actions and round statistics", () => {
       await owner.client.expectAck(mid);
     }, 15_000);
 
-    test("mode tie renders as '8, 13' and non-numeric votes are excluded", async () => {
-      const { roomID, owner } = track(
-        await setupRoom({ username: "tie-owner" }),
-      );
-      const voterA = track(await connectToRoom({ roomID, username: "tv-a" }));
-      const voterB = track(await connectToRoom({ roomID, username: "tv-b" }));
-      const voterC = track(await connectToRoom({ roomID, username: "tv-c" }));
+    test(
+      "mode tie renders as '8, 13' and non-numeric votes are excluded",
+      async () => {
+        const { roomID, owner } = track(
+          await setupRoom({ username: "tie-owner" }),
+        );
+        const voterA = track(await connectToRoom({ roomID, username: "tv-a" }));
+        const voterB = track(await connectToRoom({ roomID, username: "tv-b" }));
+        const voterC = track(await connectToRoom({ roomID, username: "tv-c" }));
 
-      const roundID = owner.response.room.rounds.at(-1)!.id;
-      await castVote(roomID, roundID, voterA, optionIDByName(owner, "8"));
-      await castVote(roomID, roundID, voterB, optionIDByName(owner, "13"));
+        const roundID = owner.response.room.rounds.at(-1)!.id;
+        await castVote(roomID, roundID, voterA, optionIDByName(owner, "8"));
+        await castVote(roomID, roundID, voterB, optionIDByName(owner, "13"));
 
-      // non-numeric vote via chat command — must not count into the stats
-      const chatMid = voterC.client.send({
-        type: IncomingMessageType.POST_MESSAGE,
-        roomID,
-        userID: voterC.userID,
-        text: "/vote ?",
-      });
-      await voterC.client.expectAck(chatMid);
+        // non-numeric vote via chat command — must not count into the stats
+        const chatMid = voterC.client.send({
+          type: IncomingMessageType.POST_MESSAGE,
+          roomID,
+          userID: voterC.userID,
+          text: "/vote ?",
+        });
+        await voterC.client.expectAck(chatMid);
 
-      await owner.client.waitFor(
-        (m) => m.type === OutgoingMessageType.ROUND_UPDATE && m.results.length === 3,
-      );
+        await owner.client.waitFor(
+          (m) =>
+            m.type === OutgoingMessageType.ROUND_UPDATE
+            && m.results.length === 3,
+        );
 
-      const mid = owner.client.send({
-        type: IncomingMessageType.FINISH_LAST_ROUND,
-        roomID,
-        userID: owner.userID,
-      });
+        const mid = owner.client.send({
+          type: IncomingMessageType.FINISH_LAST_ROUND,
+          roomID,
+          userID: owner.userID,
+        });
 
-      const update = await voterA.client.waitFor(
-        (m) => m.type === OutgoingMessageType.ROUND_UPDATE && !m.isInProgress,
-      );
+        const update = await voterA.client.waitFor(
+          (m) => m.type === OutgoingMessageType.ROUND_UPDATE && !m.isInProgress,
+        );
 
-      // votes: 8, 13, "?" -> only the two numeric votes count
-      expect(update.finalResult).toEqual({
-        votes: 2,
-        mean: "10.50", // even count -> average of middle two, 2 decimals
-        median: "10.50",
-        mode: "8, 13", // tie -> "first, rest"
-      });
+        // votes: 8, 13, "?" -> only the two numeric votes count
+        expect(update.finalResult).toEqual({
+          votes: 2,
+          mean: "10.50", // even count -> average of middle two, 2 decimals
+          median: "10.50",
+          mode: "8, 13", // tie -> "first, rest"
+        });
 
-      await owner.client.expectAck(mid);
-    }, 15_000);
+        await owner.client.expectAck(mid);
+      },
+      15_000,
+    );
 
     test("no votes at all -> N/A placeholders", async () => {
       const { roomID, owner } = track(
@@ -301,7 +316,9 @@ describe("owner-only actions and round statistics", () => {
       const { roomID, owner, username } = track(
         await setupRoom({ username: "cancel-owner" }),
       );
-      const voter = track(await connectToRoom({ roomID, username: "cancel-voter" }));
+      const voter = track(
+        await connectToRoom({ roomID, username: "cancel-voter" }),
+      );
 
       expect(owner.response.room.rounds.length).toBe(1);
 
@@ -348,40 +365,50 @@ describe("owner-only actions and round statistics", () => {
   });
 
   describe("room:set-default-options", () => {
-    test("owner replaces default options and the in-progress round's options", async () => {
-      const { roomID, owner } = track(
-        await setupRoom({ username: "options-owner" }),
-      );
-      const voter = track(await connectToRoom({ roomID, username: "ov-voter" }));
+    test(
+      "owner replaces default options and the in-progress round's options",
+      async () => {
+        const { roomID, owner } = track(
+          await setupRoom({ username: "options-owner" }),
+        );
+        const voter = track(
+          await connectToRoom({ roomID, username: "ov-voter" }),
+        );
 
-      const oldIDs = owner.response.room.defaultOptions.map((o) => o.id);
+        const oldIDs = owner.response.room.defaultOptions.map((o) => o.id);
 
-      const mid = owner.client.send({
-        type: IncomingMessageType.SET_DEFAULT_OPTIONS,
-        roomID,
-        userID: owner.userID,
-        options: ["1", "2", "3"],
-      });
+        const mid = owner.client.send({
+          type: IncomingMessageType.SET_DEFAULT_OPTIONS,
+          roomID,
+          userID: owner.userID,
+          options: ["1", "2", "3"],
+        });
 
-      const update = await voter.client.waitFor(
-        (m) => isRoomUpdate(m) && m.defaultOptions.length === 3,
-      );
+        const update = await voter.client.waitFor(
+          (m) => isRoomUpdate(m) && m.defaultOptions.length === 3,
+        );
 
-      expect(update.defaultOptions.map((o) => o.name)).toEqual(["1", "2", "3"]);
-      // new RoundOptions get fresh ids
-      for (const opt of update.defaultOptions) {
-        expect(oldIDs).not.toContain(opt.id);
-      }
+        expect(update.defaultOptions.map((o) => o.name)).toEqual([
+          "1",
+          "2",
+          "3",
+        ]);
+        // new RoundOptions get fresh ids
+        for (const opt of update.defaultOptions) {
+          expect(oldIDs).not.toContain(opt.id);
+        }
 
-      // the still in-progress round uses the new options as well
-      const lastRound = update.rounds.at(-1)!;
-      expect(lastRound.isInProgress).toBe(true);
-      expect(lastRound.options.map((o) => o.id)).toEqual(
-        update.defaultOptions.map((o) => o.id),
-      );
+        // the still in-progress round uses the new options as well
+        const lastRound = update.rounds.at(-1)!;
+        expect(lastRound.isInProgress).toBe(true);
+        expect(lastRound.options.map((o) => o.id)).toEqual(
+          update.defaultOptions.map((o) => o.id),
+        );
 
-      await owner.client.expectAck(mid);
-    }, 15_000);
+        await owner.client.expectAck(mid);
+      },
+      15_000,
+    );
 
     test("non-owner gets 401", async () => {
       const { roomID, owner } = track(
@@ -410,66 +437,74 @@ describe("owner-only actions and round statistics", () => {
   });
 
   describe("room:change-owner", () => {
-    test("owner transfers ownership; new owner gains owner powers", async () => {
-      const { roomID, owner } = track(
-        await setupRoom({ username: "transfer-owner" }),
-      );
-      const voter = track(await connectToRoom({ roomID, username: "new-owner" }));
+    test(
+      "owner transfers ownership; new owner gains owner powers",
+      async () => {
+        const { roomID, owner } = track(
+          await setupRoom({ username: "transfer-owner" }),
+        );
+        const voter = track(
+          await connectToRoom({ roomID, username: "new-owner" }),
+        );
 
-      // non-owner cannot transfer ownership
-      const badMid = voter.client.send({
-        type: IncomingMessageType.CHANGE_OWNER,
-        roomID,
-        userID: voter.userID,
-        newOwnerID: voter.userID,
-      });
-      const badErr = await voter.client.expectError(badMid);
-      expect(badErr.code).toBe(401);
-      expect(badErr.message).toBe(
-        "Unauthorized access. Only room owner can perform room:change-owner action.",
-      );
+        // non-owner cannot transfer ownership
+        const badMid = voter.client.send({
+          type: IncomingMessageType.CHANGE_OWNER,
+          roomID,
+          userID: voter.userID,
+          newOwnerID: voter.userID,
+        });
+        const badErr = await voter.client.expectError(badMid);
+        expect(badErr.code).toBe(401);
+        expect(badErr.message).toBe(
+          "Unauthorized access. Only room owner can perform room:change-owner action.",
+        );
 
-      const mid = owner.client.send({
-        type: IncomingMessageType.CHANGE_OWNER,
-        roomID,
-        userID: owner.userID,
-        newOwnerID: voter.userID,
-      });
+        const mid = owner.client.send({
+          type: IncomingMessageType.CHANGE_OWNER,
+          roomID,
+          userID: owner.userID,
+          newOwnerID: voter.userID,
+        });
 
-      const ownerChange = await voter.client.waitFor(isOwnerUpdate);
-      expect(ownerChange.ownerName).toBe(voter.username);
-      expect(ownerChange.ownerPublicID).toBe(voter.publicUserID);
-      expect(ownerChange.ownerRole).toBe("voter");
+        const ownerChange = await voter.client.waitFor(isOwnerUpdate);
+        expect(ownerChange.ownerName).toBe(voter.username);
+        expect(ownerChange.ownerPublicID).toBe(voter.publicUserID);
+        expect(ownerChange.ownerRole).toBe("voter");
 
-      const ownerChangeForOldOwner = await owner.client.waitFor(isOwnerUpdate);
-      expect(ownerChangeForOldOwner.ownerName).toBe(voter.username);
+        const ownerChangeForOldOwner = await owner.client.waitFor(
+          isOwnerUpdate,
+        );
+        expect(ownerChangeForOldOwner.ownerName).toBe(voter.username);
 
-      await owner.client.expectAck(mid);
+        await owner.client.expectAck(mid);
 
-      // the new owner can now create rounds...
-      const createMid = voter.client.send({
-        type: IncomingMessageType.CREATE_NEW_ROUND,
-        roomID,
-        userID: voter.userID,
-      });
-      const update = await owner.client.waitFor(
-        (m) => isRoomUpdate(m) && m.rounds.length === 2,
-      );
-      expect(update.rounds.at(-1)!.isInProgress).toBe(true);
-      await voter.client.expectAck(createMid);
+        // the new owner can now create rounds...
+        const createMid = voter.client.send({
+          type: IncomingMessageType.CREATE_NEW_ROUND,
+          roomID,
+          userID: voter.userID,
+        });
+        const update = await owner.client.waitFor(
+          (m) => isRoomUpdate(m) && m.rounds.length === 2,
+        );
+        expect(update.rounds.at(-1)!.isInProgress).toBe(true);
+        await voter.client.expectAck(createMid);
 
-      // ...while the previous owner lost the power
-      const oldMid = owner.client.send({
-        type: IncomingMessageType.CREATE_NEW_ROUND,
-        roomID,
-        userID: owner.userID,
-      });
-      const err = await owner.client.expectError(oldMid);
-      expect(err.code).toBe(401);
-      expect(err.message).toBe(
-        "Unauthorized access. Only room owner can perform round:create action.",
-      );
-    }, 15_000);
+        // ...while the previous owner lost the power
+        const oldMid = owner.client.send({
+          type: IncomingMessageType.CREATE_NEW_ROUND,
+          roomID,
+          userID: owner.userID,
+        });
+        const err = await owner.client.expectError(oldMid);
+        expect(err.code).toBe(401);
+        expect(err.message).toBe(
+          "Unauthorized access. Only room owner can perform round:create action.",
+        );
+      },
+      15_000,
+    );
 
     test("unknown newOwnerID gets 404", async () => {
       const { roomID, owner } = track(
@@ -512,12 +547,14 @@ describe("owner-only actions and round statistics", () => {
       ];
 
       for (const [type, extra] of cases) {
-        const mid = client.send({
-          type,
-          roomID: "no-such-room",
-          userID: "some-user",
-          ...extra,
-        } as Parameters<RoomClient["send"]>[0]);
+        const mid = client.send(
+          {
+            type,
+            roomID: "no-such-room",
+            userID: "some-user",
+            ...extra,
+          } as Parameters<RoomClient["send"]>[0],
+        );
         const err = await client.expectError(mid);
         expect(err.code).toBe(404);
         expect(err.message).toBe("Room with id no-such-room not found.");

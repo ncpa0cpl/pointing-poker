@@ -15,9 +15,7 @@ test.beforeEach(async ({ request }) => {
   expect(res.ok()).toBe(true);
 });
 
-test("join page renders create/join forms after registration", async ({
-  page,
-}) => {
+test("join page renders create/join forms after registration", async ({ page }) => {
   // Fresh browser context: no user yet, so `/` redirects to /register.
   await page.goto("/");
   const usernameInput = page.locator("#username");
@@ -53,9 +51,7 @@ test("about page renders its content", async ({ page }) => {
   ).toBeVisible();
 });
 
-test("nonexistent room id shows a graceful not-found state", async ({
-  page,
-}) => {
+test("nonexistent room id shows a graceful not-found state", async ({ page }) => {
   // Without a stored user the room route first redirects to /register.
   await page.goto("/room?roomID=this-room-does-not-exist-123");
   const usernameInput = page.locator("#username");

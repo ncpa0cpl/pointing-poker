@@ -11,15 +11,15 @@
  * Run with NODE_EXTRA_CA_CERTS pointing at tests/nginx/certs/ca.crt —
  * Bun only honors it at process startup.
  */
-import { describe, test, expect, beforeAll, afterAll } from "bun:test";
+import { afterAll, beforeAll, describe, expect, test } from "bun:test";
+import { BASE_URL, HTTP_URL, ORIGIN } from "../helpers/config";
 import { ensureServer } from "../helpers/docker";
 import { api, createRoom, randomIp } from "../helpers/http";
 import {
-  RoomClient,
   IncomingMessageType,
   OutgoingMessageType,
+  RoomClient,
 } from "../helpers/ws";
-import { BASE_URL, HTTP_URL, ORIGIN } from "../helpers/config";
 
 const TIMEOUT = 10_000;
 
@@ -105,12 +105,16 @@ describe("nginx proxy — blocked scanner locations return 403 straight from ngi
     TIMEOUT,
   );
 
-  test("403 body is nginx's own error page, not the app's 'Not found' text", async () => {
-    const res = await api("/.env");
-    const body = await res.text();
-    expect(body).toContain("403 Forbidden");
-    expect(body).toContain("nginx");
-  }, TIMEOUT);
+  test(
+    "403 body is nginx's own error page, not the app's 'Not found' text",
+    async () => {
+      const res = await api("/.env");
+      const body = await res.text();
+      expect(body).toContain("403 Forbidden");
+      expect(body).toContain("nginx");
+    },
+    TIMEOUT,
+  );
 });
 
 describe("nginx proxy — /.well-known is exempt from the scanner blocks", () => {
@@ -119,50 +123,66 @@ describe("nginx proxy — /.well-known is exempt from the scanner blocks", () =>
   // so nginx serves it from its default static root: /.well-known/foo gets
   // nginx's OWN 404 HTML error page and never reaches the app. The point of
   // the test stands — it is NOT the 403 scanner block.
-  test("/.well-known/foo is not blocked (nginx-served 404, not 403)", async () => {
-    const res = await api("/.well-known/foo");
-    expect(res.status).not.toBe(403);
-    // observed: 404 straight from nginx's static module
-    expect(res.status).toBe(404);
-    expect(res.headers.get("server")).toStartWith("nginx/");
-    const body = await res.text();
-    expect(body).toContain("404 Not Found");
-  }, TIMEOUT);
+  test(
+    "/.well-known/foo is not blocked (nginx-served 404, not 403)",
+    async () => {
+      const res = await api("/.well-known/foo");
+      expect(res.status).not.toBe(403);
+      // observed: 404 straight from nginx's static module
+      expect(res.status).toBe(404);
+      expect(res.headers.get("server")).toStartWith("nginx/");
+      const body = await res.text();
+      expect(body).toContain("404 Not Found");
+    },
+    TIMEOUT,
+  );
 });
 
 describe("nginx proxy — port 80 redirects to HTTPS", () => {
-  test("Host: pointingpoker.work → 301 with same path + query, https scheme", async () => {
-    const res = await fetch(`${HTTP_URL}/room?roomID=abc`, {
-      redirect: "manual",
-      headers: { Host: "pointingpoker.work" },
-    });
-    expect(res.status).toBe(301);
-    expect(res.headers.get("location")).toBe(
-      "https://pointingpoker.work/room?roomID=abc",
-    );
-  }, TIMEOUT);
+  test(
+    "Host: pointingpoker.work → 301 with same path + query, https scheme",
+    async () => {
+      const res = await fetch(`${HTTP_URL}/room?roomID=abc`, {
+        redirect: "manual",
+        headers: { Host: "pointingpoker.work" },
+      });
+      expect(res.status).toBe(301);
+      expect(res.headers.get("location")).toBe(
+        "https://pointingpoker.work/room?roomID=abc",
+      );
+    },
+    TIMEOUT,
+  );
 
-  test("redirect preserves arbitrary paths and multi-param queries", async () => {
-    const res = await fetch(`${HTTP_URL}/some/page?a=1&b=2`, {
-      redirect: "manual",
-      headers: { Host: "pointingpoker.work" },
-    });
-    expect(res.status).toBe(301);
-    expect(res.headers.get("location")).toBe(
-      "https://pointingpoker.work/some/page?a=1&b=2",
-    );
-  }, TIMEOUT);
+  test(
+    "redirect preserves arbitrary paths and multi-param queries",
+    async () => {
+      const res = await fetch(`${HTTP_URL}/some/page?a=1&b=2`, {
+        redirect: "manual",
+        headers: { Host: "pointingpoker.work" },
+      });
+      expect(res.status).toBe(301);
+      expect(res.headers.get("location")).toBe(
+        "https://pointingpoker.work/some/page?a=1&b=2",
+      );
+    },
+    TIMEOUT,
+  );
 
-  test("Host: www.pointingpoker.work → 301 with the www prefix stripped", async () => {
-    const res = await fetch(`${HTTP_URL}/room?roomID=xyz`, {
-      redirect: "manual",
-      headers: { Host: "www.pointingpoker.work" },
-    });
-    expect(res.status).toBe(301);
-    expect(res.headers.get("location")).toBe(
-      "https://pointingpoker.work/room?roomID=xyz",
-    );
-  }, TIMEOUT);
+  test(
+    "Host: www.pointingpoker.work → 301 with the www prefix stripped",
+    async () => {
+      const res = await fetch(`${HTTP_URL}/room?roomID=xyz`, {
+        redirect: "manual",
+        headers: { Host: "www.pointingpoker.work" },
+      });
+      expect(res.status).toBe(301);
+      expect(res.headers.get("location")).toBe(
+        "https://pointingpoker.work/room?roomID=xyz",
+      );
+    },
+    TIMEOUT,
+  );
 
   test("redirect responses come from nginx", async () => {
     const res = await fetch(`${HTTP_URL}/`, {
@@ -191,7 +211,7 @@ describe("nginx proxy — port 80 default server returns 444 (connection closed,
 
   test("Host: localhost gets no response", async () => {
     await assertNoResponse(() =>
-      fetch(`${HTTP_URL}/`, { headers: { Host: "localhost" } }),
+      fetch(`${HTTP_URL}/`, { headers: { Host: "localhost" } })
     );
   }, TIMEOUT);
 
@@ -218,86 +238,110 @@ describe("nginx proxy — 443 default server (only one TLS server block, so it i
     expect(body).toHaveProperty("activeRooms");
   }, TIMEOUT);
 
-  test("Host: localhost over TLS is proxied to the app too (BASE_URL default)", async () => {
-    const res = await fetchWithHost("/api/stats", "localhost");
-    expect(res.status).toBe(200);
-    expect(res.headers.get("server")).toStartWith("nginx/");
-  }, TIMEOUT);
+  test(
+    "Host: localhost over TLS is proxied to the app too (BASE_URL default)",
+    async () => {
+      const res = await fetchWithHost("/api/stats", "localhost");
+      expect(res.status).toBe(200);
+      expect(res.headers.get("server")).toStartWith("nginx/");
+    },
+    TIMEOUT,
+  );
 });
 
 describe("nginx proxy — requests are forwarded to the app untouched", () => {
   // light-weight propagation checks (the full X-Forwarded-For/rate-limit
   // behavior is covered by 17-ratelimit-stats.test.ts):
-  test("POST /api/room WITHOUT Origin passes through the proxy and hits the app's origin check (403)", async () => {
-    const res = await fetch(`${BASE_URL}/api/room`, {
-      method: "POST",
-      headers: {
-        // no Origin header on purpose
-        "Content-Type": "application/json",
-        "X-Forwarded-For": randomIp(),
-      },
-      body: JSON.stringify({ userID: "proxy-u1", username: "proxy-n1" }),
-    });
-    expect(res.status).toBe(403);
-    // app-flavored response: plain text, no nginx error page
-    expect(res.headers.get("content-type")).toContain("text/plain");
-    expect(res.headers.get("server")).toStartWith("nginx/");
-  }, TIMEOUT);
+  test(
+    "POST /api/room WITHOUT Origin passes through the proxy and hits the app's origin check (403)",
+    async () => {
+      const res = await fetch(`${BASE_URL}/api/room`, {
+        method: "POST",
+        headers: {
+          // no Origin header on purpose
+          "Content-Type": "application/json",
+          "X-Forwarded-For": randomIp(),
+        },
+        body: JSON.stringify({ userID: "proxy-u1", username: "proxy-n1" }),
+      });
+      expect(res.status).toBe(403);
+      // app-flavored response: plain text, no nginx error page
+      expect(res.headers.get("content-type")).toContain("text/plain");
+      expect(res.headers.get("server")).toStartWith("nginx/");
+    },
+    TIMEOUT,
+  );
 
-  test("POST /api/room WITH the prod Origin succeeds through the proxy (200)", async () => {
-    const res = await api("/api/room", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userID: "proxy-u2", username: "proxy-n2" }),
-    });
-    expect(res.status).toBe(200);
-    const body = await res.json();
-    expect(typeof body.roomID).toBe("string");
-    expect(body.roomID.length).toBeGreaterThan(0);
-  }, TIMEOUT);
+  test(
+    "POST /api/room WITH the prod Origin succeeds through the proxy (200)",
+    async () => {
+      const res = await api("/api/room", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userID: "proxy-u2", username: "proxy-n2" }),
+      });
+      expect(res.status).toBe(200);
+      const body = await res.json();
+      expect(typeof body.roomID).toBe("string");
+      expect(body.roomID.length).toBeGreaterThan(0);
+    },
+    TIMEOUT,
+  );
 
-  test("app-originated responses keep the app's CORS headers through the proxy", async () => {
-    const res = await api("/definitely-not-a-real-path-xyz");
-    // app 404 ("Not found", text/plain) proxied back through nginx
-    expect(res.status).toBe(404);
-    expect(res.headers.get("content-type")).toContain("text/plain");
-    expect(res.headers.get("access-control-allow-origin")).toBe(ORIGIN);
-  }, TIMEOUT);
+  test(
+    "app-originated responses keep the app's CORS headers through the proxy",
+    async () => {
+      const res = await api("/definitely-not-a-real-path-xyz");
+      // app 404 ("Not found", text/plain) proxied back through nginx
+      expect(res.status).toBe(404);
+      expect(res.headers.get("content-type")).toContain("text/plain");
+      expect(res.headers.get("access-control-allow-origin")).toBe(ORIGIN);
+    },
+    TIMEOUT,
+  );
 });
 
 describe("nginx proxy — WebSocket via the /ws/ location", () => {
-  test("wss handshake + room:connect → room:connected round-trip through the proxy", async () => {
-    const { roomID } = await createRoom();
-    const client = await RoomClient.connect();
-    wsClients.push(client);
+  test(
+    "wss handshake + room:connect → room:connected round-trip through the proxy",
+    async () => {
+      const { roomID } = await createRoom();
+      const client = await RoomClient.connect();
+      wsClients.push(client);
 
-    const messageID = client.send({
-      type: IncomingMessageType.ROOM_CONNECT,
-      roomID,
-      userID: "proxy-ws-u1",
-      publicUserID: "proxy-ws-pub1",
-      username: "proxy-ws-n1",
-      role: "voter",
-    });
-    const connected = await client.waitFor(
-      OutgoingMessageType.ROOM_CONNECTED,
-      5000,
-    );
-    expect(connected.type).toBe(OutgoingMessageType.ROOM_CONNECTED);
-    await client.expectAck(messageID, 5000);
+      const messageID = client.send({
+        type: IncomingMessageType.ROOM_CONNECT,
+        roomID,
+        userID: "proxy-ws-u1",
+        publicUserID: "proxy-ws-pub1",
+        username: "proxy-ws-n1",
+        role: "voter",
+      });
+      const connected = await client.waitFor(
+        OutgoingMessageType.ROOM_CONNECTED,
+        5000,
+      );
+      expect(connected.type).toBe(OutgoingMessageType.ROOM_CONNECTED);
+      await client.expectAck(messageID, 5000);
 
-    await client.close();
-    expect(client.isClosed).toBe(true);
-  }, TIMEOUT);
+      await client.close();
+      expect(client.isClosed).toBe(true);
+    },
+    TIMEOUT,
+  );
 
-  test("wss to a non-/ws/room path does not complete the handshake", async () => {
-    // NOTE: /ws/ is a PREFIX location, so /ws/bogus IS proxied to the app —
-    // but the app only upgrades /ws/room and answers 404 ("Not found") for
-    // anything else, so the WebSocket handshake never completes.
-    await expect(
-      RoomClient.connect({ url: "wss://localhost:6969/ws/bogus" }),
-    ).rejects.toThrow("WebSocket connection failed");
-  }, TIMEOUT);
+  test(
+    "wss to a non-/ws/room path does not complete the handshake",
+    async () => {
+      // NOTE: /ws/ is a PREFIX location, so /ws/bogus IS proxied to the app —
+      // but the app only upgrades /ws/room and answers 404 ("Not found") for
+      // anything else, so the WebSocket handshake never completes.
+      await expect(
+        RoomClient.connect({ url: "wss://localhost:6969/ws/bogus" }),
+      ).rejects.toThrow("WebSocket connection failed");
+    },
+    TIMEOUT,
+  );
 
   test("wss to a path outside /ws/ never upgrades", async () => {
     // no proxy WebSocket mapping for arbitrary paths; the app may answer

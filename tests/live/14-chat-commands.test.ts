@@ -57,7 +57,11 @@ function postChat(
 }
 
 /** waits for a room:chat-update whose LAST entry has the given text */
-function waitForChatEndingWith(client: RoomClient, text: string, timeoutMs = 5000) {
+function waitForChatEndingWith(
+  client: RoomClient,
+  text: string,
+  timeoutMs = 5000,
+) {
   return client.waitFor(
     (m) =>
       m.type === OutgoingMessageType.ROOM_CHAT_UPDATE
@@ -87,7 +91,9 @@ function voteNormally(
   client: RoomClient,
   roomID: string,
   userID: string,
-  ownerResponse: { room: { rounds: { id: string }[]; defaultOptions: { id: string }[] } },
+  ownerResponse: {
+    room: { rounds: { id: string }[]; defaultOptions: { id: string }[] };
+  },
 ) {
   return client.send({
     type: IncomingMessageType.ADD_ROUND_VOTE,
@@ -127,11 +133,19 @@ describe("live: chat messages and chat commands", () => {
     "plain message is broadcast to everyone with escaped text and author metadata",
     async () => {
       const { roomID, owner } = await newRoom("chat-owner");
-      const voter = track(await connectToRoom({ roomID, username: "chat-voter" }));
+      const voter = track(
+        await connectToRoom({ roomID, username: "chat-voter" }),
+      );
 
-      postChat(owner.client, roomID, owner.userID, `hi <b>bold</b> & "quotes" 'ap'`);
+      postChat(
+        owner.client,
+        roomID,
+        owner.userID,
+        `hi <b>bold</b> & "quotes" 'ap'`,
+      );
 
-      const expected = "hi &lt;b&gt;bold&lt;/b&gt; &amp; &quot;quotes&quot; &#39;ap&#39;";
+      const expected =
+        "hi &lt;b&gt;bold&lt;/b&gt; &amp; &quot;quotes&quot; &#39;ap&#39;";
       const ownerMsg = await waitForChatEndingWith(owner.client, expected);
       const voterMsg = await waitForChatEndingWith(voter.client, expected);
 
@@ -163,17 +177,24 @@ describe("live: chat messages and chat commands", () => {
     "/transfer hands ownership to the named participant; unknown name is a no-op",
     async () => {
       const { roomID, owner } = await newRoom("transfer-owner");
-      const voter = track(await connectToRoom({ roomID, username: "transfer-voter" }));
+      const voter = track(
+        await connectToRoom({ roomID, username: "transfer-voter" }),
+      );
 
       // unknown target: no-op — nothing is added to the chat
       postChat(owner.client, roomID, owner.userID, "/transfer nobody-here");
       postChat(owner.client, roomID, owner.userID, "after unknown transfer");
-      const sentinel = await waitForChatEndingWith(owner.client, "after unknown transfer");
+      const sentinel = await waitForChatEndingWith(
+        owner.client,
+        "after unknown transfer",
+      );
       expect(sentinel.chatMessages).toHaveLength(3); // 2 joins + 1 message
 
       // real transfer
       postChat(owner.client, roomID, owner.userID, "/transfer transfer-voter");
-      const change = await owner.client.waitFor(OutgoingMessageType.OWNER_UPDATE);
+      const change = await owner.client.waitFor(
+        OutgoingMessageType.OWNER_UPDATE,
+      );
       expect(change.ownerName).toBe("transfer-voter");
       expect(change.ownerPublicID).toBe(voter.publicUserID);
       expect(change.ownerRole).toBe("voter");
@@ -187,7 +208,8 @@ describe("live: chat messages and chat commands", () => {
         userID: voter.userID,
       });
       const update = await voter.client.waitFor(
-        (m) => m.type === OutgoingMessageType.ROOM_UPDATE && m.rounds.length === 2,
+        (m) =>
+          m.type === OutgoingMessageType.ROOM_UPDATE && m.rounds.length === 2,
       );
       expect(update.rounds).toHaveLength(2);
       await owner.client.waitFor(OutgoingMessageType.ROOM_UPDATE);
@@ -208,11 +230,15 @@ describe("live: chat messages and chat commands", () => {
     "/vote adds a free-form vote for voters",
     async () => {
       const { roomID, owner } = await newRoom("vote-owner");
-      const voter = track(await connectToRoom({ roomID, username: "vote-voter" }));
+      const voter = track(
+        await connectToRoom({ roomID, username: "vote-voter" }),
+      );
 
       postChat(voter.client, roomID, voter.userID, "/vote banana");
 
-      const update = await owner.client.waitFor(OutgoingMessageType.ROUND_UPDATE);
+      const update = await owner.client.waitFor(
+        OutgoingMessageType.ROUND_UPDATE,
+      );
       expect(update.results).toHaveLength(1);
       expect(update.results[0]).toEqual({
         vote: "banana",
@@ -232,15 +258,23 @@ describe("live: chat messages and chat commands", () => {
     async () => {
       const { roomID, owner } = await newRoom("viewer-vote-owner");
       const viewer = track(
-        await connectToRoom({ roomID, username: "quiet-viewer", role: "viewer" }),
+        await connectToRoom({
+          roomID,
+          username: "quiet-viewer",
+          role: "viewer",
+        }),
       );
-      const voter = track(await connectToRoom({ roomID, username: "real-voter" }));
+      const voter = track(
+        await connectToRoom({ roomID, username: "real-voter" }),
+      );
 
       postChat(viewer.client, roomID, viewer.userID, "/vote 42");
 
       // a real vote from a voter lands as the ONLY result
       voteNormally(voter.client, roomID, voter.userID, owner.response);
-      const update = await owner.client.waitFor(OutgoingMessageType.ROUND_UPDATE);
+      const update = await owner.client.waitFor(
+        OutgoingMessageType.ROUND_UPDATE,
+      );
       expect(update.results).toHaveLength(1);
       expect(update.results[0]!.username).toBe("real-voter");
     },
@@ -251,7 +285,9 @@ describe("live: chat messages and chat commands", () => {
     "/reset replaces all rounds with a single fresh empty round",
     async () => {
       const { roomID, owner } = await newRoom("reset-owner");
-      const voter = track(await connectToRoom({ roomID, username: "reset-voter" }));
+      const voter = track(
+        await connectToRoom({ roomID, username: "reset-voter" }),
+      );
 
       // build up state: a vote on round 1, then a second round
       voteNormally(voter.client, roomID, voter.userID, owner.response);
@@ -262,19 +298,22 @@ describe("live: chat messages and chat commands", () => {
         userID: owner.userID,
       });
       await owner.client.waitFor(
-        (m) => m.type === OutgoingMessageType.ROOM_UPDATE && m.rounds.length === 2,
+        (m) =>
+          m.type === OutgoingMessageType.ROOM_UPDATE && m.rounds.length === 2,
       );
 
       postChat(owner.client, roomID, owner.userID, "/reset");
 
       const update = await owner.client.waitFor(
-        (m) => m.type === OutgoingMessageType.ROOM_UPDATE && m.rounds.length === 1,
+        (m) =>
+          m.type === OutgoingMessageType.ROOM_UPDATE && m.rounds.length === 1,
       );
       expect(update.rounds).toHaveLength(1);
       expect(update.rounds[0]!.results).toHaveLength(0);
       expect(update.rounds[0]!.isInProgress).toBe(true);
       await voter.client.waitFor(
-        (m) => m.type === OutgoingMessageType.ROOM_UPDATE && m.rounds.length === 1,
+        (m) =>
+          m.type === OutgoingMessageType.ROOM_UPDATE && m.rounds.length === 1,
       );
 
       const sysMsg = await waitForChatEndingWith(
@@ -290,11 +329,16 @@ describe("live: chat messages and chat commands", () => {
     "/reset by a non-owner is a no-op",
     async () => {
       const { roomID, owner } = await newRoom("noreset-owner");
-      const voter = track(await connectToRoom({ roomID, username: "noreset-voter" }));
+      const voter = track(
+        await connectToRoom({ roomID, username: "noreset-voter" }),
+      );
 
       postChat(voter.client, roomID, voter.userID, "/reset");
       postChat(owner.client, roomID, owner.userID, "rounds intact");
-      const sentinel = await waitForChatEndingWith(owner.client, "rounds intact");
+      const sentinel = await waitForChatEndingWith(
+        owner.client,
+        "rounds intact",
+      );
       // 2 joins + sentinel, and no "All previous rounds were deleted" message
       expect(sentinel.chatMessages).toHaveLength(3);
       expect(
@@ -308,7 +352,9 @@ describe("live: chat messages and chat commands", () => {
     "/clearchat empties the chat and leaves a system message",
     async () => {
       const { roomID, owner } = await newRoom("clear-owner");
-      const voter = track(await connectToRoom({ roomID, username: "clear-voter" }));
+      const voter = track(
+        await connectToRoom({ roomID, username: "clear-voter" }),
+      );
 
       postChat(owner.client, roomID, owner.userID, "one");
       postChat(voter.client, roomID, voter.userID, "two");
@@ -338,17 +384,23 @@ describe("live: chat messages and chat commands", () => {
     "/clearchat by a non-owner is a no-op",
     async () => {
       const { roomID, owner } = await newRoom("noclear-owner");
-      const voter = track(await connectToRoom({ roomID, username: "noclear-voter" }));
+      const voter = track(
+        await connectToRoom({ roomID, username: "noclear-voter" }),
+      );
 
       postChat(voter.client, roomID, voter.userID, "keep me");
       postChat(voter.client, roomID, voter.userID, "/clearchat");
       postChat(owner.client, roomID, owner.userID, "history intact");
-      const sentinel = await waitForChatEndingWith(owner.client, "history intact");
+      const sentinel = await waitForChatEndingWith(
+        owner.client,
+        "history intact",
+      );
       // owner join + voter join + "keep me" + sentinel
       expect(sentinel.chatMessages).toHaveLength(4);
-      expect(sentinel.chatMessages.some((m) => m.text.includes("cleared"))).toBe(
-        false,
-      );
+      expect(sentinel.chatMessages.some((m) => m.text.includes("cleared")))
+        .toBe(
+          false,
+        );
     },
     TIMEOUT,
   );
@@ -358,9 +410,16 @@ describe("live: chat messages and chat commands", () => {
     async () => {
       const { roomID, owner } = await newRoom("opts-owner");
 
-      postChat(owner.client, roomID, owner.userID, "/setoptions alpha beta gamma");
+      postChat(
+        owner.client,
+        roomID,
+        owner.userID,
+        "/setoptions alpha beta gamma",
+      );
 
-      const update = await owner.client.waitFor(OutgoingMessageType.ROOM_UPDATE);
+      const update = await owner.client.waitFor(
+        OutgoingMessageType.ROOM_UPDATE,
+      );
       expect(update.defaultOptions.map((o) => o.name)).toEqual([
         "alpha",
         "beta",
@@ -380,11 +439,15 @@ describe("live: chat messages and chat commands", () => {
     "/addoption appends a label (spaces allowed)",
     async () => {
       const { roomID, owner } = await newRoom("addopt-owner");
-      const initialNames = owner.response.room.defaultOptions.map((o) => o.name);
+      const initialNames = owner.response.room.defaultOptions.map((o) =>
+        o.name
+      );
 
       postChat(owner.client, roomID, owner.userID, "/addoption my new option");
 
-      const update = await owner.client.waitFor(OutgoingMessageType.ROOM_UPDATE);
+      const update = await owner.client.waitFor(
+        OutgoingMessageType.ROOM_UPDATE,
+      );
       expect(update.defaultOptions.map((o) => o.name)).toEqual([
         ...initialNames,
         "my new option",
@@ -397,18 +460,27 @@ describe("live: chat messages and chat commands", () => {
     "option commands by non-owners are no-ops",
     async () => {
       const { roomID, owner } = await newRoom("noopts-owner");
-      const voter = track(await connectToRoom({ roomID, username: "noopts-voter" }));
-      const initialNames = owner.response.room.defaultOptions.map((o) => o.name);
+      const voter = track(
+        await connectToRoom({ roomID, username: "noopts-voter" }),
+      );
+      const initialNames = owner.response.room.defaultOptions.map((o) =>
+        o.name
+      );
 
       postChat(voter.client, roomID, voter.userID, "/setoptions x y");
       postChat(voter.client, roomID, voter.userID, "/addoption nope");
       postChat(owner.client, roomID, owner.userID, "still original options");
-      const sentinel = await waitForChatEndingWith(owner.client, "still original options");
+      const sentinel = await waitForChatEndingWith(
+        owner.client,
+        "still original options",
+      );
       expect(sentinel.chatMessages).toHaveLength(3); // 2 joins + sentinel
 
       // an owner-side command confirms the original options were untouched
       postChat(owner.client, roomID, owner.userID, "/addoption probe");
-      const update = await owner.client.waitFor(OutgoingMessageType.ROOM_UPDATE);
+      const update = await owner.client.waitFor(
+        OutgoingMessageType.ROOM_UPDATE,
+      );
       expect(update.defaultOptions.map((o) => o.name)).toEqual([
         ...initialNames,
         "probe",
@@ -422,25 +494,33 @@ describe("live: chat messages and chat commands", () => {
     "/setmode switches the room mode; invalid mode is a no-op",
     async () => {
       const { roomID, owner } = await newRoom("mode-owner");
-      const voter = track(await connectToRoom({ roomID, username: "mode-voter" }));
+      const voter = track(
+        await connectToRoom({ roomID, username: "mode-voter" }),
+      );
 
       postChat(owner.client, roomID, owner.userID, "/setmode private");
       await owner.client.waitFor(
-        (m) => m.type === OutgoingMessageType.ROOM_UPDATE && m.mode === "private",
+        (m) =>
+          m.type === OutgoingMessageType.ROOM_UPDATE && m.mode === "private",
       );
       await voter.client.waitFor(
-        (m) => m.type === OutgoingMessageType.ROOM_UPDATE && m.mode === "private",
+        (m) =>
+          m.type === OutgoingMessageType.ROOM_UPDATE && m.mode === "private",
       );
 
       postChat(owner.client, roomID, owner.userID, "/setmode default");
       await owner.client.waitFor(
-        (m) => m.type === OutgoingMessageType.ROOM_UPDATE && m.mode === "default",
+        (m) =>
+          m.type === OutgoingMessageType.ROOM_UPDATE && m.mode === "default",
       );
 
       // invalid mode: no-op, nothing is added to the chat
       postChat(owner.client, roomID, owner.userID, "/setmode hardcore");
       postChat(owner.client, roomID, owner.userID, "mode sentinel");
-      const sentinel = await waitForChatEndingWith(owner.client, "mode sentinel");
+      const sentinel = await waitForChatEndingWith(
+        owner.client,
+        "mode sentinel",
+      );
       expect(sentinel.chatMessages).toHaveLength(3); // 2 joins + sentinel
       // NOTE: the invalid mode cannot be observed beyond "no room:update with
       // a mode change and no crash" — "hardcore" is not a valid mode value
@@ -468,45 +548,58 @@ describe("live: chat messages and chat commands", () => {
       const update = await owner.client.waitFor(
         (m) =>
           m.type === OutgoingMessageType.ROOM_UPDATE
-          && m.participants.find((p) => p.publicID === voterA.publicUserID)?.role
+          && m.participants.find((p) => p.publicID === voterA.publicUserID)
+            ?.role
             === "viewer",
       );
       expect(
-        update.participants.find((p) => p.publicID === voterA.publicUserID)!.role,
+        update.participants.find((p) => p.publicID === voterA.publicUserID)!
+          .role,
       ).toBe("viewer");
       expect(
-        update.participants.find((p) => p.publicID === voterB.publicUserID)!.role,
+        update.participants.find((p) => p.publicID === voterB.publicUserID)!
+          .role,
       ).toBe("voter");
 
       // viewer's /vote is ignored
       postChat(voterA.client, roomID, voterA.userID, "/vote 8");
       voteNormally(voterB.client, roomID, voterB.userID, owner.response);
-      const voteUpdate = await owner.client.waitFor(OutgoingMessageType.ROUND_UPDATE);
+      const voteUpdate = await owner.client.waitFor(
+        OutgoingMessageType.ROUND_UPDATE,
+      );
       expect(voteUpdate.results).toHaveLength(1);
       expect(voteUpdate.results[0]!.username).toBe("role-b");
 
       // invalid role: no-op
       postChat(voterA.client, roomID, voterA.userID, "/setrole admin");
       postChat(owner.client, roomID, owner.userID, "role sentinel");
-      const sentinel = await waitForChatEndingWith(owner.client, "role sentinel");
+      const sentinel = await waitForChatEndingWith(
+        owner.client,
+        "role sentinel",
+      );
       expect(sentinel.chatMessages.some((m) => m.text.includes("admin"))).toBe(
         false,
       );
 
       // back to voter
       postChat(voterA.client, roomID, voterA.userID, "/setrole voter");
-      await waitForChatEndingWith(owner.client, "**role-a** is back to voting.");
+      await waitForChatEndingWith(
+        owner.client,
+        "**role-a** is back to voting.",
+      );
       await owner.client.waitFor(
         (m) =>
           m.type === OutgoingMessageType.ROOM_UPDATE
-          && m.participants.find((p) => p.publicID === voterA.publicUserID)?.role
+          && m.participants.find((p) => p.publicID === voterA.publicUserID)
+            ?.role
             === "voter",
       );
 
       // and now /vote works again
       postChat(voterA.client, roomID, voterA.userID, "/vote 5");
       const voteUpdate2 = await owner.client.waitFor(
-        (m) => m.type === OutgoingMessageType.ROUND_UPDATE && m.results.length === 2,
+        (m) =>
+          m.type === OutgoingMessageType.ROUND_UPDATE && m.results.length === 2,
       );
       expect(voteUpdate2.results.map((r) => r.vote)).toContain("5");
     },
@@ -521,7 +614,8 @@ describe("live: chat messages and chat commands", () => {
       postChat(owner.client, roomID, owner.userID, "/setrole viewer");
       const viewerUpdate = await owner.client.waitFor(
         (m) =>
-          m.type === OutgoingMessageType.ROOM_UPDATE && m.ownerRole === "viewer",
+          m.type === OutgoingMessageType.ROOM_UPDATE
+          && m.ownerRole === "viewer",
       );
       expect(viewerUpdate.ownerName).toBe("ownrole-owner");
 
@@ -542,7 +636,10 @@ describe("live: chat messages and chat commands", () => {
 
       postChat(owner.client, roomID, owner.userID, "/foobar do stuff");
       postChat(owner.client, roomID, owner.userID, "after unknown command");
-      const sentinel = await waitForChatEndingWith(owner.client, "after unknown command");
+      const sentinel = await waitForChatEndingWith(
+        owner.client,
+        "after unknown command",
+      );
       expect(sentinel.chatMessages).toHaveLength(3); // 2 joins + sentinel
       // NOTE: chat commands never produce a connection:error reply, so there
       // is no error to assert on — the unchanged chat is the observable
@@ -554,7 +651,9 @@ describe("live: chat messages and chat commands", () => {
     "/close by a non-owner is a no-op",
     async () => {
       const { roomID, owner } = await newRoom("noclose-owner");
-      const voter = track(await connectToRoom({ roomID, username: "noclose-voter" }));
+      const voter = track(
+        await connectToRoom({ roomID, username: "noclose-voter" }),
+      );
 
       postChat(voter.client, roomID, voter.userID, "/close");
       postChat(owner.client, roomID, owner.userID, "room still open");
@@ -582,9 +681,13 @@ describe("live: chat messages and chat commands", () => {
       postChat(owner.client, roomID, owner.userID, "/close");
 
       // connections at indices 0 and 2 are notified ...
-      const ownerClosed = await owner.client.waitFor(OutgoingMessageType.ROOM_CLOSED);
+      const ownerClosed = await owner.client.waitFor(
+        OutgoingMessageType.ROOM_CLOSED,
+      );
       expect(ownerClosed.roomID).toBe(roomID);
-      const bClosed = await userB.client.waitFor(OutgoingMessageType.ROOM_CLOSED);
+      const bClosed = await userB.client.waitFor(
+        OutgoingMessageType.ROOM_CLOSED,
+      );
       expect(bClosed.roomID).toBe(roomID);
 
       // ... while connections at indices 1 and 3 are NOT

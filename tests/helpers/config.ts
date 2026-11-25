@@ -15,6 +15,7 @@ export const ORIGIN = "https://pointingpoker.work";
 export const WS_URL = `wss://localhost:${TEST_PORT}/ws/room`;
 
 /** CA that signed the proxy's certificate; Bun needs it via NODE_EXTRA_CA_CERTS */
-export const CA_CERT = new URL("../nginx/certs/ca.crt", import.meta.url).pathname;
+export const CA_CERT =
+  new URL("../nginx/certs/ca.crt", import.meta.url).pathname;
 
 export const SUITE_TIMEOUT = 30_000;

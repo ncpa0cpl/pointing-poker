@@ -14,18 +14,20 @@ Shared helpers (created once, used by every suite):
 ## Server surface under test
 
 ### HTTP endpoints
-| Route | Notes |
-|---|---|
-| `POST /api/room` | body: `{ userID, username, persistent? }`; 400 on invalid body; 503 "Too many rooms." at 100 active rooms |
-| `GET /ws/room` | WebSocket endpoint (upgrade) |
-| `GET /api/stats` | usage stats, `Cache-Control: no-store` |
-| `GET /sitemap.xml` | uses `SITEMAP_URL`; 500 if unset |
-| `GET /favicon.ico` | 1h cache |
-| `GET /public/*` | static bundle, 30d cache + `must-revalidate` |
+
+| Route                  | Notes                                                                                                                                                           |
+| ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `POST /api/room`       | body: `{ userID, username, persistent? }`; 400 on invalid body; 503 "Too many rooms." at 100 active rooms                                                       |
+| `GET /ws/room`         | WebSocket endpoint (upgrade)                                                                                                                                    |
+| `GET /api/stats`       | usage stats, `Cache-Control: no-store`                                                                                                                          |
+| `GET /sitemap.xml`     | uses `SITEMAP_URL`; 500 if unset                                                                                                                                |
+| `GET /favicon.ico`     | 1h cache                                                                                                                                                        |
+| `GET /public/*`        | static bundle, 30d cache + `must-revalidate`                                                                                                                    |
 | `GET /` and SPA routes | `/join /notfound /register /room /about /stats /privacy /error /roomclosed /user` → respective `dist/public/*.html` or `index.html` fallback; other paths → 404 |
-| OPTIONS | CORS preflight; non-GET with disallowed/missing `Origin` → 403 |
+| OPTIONS                | CORS preflight; non-GET with disallowed/missing `Origin` → 403                                                                                                  |
 
 ### WebSocket incoming message types (`src/shared/websockets-messages/room-websocket-incoming-message-types.ts`)
+
 1. `room:connect` — happy path (`room:connected` + full room view), empty/whitespace username → 422 error, unknown room → `room:closed`, reconnecting owner claims ownership, multi-tab (same `userID`, several sockets), duplicate connection object reuse.
 2. `room:set-default-options` — owner only (401 error otherwise), updates default + in-progress round options, broadcast `room:update`.
 3. `round:add-vote` — voter only; vote stored/replaced (one vote per user); unknown round id → ignored; unknown optionRef → handler crash → 500 error msg; round update broadcast to all clients; private mode sets `hideUsername`; non-connected user → 404 error.
@@ -37,32 +39,37 @@ Shared helpers (created once, used by every suite):
 9. `room:disconnect` — removes user, participants update + system message, ownership reassignment when owner leaves.
 
 ### Cross-cutting WS behavior
+
 - `message:received` ack for every message carrying a `messageID` (even failures); **deduplication** of repeated `messageID`s.
 - Malformed JSON / schema-invalid / binary messages → `connection:error` 500 ("Internal server error.", `causedBy: "unknown"` for unparseable ones).
 - Messages referencing non-existent rooms → `connection:error` 404.
 - Error shape: `{ type, code, message, causedBy }`.
 
 ### Text chat commands (`Room.handleMsgCommand`, messages starting with `/`)
-| Command | Who | Effect |
-|---|---|---|
-| `/transfer <name>` | anyone | owner change if username found |
-| `/vote <value>` | voters only | adds vote with arbitrary value |
-| `/close` | owner | removes room, clients get `room:closed` |
-| `/reset` | owner | wipes round history |
-| `/clearchat` | owner | clears chat |
-| `/setoptions a b c` | owner | replaces default options |
-| `/addoption <label>` | owner | appends option (multi-word allowed) |
-| `/setmode private\\|default` | owner | mode change, affects `hideUsername` |
-| `/setrole voter\\|viewer` | anyone (self) | role change + system message; viewers can't vote |
+
+| Command              | Who         | Effect                                  |
+| -------------------- | ----------- | --------------------------------------- |
+| `/transfer <name>`   | anyone      | owner change if username found          |
+| `/vote <value>`      | voters only | adds vote with arbitrary value          |
+| `/close`             | owner       | removes room, clients get `room:closed` |
+| `/reset`             | owner       | wipes round history                     |
+| `/clearchat`         | owner       | clears chat                             |
+| `/setoptions a b c`  | owner       | replaces default options                |
+| `/addoption <label>` | owner       | appends option (multi-word allowed)     |
+| `/setmode private\\  | default`    | owner                                   | mode change, affects `hideUsername` |
+| `/setrole voter\\    | viewer`     | anyone (self)                           | role change + system message; viewers can't vote |
+
 - Unknown commands, owner commands by non-owner (no-op), `/vote` by viewer (ignored), `/transfer` to unknown name (no-op).
 
 ### Room lifecycle & persistence
+
 - Participants list updates (`room:participants-change`), active/inactive flags per socket.
 - Owner leaves → first remaining participant becomes owner; rejoining original owner reclaims it.
 - Rooms survive **container restart** (rooms are persisted to `dist/persistent-storage` and reloaded on boot); persistent rooms keep data, reconnect works.
 - Stale-room purge / 503 when 100 active rooms exist (cleanup: owner `/close`s rooms afterwards).
 
 ### Middleware / infra behavior
+
 - Rate limiter: > `REQ_THRESHOLD` (1000) requests from one IP (keyed by `X-Forwarded-For`) within `LIMIT_TIMEFRAME` → 429; other IPs unaffected.
 - Gzip for `Accept-Encoding: gzip` on text responses ≥256B.
 - Cache headers: defaults (30 min) on API GETs, `no-store` on `/api/stats` & SPA, long max-age on `/public`, ETag/`If-None-Match` → 304.
@@ -70,10 +77,12 @@ Shared helpers (created once, used by every suite):
 - `/api/stats` counters: rooms created, users, rounds completed, votes placed, per-day history.
 
 ## Smoke tests (Playwright, `tests/smoke/`)
+
 1. **Full game round**: open `/`, register username, create room, room page shows room ID; second browser context joins by room ID; both vote different options; owner starts/finishes round; results visible.
 2. **Navigation & room join**: `/`, `/about`, `/join` pages render; joining a nonexistent room id surfaces room-not-found/room-closed handling gracefully.
 
 ## Nginx reverse proxy (`tests/live/18-*`, `tests/nginx/`)
+
 The test stack mirrors production topology: the Bun app is **not** published to
 the host — every HTTP and WebSocket request goes through an nginx proxy
 container (`nginx:1.27-alpine`) running the production server config verbatim

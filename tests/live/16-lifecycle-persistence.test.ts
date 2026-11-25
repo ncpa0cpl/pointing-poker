@@ -1,11 +1,5 @@
 import { $ } from "bun";
-import {
-  afterAll,
-  beforeAll,
-  describe,
-  expect,
-  test,
-} from "bun:test";
+import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import {
   ensureServer,
   recreateServer,
@@ -14,12 +8,12 @@ import {
 } from "../helpers/docker";
 import { uniqueId } from "../helpers/http";
 import {
+  type ConnectedUser,
+  connectToRoom,
   IncomingMessageType,
   OutgoingMessageType,
   RoomClient,
-  connectToRoom,
   setupRoom,
-  type ConnectedUser,
 } from "../helpers/ws";
 
 /**
@@ -238,8 +232,9 @@ interface PersistedSnapshot {
 
 /** reads the room's serialized snapshot from inside the test container */
 async function readPersistedRoomFile(roomID: string): Promise<string | null> {
-  const proc = await $`docker exec pointing-poker-test cat /var/www/pointing-poker/dist/persistent-storage/Room/${roomID}.json`
-    .quiet().nothrow();
+  const proc =
+    await $`docker exec pointing-poker-test cat /var/www/pointing-poker/dist/persistent-storage/Room/${roomID}.json`
+      .quiet().nothrow();
   return proc.exitCode === 0 ? proc.stdout.toString() : null;
 }
 
@@ -437,8 +432,7 @@ describe("room lifecycle (no restart)", () => {
           (m) =>
             m.type === OutgoingMessageType.ROOM_PARTICIPANTS_UPDATE
             && m.participants.some(
-              (p) =>
-                p.publicID === voter.publicUserID && p.isActive === false,
+              (p) => p.publicID === voter.publicUserID && p.isActive === false,
             ),
         );
         expect(inactive.participants.length).toBe(2);
@@ -458,8 +452,7 @@ describe("room lifecycle (no restart)", () => {
           (m) =>
             m.type === OutgoingMessageType.ROOM_PARTICIPANTS_UPDATE
             && m.participants.some(
-              (p) =>
-                p.publicID === voter.publicUserID && p.isActive === true,
+              (p) => p.publicID === voter.publicUserID && p.isActive === true,
             ),
         );
         expect(active.participants.length).toBe(2);

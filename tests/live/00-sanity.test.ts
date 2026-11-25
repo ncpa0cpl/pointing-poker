@@ -1,7 +1,12 @@
 import { describe, expect, test } from "bun:test";
 import { ensureServer } from "../helpers/docker";
 import { api } from "../helpers/http";
-import { IncomingMessageType, OutgoingMessageType, connectToRoom, setupRoom } from "../helpers/ws";
+import {
+  connectToRoom,
+  IncomingMessageType,
+  OutgoingMessageType,
+  setupRoom,
+} from "../helpers/ws";
 
 describe("sanity", () => {
   test("server responds", async () => {

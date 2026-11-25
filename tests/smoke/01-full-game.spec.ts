@@ -1,4 +1,4 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, type Page, test } from "@playwright/test";
 
 /**
  * Full happy-path game:
@@ -47,9 +47,7 @@ async function createRoom(page: Page): Promise<string> {
   throw new Error("Room could not be created after 3 attempts.");
 }
 
-test("full game: create room, join, vote, finish round, next round", async ({
-  browser,
-}) => {
+test("full game: create room, join, vote, finish round, next round", async ({ browser }) => {
   // --- Owner registers and creates a room ---------------------------------
   const ownerContext = await browser.newContext();
   const ownerPage = await ownerContext.newPage();

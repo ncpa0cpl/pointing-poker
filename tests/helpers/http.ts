@@ -7,7 +7,9 @@ import { BASE_URL, ORIGIN } from "./config";
  */
 export function randomIp(): string {
   const a = 10 + Math.floor(Math.random() * 200);
-  return `${a}.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}`;
+  return `${a}.${Math.floor(Math.random() * 255)}.${
+    Math.floor(Math.random() * 255)
+  }.${Math.floor(Math.random() * 255)}`;
 }
 
 export type ApiInit = Omit<RequestInit, "headers"> & {
@@ -45,7 +47,9 @@ const counters = new Map<string, number>();
 export function uniqueId(prefix = "user"): string {
   const n = (counters.get(prefix) ?? 0) + 1;
   counters.set(prefix, n);
-  return `${prefix}-${Date.now().toString(36)}-${n}-${Math.random().toString(36).slice(2, 6)}`;
+  return `${prefix}-${Date.now().toString(36)}-${n}-${
+    Math.random().toString(36).slice(2, 6)
+  }`;
 }
 
 /**

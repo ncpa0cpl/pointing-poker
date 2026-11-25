@@ -65,7 +65,8 @@ describe("http static surface", () => {
       const res = await api("/favicon.ico");
       expect(res.status).toBe(200);
       expect(res.headers.get("content-type")).toContain("image/");
-      expect(parseInt(res.headers.get("content-length") ?? "0")).toBeGreaterThan(0);
+      expect(parseInt(res.headers.get("content-length") ?? "0"))
+        .toBeGreaterThan(0);
       expect(res.headers.get("cache-control")).toContain("max-age=3600");
     });
 

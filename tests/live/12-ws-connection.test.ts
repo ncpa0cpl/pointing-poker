@@ -2,11 +2,11 @@ import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { ensureServer } from "../helpers/docker";
 import { uniqueId } from "../helpers/http";
 import {
+  connectToRoom,
   IncomingMessageType,
+  nextMessageID,
   OutgoingMessageType,
   RoomClient,
-  connectToRoom,
-  nextMessageID,
   setupRoom,
 } from "../helpers/ws";
 
@@ -188,7 +188,9 @@ describe("WS connection protocol", () => {
       expect(err.message).toBe("Internal server error.");
 
       // unknown message type
-      client.raw(JSON.stringify({ type: "foo:bar", messageID: nextMessageID() }));
+      client.raw(
+        JSON.stringify({ type: "foo:bar", messageID: nextMessageID() }),
+      );
       err = await client.expectError("unknown");
       expect(err.code).toBe(500);
       expect(err.message).toBe("Internal server error.");
@@ -280,8 +282,18 @@ describe("WS connection protocol", () => {
       const publicUserID = uniqueId("pub");
       const username = uniqueId("mt-user");
 
-      const tab1 = await connectToRoom({ roomID, userID, publicUserID, username });
-      const tab2 = await connectToRoom({ roomID, userID, publicUserID, username });
+      const tab1 = await connectToRoom({
+        roomID,
+        userID,
+        publicUserID,
+        username,
+      });
+      const tab2 = await connectToRoom({
+        roomID,
+        userID,
+        publicUserID,
+        username,
+      });
       sockets.push(tab1.client, tab2.client);
 
       expect(tab2.response.type).toBe(OutgoingMessageType.ROOM_CONNECTED);
@@ -329,7 +341,12 @@ describe("WS connection protocol", () => {
       const publicUserID = uniqueId("pub");
       const username = uniqueId("rc-user");
 
-      const first = await connectToRoom({ roomID, userID, publicUserID, username });
+      const first = await connectToRoom({
+        roomID,
+        userID,
+        publicUserID,
+        username,
+      });
       sockets.push(first.client);
       const originalConnectionID = first.connectionID;
 
@@ -339,7 +356,10 @@ describe("WS connection protocol", () => {
       await new Promise((r) => setTimeout(r, 300));
 
       // a fresh observer sees the user still listed, but inactive
-      const observer = await connectToRoom({ roomID, username: uniqueId("obs") });
+      const observer = await connectToRoom({
+        roomID,
+        username: uniqueId("obs"),
+      });
       sockets.push(observer.client);
       const stale = observer.response.room.participants.find(
         (p) => p.publicID === publicUserID,
@@ -348,7 +368,12 @@ describe("WS connection protocol", () => {
       expect(stale!.isActive).toBe(false);
 
       // reconnecting with the same userID re-attaches to the SAME connection
-      const second = await connectToRoom({ roomID, userID, publicUserID, username });
+      const second = await connectToRoom({
+        roomID,
+        userID,
+        publicUserID,
+        username,
+      });
       sockets.push(second.client);
 
       expect(second.connectionID).toBe(originalConnectionID);

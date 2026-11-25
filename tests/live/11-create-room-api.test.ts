@@ -1,4 +1,4 @@
-import { describe, test, expect, beforeAll, afterAll } from "bun:test";
+import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { ensureServer } from "../helpers/docker";
 import { api, createRoom, uniqueId } from "../helpers/http";
 import {
@@ -96,7 +96,9 @@ async function expect400(
 ): Promise<void> {
   if (res.status === 200) {
     const body = (await res.json()) as { roomID: string };
-    const ownerID = typeof payload?.userID === "string" ? payload.userID : uniqueId("leak-owner");
+    const ownerID = typeof payload?.userID === "string"
+      ? payload.userID
+      : uniqueId("leak-owner");
     await closeRoom(body.roomID, ownerID);
     throw new Error(
       `expected 400 for ${label} but got 200 (leaked room ${body.roomID} was closed)`,
@@ -117,14 +119,18 @@ async function expectAcceptedAndClose(
   expect(res.status).toBe(200);
   const body = (await res.json()) as { roomID: string };
   expect(typeof body.roomID).toBe("string");
-  const ownerID = typeof payload.userID === "string" ? payload.userID : uniqueId("leak-owner");
+  const ownerID = typeof payload.userID === "string"
+    ? payload.userID
+    : uniqueId("leak-owner");
   await closeRoom(body.roomID, ownerID);
   void label;
   return body;
 }
 
 /** json body used for every valid-room request in the validation suites */
-function validBody(extra: Record<string, unknown> = {}): Record<string, unknown> {
+function validBody(
+  extra: Record<string, unknown> = {},
+): Record<string, unknown> {
   return { userID: uniqueId(), username: uniqueId("username"), ...extra };
 }
 
@@ -147,23 +153,31 @@ describe("POST /api/room", () => {
   /* ---------------------------------------------------------------- */
 
   describe("happy path", () => {
-    test("creates a non-persistent room and returns an 8-char alphanumeric roomID", async () => {
-      const userID = uniqueId();
-      const username = uniqueId("username");
-      const res = await postRoomJson({ userID, username });
+    test(
+      "creates a non-persistent room and returns an 8-char alphanumeric roomID",
+      async () => {
+        const userID = uniqueId();
+        const username = uniqueId("username");
+        const res = await postRoomJson({ userID, username });
 
-      expect(res.status).toBe(200);
-      const body = (await res.json()) as { roomID: string };
-      expect(typeof body.roomID).toBe("string");
-      expect(body.roomID).toHaveLength(8);
-      expect(body.roomID).toMatch(/^[a-z0-9]+$/);
+        expect(res.status).toBe(200);
+        const body = (await res.json()) as { roomID: string };
+        expect(typeof body.roomID).toBe("string");
+        expect(body.roomID).toHaveLength(8);
+        expect(body.roomID).toMatch(/^[a-z0-9]+$/);
 
-      await closeRoom(body.roomID, userID);
-    }, 30_000);
+        await closeRoom(body.roomID, userID);
+      },
+      30_000,
+    );
 
     test("explicit persistent:false behaves like the default", async () => {
       const userID = uniqueId();
-      const res = await postRoomJson({ userID, username: uniqueId("username"), persistent: false });
+      const res = await postRoomJson({
+        userID,
+        username: uniqueId("username"),
+        persistent: false,
+      });
       expect(res.status).toBe(200);
       const body = (await res.json()) as { roomID: string };
       expect(body.roomID).toHaveLength(8);
@@ -171,17 +185,25 @@ describe("POST /api/room", () => {
       await closeRoom(body.roomID, userID);
     }, 30_000);
 
-    test("persistent:true returns a longer, timestamp-encoded roomID", async () => {
-      const userID = uniqueId();
-      const res = await postRoomJson({ userID, username: uniqueId("username"), persistent: true });
-      expect(res.status).toBe(200);
-      const body = (await res.json()) as { roomID: string };
-      // non-persistent ids are 8 chars; the persistent variant adds a
-      // timestamp-encoded prefix
-      expect(body.roomID.length).toBeGreaterThan(8);
+    test(
+      "persistent:true returns a longer, timestamp-encoded roomID",
+      async () => {
+        const userID = uniqueId();
+        const res = await postRoomJson({
+          userID,
+          username: uniqueId("username"),
+          persistent: true,
+        });
+        expect(res.status).toBe(200);
+        const body = (await res.json()) as { roomID: string };
+        // non-persistent ids are 8 chars; the persistent variant adds a
+        // timestamp-encoded prefix
+        expect(body.roomID.length).toBeGreaterThan(8);
 
-      await closeRoom(body.roomID, userID);
-    }, 30_000);
+        await closeRoom(body.roomID, userID);
+      },
+      30_000,
+    );
 
     test("accepts unicode and whitespace in userID/username", async () => {
       const userID = "id-🎯-ßpÄce 42";
@@ -196,8 +218,14 @@ describe("POST /api/room", () => {
 
     test("two calls create two distinct roomIDs", async () => {
       const userID = uniqueId();
-      const res1 = await postRoomJson({ userID, username: uniqueId("username") });
-      const res2 = await postRoomJson({ userID, username: uniqueId("username") });
+      const res1 = await postRoomJson({
+        userID,
+        username: uniqueId("username"),
+      });
+      const res2 = await postRoomJson({
+        userID,
+        username: uniqueId("username"),
+      });
       expect(res1.status).toBe(200);
       expect(res2.status).toBe(200);
       const room1 = (await res1.json()) as { roomID: string };
@@ -226,7 +254,11 @@ describe("POST /api/room", () => {
       ["userID is array", { userID: ["a"], username: "x" }],
       ["userID is object", { userID: { a: 1 }, username: "x" }],
       ["username is array", { userID: "x", username: ["a"] }],
-      ["persistent is string", { userID: "x", username: "x", persistent: "yes" }],
+      ["persistent is string", {
+        userID: "x",
+        username: "x",
+        persistent: "yes",
+      }],
       ["persistent is number", { userID: "x", username: "x", persistent: 1 }],
       ["persistent is null", { userID: "x", username: "x", persistent: null }],
       ["persistent is array", { userID: "x", username: "x", persistent: [] }],
@@ -238,29 +270,39 @@ describe("POST /api/room", () => {
     // NOTE: observed discrepancy — the source's dilswer schema (Type.String)
     // accepts empty strings, so the server creates a room for them (200)
     // even though the empty userID/username case was expected to be a 400.
-    test("observed: empty-string userID and username are ACCEPTED (200)", async () => {
-      const res1 = await postRoomJson({ userID: "", username: "x" });
-      await expectAcceptedAndClose(res1, "empty userID", { userID: "" });
+    test(
+      "observed: empty-string userID and username are ACCEPTED (200)",
+      async () => {
+        const res1 = await postRoomJson({ userID: "", username: "x" });
+        await expectAcceptedAndClose(res1, "empty userID", { userID: "" });
 
-      const res2 = await postRoomJson({ userID: "some-user", username: "" });
-      await expectAcceptedAndClose(res2, "empty username", { userID: "some-user" });
-    }, 30_000);
+        const res2 = await postRoomJson({ userID: "some-user", username: "" });
+        await expectAcceptedAndClose(res2, "empty username", {
+          userID: "some-user",
+        });
+      },
+      30_000,
+    );
 
-    test("does not validate unknown extra properties (observed: 200)", async () => {
-      // DTCreateRoomRequestData is a dilswer Record — Records don't strip or
-      // reject unknown keys by default. Assert the OBSERVED behavior.
-      const userID = uniqueId();
-      const res = await postRoomJson({
-        userID,
-        username: uniqueId("username"),
-        sneakyExtra: { nested: true },
-      });
-      expect(res.status).toBe(200);
-      const body = (await res.json()) as { roomID: string };
-      expect(typeof body.roomID).toBe("string");
+    test(
+      "does not validate unknown extra properties (observed: 200)",
+      async () => {
+        // DTCreateRoomRequestData is a dilswer Record — Records don't strip or
+        // reject unknown keys by default. Assert the OBSERVED behavior.
+        const userID = uniqueId();
+        const res = await postRoomJson({
+          userID,
+          username: uniqueId("username"),
+          sneakyExtra: { nested: true },
+        });
+        expect(res.status).toBe(200);
+        const body = (await res.json()) as { roomID: string };
+        expect(typeof body.roomID).toBe("string");
 
-      await closeRoom(body.roomID, userID);
-    }, 30_000);
+        await closeRoom(body.roomID, userID);
+      },
+      30_000,
+    );
 
     // NOTE: observed discrepancy — bodies that fail JSON.parse throw inside
     // ctx.body("json") BEFORE the schema validator runs, so the framework's
@@ -268,38 +310,49 @@ describe("POST /api/room", () => {
     test.each([
       ["empty body", ""],
       ["whitespace-only body", "   "],
-      ["malformed json", '{"userID": "x", '],
+      ["malformed json", "{\"userID\": \"x\", "],
       ["non-json text", "hello world"],
       ["form-encoded", "userID=x&username=y"],
-    ])("observed: %s → 500 (parse error bypasses validation)", async (_label, raw) => {
-      const res = await postRoom(raw);
-      expect(res.status).toBe(500);
-    }, 30_000);
+    ])(
+      "observed: %s → 500 (parse error bypasses validation)",
+      async (_label, raw) => {
+        const res = await postRoom(raw);
+        expect(res.status).toBe(500);
+      },
+      30_000,
+    );
 
     test.each([
-      ["json string", '"just a string"'],
+      ["json string", "\"just a string\""],
       ["json number", "123"],
       ["json null", "null"],
       ["json array", "[]"],
-      ["json array of records", JSON.stringify([{ userID: "x", username: "y" }])],
+      [
+        "json array of records",
+        JSON.stringify([{ userID: "x", username: "y" }]),
+      ],
     ])("rejects %s with 400", async (_label, raw) => {
       const res = await postRoom(raw);
       await expect400(res, _label);
     }, 30_000);
 
-    test("missing content-type still parses a valid json body (observed)", async () => {
-      // ctx.body("json") reads request.json() which ignores the content
-      // type. Observed behavior asserted here.
-      const userID = uniqueId();
-      const res = await postRoom(
-        JSON.stringify({ userID, username: uniqueId("username") }),
-        { headers: {} },
-      );
-      expect(res.status).toBe(200);
-      const body = (await res.json()) as { roomID: string };
+    test(
+      "missing content-type still parses a valid json body (observed)",
+      async () => {
+        // ctx.body("json") reads request.json() which ignores the content
+        // type. Observed behavior asserted here.
+        const userID = uniqueId();
+        const res = await postRoom(
+          JSON.stringify({ userID, username: uniqueId("username") }),
+          { headers: {} },
+        );
+        expect(res.status).toBe(200);
+        const body = (await res.json()) as { roomID: string };
 
-      await closeRoom(body.roomID, userID);
-    }, 30_000);
+        await closeRoom(body.roomID, userID);
+      },
+      30_000,
+    );
   });
 
   /* ---------------------------------------------------------------- */
@@ -323,7 +376,10 @@ describe("POST /api/room", () => {
 
     test("allowed Origin (helper default) is accepted", async () => {
       const userID = uniqueId();
-      const res = await postRoomJson({ userID, username: uniqueId("username") });
+      const res = await postRoomJson({
+        userID,
+        username: uniqueId("username"),
+      });
       expect(res.status).toBe(200);
       const body = (await res.json()) as { roomID: string };
 
@@ -351,17 +407,21 @@ describe("POST /api/room", () => {
   /* ---------------------------------------------------------------- */
 
   describe("body size limit", () => {
-    test("body > 512KB is rejected (413, or 502 via a proxy race)", async () => {
-      // NOTE: the app aborts the connection on max-body-size before nginx
-      // (which buffers large bodies) finishes sending it, so through the
-      // proxy the client sees 413 or 502 depending on timing; what matters
-      // is that the request is never accepted
-      const big = "x".repeat(600 * 1024);
-      const res = await postRoom(
-        JSON.stringify({ userID: big, username: "x" }),
-      );
-      expect([413, 502]).toContain(res.status);
-    }, 30_000);
+    test(
+      "body > 512KB is rejected (413, or 502 via a proxy race)",
+      async () => {
+        // NOTE: the app aborts the connection on max-body-size before nginx
+        // (which buffers large bodies) finishes sending it, so through the
+        // proxy the client sees 413 or 502 depending on timing; what matters
+        // is that the request is never accepted
+        const big = "x".repeat(600 * 1024);
+        const res = await postRoom(
+          JSON.stringify({ userID: big, username: "x" }),
+        );
+        expect([413, 502]).toContain(res.status);
+      },
+      30_000,
+    );
 
     test("body just under 512KB is accepted", async () => {
       const userID = uniqueId();
@@ -381,74 +441,79 @@ describe("POST /api/room", () => {
   /* ---------------------------------------------------------------- */
 
   describe("max active rooms", () => {
-    test("the 101st active room creation returns 503 'Too many rooms.'", async () => {
-      const start = await getActiveRooms();
-      const created: Array<{ roomID: string; userID: string }> = [];
+    test(
+      "the 101st active room creation returns 503 'Too many rooms.'",
+      async () => {
+        const start = await getActiveRooms();
+        const created: Array<{ roomID: string; userID: string }> = [];
 
-      try {
-        let tooManyBody = "";
-        let got503 = false;
+        try {
+          let tooManyBody = "";
+          let got503 = false;
 
-        for (let i = 0; i < 110; i++) {
-          const userID = uniqueId("owner");
-          const res = await postRoomJson({
-            userID,
+          for (let i = 0; i < 110; i++) {
+            const userID = uniqueId("owner");
+            const res = await postRoomJson({
+              userID,
+              username: uniqueId("username"),
+            });
+
+            if (res.status === 503) {
+              got503 = true;
+              tooManyBody = await res.text();
+              break;
+            }
+
+            // tolerate a rate-limit trip by another suite? no — a random ip is
+            // used per request, so anything but 200/503 is a real failure.
+            if (res.status !== 200) {
+              throw new Error(
+                `unexpected status ${res.status} while filling rooms: ${await res
+                  .text()}`,
+              );
+            }
+
+            const body = (await res.json()) as { roomID: string };
+            created.push({ roomID: body.roomID, userID });
+
+            // hard safety net: never overshoot the limit
+            if (created.length > 100) {
+              break;
+            }
+          }
+
+          // if the container was already near-empty, we should have created
+          // exactly enough rooms to reach the 100-room ceiling before the 503
+          expect(created.length).toBeGreaterThan(0);
+          expect(created.length).toBeLessThanOrEqual(100);
+          expect(got503).toBe(true);
+          expect(tooManyBody).toBe("Too many rooms.");
+
+          // once full, further creations keep failing
+          const extra = await postRoomJson({
+            userID: uniqueId("owner"),
             username: uniqueId("username"),
           });
-
-          if (res.status === 503) {
-            got503 = true;
-            tooManyBody = await res.text();
-            break;
-          }
-
-          // tolerate a rate-limit trip by another suite? no — a random ip is
-          // used per request, so anything but 200/503 is a real failure.
-          if (res.status !== 200) {
-            throw new Error(
-              `unexpected status ${res.status} while filling rooms: ${await res.text()}`,
-            );
-          }
-
-          const body = (await res.json()) as { roomID: string };
-          created.push({ roomID: body.roomID, userID });
-
-          // hard safety net: never overshoot the limit
-          if (created.length > 100) {
-            break;
+          expect(extra.status).toBe(503);
+        } finally {
+          // CLEANUP — runs even if an assertion above threw. Retry each room
+          // once so a transient failure cannot leak it into the next suite.
+          for (const { roomID, userID } of created) {
+            const ok = await closeRoom(roomID, userID);
+            if (!ok) {
+              await closeRoom(roomID, userID);
+            }
           }
         }
 
-        // if the container was already near-empty, we should have created
-        // exactly enough rooms to reach the 100-room ceiling before the 503
-        expect(created.length).toBeGreaterThan(0);
-        expect(created.length).toBeLessThanOrEqual(100);
-        expect(got503).toBe(true);
-        expect(tooManyBody).toBe("Too many rooms.");
-
-        // once full, further creations keep failing
-        const extra = await postRoomJson({
-          userID: uniqueId("owner"),
-          username: uniqueId("username"),
-        });
-        expect(extra.status).toBe(503);
-      } finally {
-        // CLEANUP — runs even if an assertion above threw. Retry each room
-        // once so a transient failure cannot leak it into the next suite.
-        for (const { roomID, userID } of created) {
-          const ok = await closeRoom(roomID, userID);
-          if (!ok) {
-            await closeRoom(roomID, userID);
-          }
-        }
-      }
-
-      // give the server a beat to settle, then confirm the count dropped
-      await new Promise((r) => setTimeout(r, 500));
-      const end = await getActiveRooms();
-      expect(end).toBeLessThanOrEqual(start + 5);
-      expect(end).toBeGreaterThanOrEqual(Math.max(0, start - 10));
-    }, 60_000);
+        // give the server a beat to settle, then confirm the count dropped
+        await new Promise((r) => setTimeout(r, 500));
+        const end = await getActiveRooms();
+        expect(end).toBeLessThanOrEqual(start + 5);
+        expect(end).toBeGreaterThanOrEqual(Math.max(0, start - 10));
+      },
+      60_000,
+    );
   });
 
   /* ---------------------------------------------------------------- */
@@ -466,7 +531,11 @@ describe("POST /api/room", () => {
       expect(room.roomID).toHaveLength(8);
 
       // the returned roomID is actually usable: owner connects, then closes
-      const owner = await connectToRoom({ roomID: room.roomID, userID, username });
+      const owner = await connectToRoom({
+        roomID: room.roomID,
+        userID,
+        username,
+      });
       openClients.push(owner.client);
       expect(owner.response.type).toBe(OutgoingMessageType.ROOM_CONNECTED);
 

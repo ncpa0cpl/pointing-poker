@@ -66,4 +66,3 @@ bun test:docker:down  # stop the stack
   `NODE_EXTRA_CA_CERTS=$PWD/tests/nginx/certs/ca.crt`.
 - The app container persists rooms on its filesystem; `tests/live/16-*` will
   restart/recreate it, everything else assumes the stack is running.
-
