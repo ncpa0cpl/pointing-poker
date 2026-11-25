@@ -49,11 +49,10 @@ upgrades) surface in the suite.
 bun test:docker:up    # build & start the test stack (idempotent)
 bun test:server       # server-side tests (bun:test, tests/live/**)
 bun test:smoke        # frontend smoke tests (Playwright, tests/smoke/**)
-bun test              # both
+bun test              # docker up+down and both test suites
 bun test:docker:down  # stop the stack
 ```
 
-- `tests/TESTPLAN.md` — what is covered.
 - `tests/helpers/` — shared docker/http/websocket helpers.
 - `tests/nginx/` — proxy config mirrors + test CA/server certificate.
 - `TEST_PORT` changes the host port for nginx's 443 (default 6969),
