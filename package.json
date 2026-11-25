@@ -30,7 +30,8 @@
     "watch": "NODE_ENV=development node ./scripts/build.mjs --watch",
     "build:dev": "NODE_ENV=development node --env-file=.env ./scripts/build.mjs --dev",
     "build:prod": "NODE_ENV=production node --env-file=.env ./scripts/build.mjs",
-    "gen:icon": "magick convert -background transparent -define 'icon:auto-resize=16,24,32,64,128' icon.svg ./src/server/routes/spa/favicon.ico"
+    "gen:icon": "magick convert -background transparent -define 'icon:auto-resize=16,24,32,64,128' icon.svg ./src/server/routes/spa/favicon.ico",
+    "prepare": "git-hook-tasks install -p bun"
   },
   "resolutions": {
     "@ncpa0cpl/vanilla-jsx": "^0.0.1-alpha.56"
@@ -68,7 +69,7 @@
     "dedent": "^1.7.2",
     "dprint": "^0.65.0",
     "esbuild": "^0.28.2",
-    "git-hook-tasks": "git+https://github.com/ncpa0cpl/git-hook-tasks#2.0.1",
+    "git-hook-tasks": "git+https://github.com/ncpa0cpl/git-hook-tasks#2.0.7",
     "husky": "^8.0.3",
     "jsdom": "^27.0.0",
     "typescript": "^7.0.2"
