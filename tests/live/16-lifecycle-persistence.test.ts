@@ -515,6 +515,91 @@ describe("room lifecycle (no restart)", () => {
     },
     15_000,
   );
+
+  test(
+    "an owner who reconnects with a new publicUserID re-claims ownership: both peers get room:owner-change and owner powers move back",
+    async () => {
+      const { roomID, owner } = await setupRoom({
+        username: "lc-reclaim-owner",
+      });
+      const voter = await connectToRoom({
+        roomID,
+        username: "lc-reclaim-voter",
+      });
+      track(voter.client);
+
+      owner.client.send({
+        type: IncomingMessageType.ROOM_DISCONNECT,
+        roomID,
+        userID: owner.userID,
+      });
+
+      // ownership transferred to the remaining participant
+      const transferred = await voter.client.waitFor(
+        (m) =>
+          m.type === OutgoingMessageType.OWNER_UPDATE
+          && m.ownerPublicID === voter.publicUserID,
+      );
+      expect(transferred.ownerName).toBe(voter.username);
+
+      // the original owner reconnects with the same userID but a NEW
+      // publicUserID — the server must re-claim ownership for them
+      const newPublicUserID = uniqueId("pub");
+      const reconnected = track(await RoomClient.connect());
+      const reconnectMid = reconnected.send({
+        type: IncomingMessageType.ROOM_CONNECT,
+        roomID,
+        userID: owner.userID,
+        publicUserID: newPublicUserID,
+        username: owner.username,
+        role: "voter",
+      });
+      const reconnectResponse = await reconnected.waitFor(
+        (msg) =>
+          msg.type === OutgoingMessageType.ROOM_CONNECTED
+          || msg.type === OutgoingMessageType.ROOM_CLOSED,
+      );
+      expect(reconnectResponse.type).toBe(
+        OutgoingMessageType.ROOM_CONNECTED,
+      );
+      reconnected.expectAck(reconnectMid).catch(() => {});
+
+      const reclaimedForVoter = await voter.client.waitFor(
+        (m) =>
+          m.type === OutgoingMessageType.OWNER_UPDATE
+          && m.ownerPublicID === newPublicUserID,
+      );
+      expect(reclaimedForVoter.ownerName).toBe(owner.username);
+
+      const reclaimedForOwner = await reconnected.waitFor(
+        (m) =>
+          m.type === OutgoingMessageType.OWNER_UPDATE
+          && m.ownerPublicID === newPublicUserID,
+      );
+      expect(reclaimedForOwner.ownerName).toBe(owner.username);
+
+      // the re-claimed owner can perform owner actions again...
+      const createMid = reconnected.send({
+        type: IncomingMessageType.CREATE_NEW_ROUND,
+        roomID,
+        userID: owner.userID,
+      });
+      await reconnected.expectAck(createMid);
+
+      // ...while the interim owner lost them
+      const deniedMid = voter.client.send({
+        type: IncomingMessageType.CREATE_NEW_ROUND,
+        roomID,
+        userID: voter.userID,
+      });
+      const err = await voter.client.expectError(deniedMid);
+      expect(err.code).toBe(401);
+
+      await closeQuietly(reconnected);
+      await closeQuietly(voter.client);
+    },
+    30_000,
+  );
 });
 
 describe("room persistence across server restart/recreate", () => {

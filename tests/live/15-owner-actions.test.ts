@@ -1,5 +1,6 @@
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { ensureServer } from "../helpers/docker";
+import { api, uniqueId } from "../helpers/http";
 import {
   type ConnectedUser,
   connectToRoom,
@@ -53,6 +54,20 @@ const isChatUpdate = (m: { type: string }): boolean =>
   m.type === OutgoingMessageType.ROOM_CHAT_UPDATE;
 const isOwnerUpdate = (m: { type: string }): boolean =>
   m.type === OutgoingMessageType.OWNER_UPDATE;
+
+/** the two usage gauges the double-finish test watches for re-counting */
+async function fetchUsageGauge(): Promise<{
+  thisMonthRounds: number;
+  thisMonthVotes: number;
+}> {
+  const res = await api("/api/stats");
+  expect(res.status).toBe(200);
+  const body = (await res.json()) as Record<string, unknown>;
+  return {
+    thisMonthRounds: body.thisMonthRounds as number,
+    thisMonthVotes: body.thisMonthVotes as number,
+  };
+}
 
 describe("owner-only actions and round statistics", () => {
   beforeAll(async () => {
@@ -561,5 +576,239 @@ describe("owner-only actions and round statistics", () => {
         await client.expectAck(mid);
       }
     }, 15_000);
+  });
+
+  describe("empty-rounds edge cases (rounds list can be empty)", () => {
+    /** cancels the room's only round; resolves once the owner observed an empty rounds list */
+    async function cancelOnlyRound(
+      roomID: string,
+      owner: ConnectedUser,
+    ): Promise<void> {
+      const mid = owner.client.send({
+        type: IncomingMessageType.CANCEL_LAST_ROUND,
+        roomID,
+        userID: owner.userID,
+      });
+      await owner.client.waitFor(
+        (m) => isRoomUpdate(m) && m.rounds.length === 0,
+      );
+      await owner.client.expectAck(mid);
+    }
+
+    test(
+      "round:add-vote into an empty rounds list is acked but broadcasts no round:update and materializes no phantom round",
+      async () => {
+        const { roomID, owner } = track(
+          await setupRoom({ username: "void-vote-owner" }),
+        );
+        await cancelOnlyRound(roomID, owner);
+
+        const mid = owner.client.send({
+          type: IncomingMessageType.ADD_ROUND_VOTE,
+          roomID,
+          userID: owner.userID,
+          roundID: "no-such-round",
+          optionRef: owner.response.room.defaultOptions[0]!.id,
+        });
+        await owner.client.expectAck(mid);
+
+        let phantomBroadcast = false;
+        try {
+          await owner.client.waitFor(
+            (m) => isRoomUpdate(m) && m.rounds.length > 0,
+            1200,
+          );
+          phantomBroadcast = true;
+        } catch {
+          // expected: nothing materialized
+        }
+        expect(phantomBroadcast).toBe(false);
+
+        const probe = track(await connectToRoom({ roomID }));
+        expect(probe.response.room.rounds.length).toBe(0);
+      },
+      15_000,
+    );
+
+    test(
+      "round:finish into an empty rounds list is acked but broadcasts no round:update and materializes no phantom round",
+      async () => {
+        const { roomID, owner } = track(
+          await setupRoom({ username: "void-finish-owner" }),
+        );
+        await cancelOnlyRound(roomID, owner);
+
+        const mid = owner.client.send({
+          type: IncomingMessageType.FINISH_LAST_ROUND,
+          roomID,
+          userID: owner.userID,
+        });
+        await owner.client.expectAck(mid);
+
+        let phantomBroadcast = false;
+        try {
+          await owner.client.waitFor(
+            (m) => isRoomUpdate(m) && m.rounds.length > 0,
+            1200,
+          );
+          phantomBroadcast = true;
+        } catch {
+          // expected: nothing materialized
+        }
+        expect(phantomBroadcast).toBe(false);
+
+        const probe = track(await connectToRoom({ roomID }));
+        expect(probe.response.room.rounds.length).toBe(0);
+      },
+      15_000,
+    );
+
+    test(
+      "round:cancel on an already-empty rounds list is acked but posts no second 'Round was cancelled' chat message and keeps 0 rounds",
+      async () => {
+        const { roomID, owner } = track(
+          await setupRoom({ username: "void-cancel-owner" }),
+        );
+        await cancelOnlyRound(roomID, owner);
+
+        const mid = owner.client.send({
+          type: IncomingMessageType.CANCEL_LAST_ROUND,
+          roomID,
+          userID: owner.userID,
+        });
+        await owner.client.expectAck(mid);
+
+        // the sentinel pins down the chat state observed after the void cancel
+        const sentinelText = uniqueId("void-cancel-sentinel");
+        owner.client.send({
+          type: IncomingMessageType.POST_MESSAGE,
+          roomID,
+          userID: owner.userID,
+          text: sentinelText,
+        });
+        const sentinel = await owner.client.waitFor(
+          (m) =>
+            isChatUpdate(m) && m.chatMessages.at(-1)?.text === sentinelText,
+        );
+        expect(
+          sentinel.chatMessages.filter((m) =>
+            m.text.startsWith("Round was cancelled")
+          ).length,
+        ).toBe(1);
+
+        const probe = track(await connectToRoom({ roomID }));
+        expect(probe.response.room.rounds.length).toBe(0);
+      },
+      15_000,
+    );
+
+    test(
+      "round:create on an empty rounds list yields exactly ONE fresh in-progress round (no phantom create-then-finish round)",
+      async () => {
+        const { roomID, owner } = track(
+          await setupRoom({ username: "void-create-owner" }),
+        );
+        await cancelOnlyRound(roomID, owner);
+
+        const mid = owner.client.send({
+          type: IncomingMessageType.CREATE_NEW_ROUND,
+          roomID,
+          userID: owner.userID,
+        });
+        await owner.client.expectAck(mid);
+
+        const probe = track(await connectToRoom({ roomID }));
+        expect(probe.response.room.rounds.length).toBe(1);
+        expect(probe.response.room.rounds[0]!.isInProgress).toBe(true);
+      },
+      15_000,
+    );
+
+    test(
+      "a second round:finish on an already-finished round must not re-count usage: thisMonthRounds/thisMonthVotes stay put and finalResult is unchanged",
+      async () => {
+        const before = await fetchUsageGauge();
+        const { roomID, owner } = track(
+          await setupRoom({ username: "dblfinish-owner" }),
+        );
+        const voter = track(
+          await connectToRoom({ roomID, username: "dblfinish-voter" }),
+        );
+
+        const roundID = owner.response.room.rounds.at(-1)!.id;
+        await castVote(roomID, roundID, voter, optionIDByName(owner, "8"));
+        await owner.client.waitFor(
+          (m) =>
+            m.type === OutgoingMessageType.ROUND_UPDATE
+            && m.results.length === 1,
+        );
+
+        const finishMid = owner.client.send({
+          type: IncomingMessageType.FINISH_LAST_ROUND,
+          roomID,
+          userID: owner.userID,
+        });
+        const finished = await owner.client.waitFor(
+          (m) => m.type === OutgoingMessageType.ROUND_UPDATE && !m.isInProgress,
+        );
+        const expectedFinalResult = {
+          votes: 1,
+          mean: "8.00",
+          median: "8",
+          mode: "8",
+        };
+        expect(finished.finalResult).toEqual(expectedFinalResult);
+        await owner.client.expectAck(finishMid);
+
+        // usage-log writes are async — the baseline must be taken BEFORE the
+        // seeded activity, and the settle wait must ride out the write lag
+        // before the no-second-count baseline is taken
+        let settled: Awaited<ReturnType<typeof fetchUsageGauge>> | undefined;
+        const settleDeadline = Date.now() + 10_000;
+        while (Date.now() < settleDeadline) {
+          const now = await fetchUsageGauge();
+          if (
+            now.thisMonthRounds >= before.thisMonthRounds + 1
+            && now.thisMonthVotes >= before.thisMonthVotes + 1
+          ) {
+            settled = now;
+            break;
+          }
+          await new Promise((r) => setTimeout(r, 300));
+        }
+        if (!settled) {
+          throw new Error(
+            "the seeded activity's usage deltas never showed up in /api/stats",
+          );
+        }
+
+        const secondMid = owner.client.send({
+          type: IncomingMessageType.FINISH_LAST_ROUND,
+          roomID,
+          userID: owner.userID,
+        });
+        await owner.client.expectAck(secondMid);
+
+        // poll past the async write window: the gauges must never move above
+        // the baseline taken after the first finish
+        const pollDeadline = Date.now() + 6_000;
+        let maxRounds = settled.thisMonthRounds;
+        let maxVotes = settled.thisMonthVotes;
+        while (Date.now() < pollDeadline) {
+          const now = await fetchUsageGauge();
+          maxRounds = Math.max(maxRounds, now.thisMonthRounds);
+          maxVotes = Math.max(maxVotes, now.thisMonthVotes);
+          await new Promise((r) => setTimeout(r, 400));
+        }
+        expect(maxRounds).toBe(settled.thisMonthRounds);
+        expect(maxVotes).toBe(settled.thisMonthVotes);
+
+        const probe = track(await connectToRoom({ roomID }));
+        expect(probe.response.room.rounds.at(-1)!.finalResult).toEqual(
+          expectedFinalResult,
+        );
+      },
+      30_000,
+    );
   });
 });

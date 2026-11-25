@@ -401,4 +401,144 @@ describe("WS connection protocol", () => {
     },
     TIMEOUT,
   );
+
+  test(
+    "a valid room:post-message payload sent as a BINARY frame is processed exactly like a text frame: acked and its text broadcast",
+    async () => {
+      const text = uniqueId("bin-frame");
+      const mid = nextMessageID();
+      owner.client.raw(
+        new TextEncoder().encode(
+          JSON.stringify({
+            type: IncomingMessageType.POST_MESSAGE,
+            roomID,
+            userID: ownerUserID,
+            text,
+            messageID: mid,
+          }),
+        ),
+      );
+
+      await owner.client.expectAck(mid);
+      await owner.client.waitFor(
+        (m) =>
+          m.type === OutgoingMessageType.ROOM_CHAT_UPDATE
+          && m.chatMessages.some((c) => c.text === text),
+      );
+    },
+    TIMEOUT,
+  );
+
+  test(
+    "a binary frame of garbage bytes gets connection:error 400 causedBy 'unknown' and the socket stays open and usable",
+    async () => {
+      const client = await RoomClient.connect();
+      sockets.push(client);
+
+      client.raw(new Uint8Array([0xff, 0xfe, 0x00, 0x01, 0xab]));
+      const err = await client.expectError("unknown");
+      expect(err.code).toBe(400);
+
+      // the socket was not torn down: a full room:connect still works on it
+      const mid = sendConnect(client, {
+        roomID,
+        userID: uniqueId(),
+        publicUserID: uniqueId("pub"),
+        username: uniqueId("after-garbage-bin"),
+      });
+      const connected = await client.waitFor(
+        (m) =>
+          m.type === OutgoingMessageType.ROOM_CONNECTED
+          || m.type === OutgoingMessageType.ROOM_CLOSED,
+      );
+      expect(connected.type).toBe(OutgoingMessageType.ROOM_CONNECTED);
+      await client.expectAck(mid);
+    },
+    TIMEOUT,
+  );
+
+  test(
+    "a messageID resent after the 30s dedup expiry is processed again: acked and its new text broadcast",
+    async () => {
+      const mid = nextMessageID();
+      const firstText = uniqueId("dedup-exp-first");
+      owner.client.send({
+        type: IncomingMessageType.POST_MESSAGE,
+        roomID,
+        userID: ownerUserID,
+        text: firstText,
+        messageID: mid,
+      });
+      await owner.client.expectAck(mid);
+      await owner.client.waitFor(
+        (m) =>
+          m.type === OutgoingMessageType.ROOM_CHAT_UPDATE
+          && m.chatMessages.some((c) => c.text === firstText),
+      );
+
+      // entries expire after 30s; waiting 35s rides past the expiry without
+      // waiting for the expiry sweeper's next 30s tick (which can be up to
+      // 60s after the first send)
+      await new Promise((r) => setTimeout(r, 35_000));
+
+      const secondText = uniqueId("dedup-exp-second");
+      owner.client.send({
+        type: IncomingMessageType.POST_MESSAGE,
+        roomID,
+        userID: ownerUserID,
+        text: secondText,
+        messageID: mid,
+      });
+      await owner.client.expectAck(mid);
+      await owner.client.waitFor(
+        (m) =>
+          m.type === OutgoingMessageType.ROOM_CHAT_UPDATE
+          && m.chatMessages.some((c) => c.text === secondText),
+      );
+    },
+    45_000,
+  );
+});
+
+describe("WS connection cap", () => {
+  test(
+    "connection cap (WS_MAX_CONNECTIONS=30 in the test container): 30 sockets connect, the 31st upgrade fails, and a closed socket frees its slot",
+    async () => {
+      // free the sockets earlier tests in this file left open — the cap
+      // arithmetic below must be exact (the file-level afterAll would close
+      // them anyway)
+      await Promise.allSettled(
+        sockets.splice(0, sockets.length).map((c) => c.close()),
+      );
+      // give the server's close handler time to release the slots
+      await new Promise((r) => setTimeout(r, 500));
+
+      const capSockets: RoomClient[] = [];
+      for (let i = 0; i < 30; i++) {
+        capSockets.push(await RoomClient.connect());
+      }
+      sockets.push(...capSockets);
+
+      // the 31st upgrade is refused (503 "Server is busy" before upgrade) —
+      // the client sees a failed handshake, not an open socket
+      let thirtyFirstError: Error | undefined;
+      let thirtyFirst: RoomClient | undefined;
+      try {
+        thirtyFirst = await RoomClient.connect();
+      } catch (e) {
+        thirtyFirstError = e as Error;
+      }
+      // leak-guard: if the cap is not enforced the socket must still be closed
+      if (thirtyFirst) {
+        sockets.push(thirtyFirst);
+      }
+      expect(thirtyFirstError?.message).toBe("WebSocket connection failed");
+
+      // closing one socket frees its slot for a fresh connection
+      await capSockets[0]!.close();
+      await new Promise((r) => setTimeout(r, 500));
+      sockets.push(await RoomClient.connect());
+    },
+    60_000,
+  );
 });

@@ -142,9 +142,13 @@ export class RoomClient {
     return messageID;
   }
 
-  /** sends an arbitrary raw string (for malformed-message tests) */
-  public raw(text: string): void {
-    this.ws.send(text);
+  /**
+   * sends an arbitrary raw payload — string for malformed-text tests,
+   * Uint8Array for binary-frame tests (Bun sends typed arrays as binary
+   * frames)
+   */
+  public raw(data: string | Uint8Array): void {
+    this.ws.send(data);
   }
 
   /**

@@ -644,6 +644,167 @@ describe("live: chat messages and chat commands", () => {
     TIMEOUT,
   );
 
+  test(
+    "/addoption with no argument is a no-op: no empty-named option is created",
+    async () => {
+      const { roomID, owner } = await newRoom("emptyaddopt-owner");
+      const initialNames = owner.response.room.defaultOptions.map((o) =>
+        o.name
+      );
+
+      postChat(owner.client, roomID, owner.userID, "/addoption");
+      postChat(
+        owner.client,
+        roomID,
+        owner.userID,
+        "sentinel after empty addoption",
+      );
+      await waitForChatEndingWith(
+        owner.client,
+        "sentinel after empty addoption",
+      );
+
+      // a real addoption confirms the option list — an empty-named option
+      // would show up between the initial names and "probe"
+      postChat(owner.client, roomID, owner.userID, "/addoption probe");
+      const update = await owner.client.waitFor(
+        (m) =>
+          m.type === OutgoingMessageType.ROOM_UPDATE
+          && m.defaultOptions.some((o) => o.name === "probe"),
+      );
+      expect(update.defaultOptions.map((o) => o.name)).toEqual([
+        ...initialNames,
+        "probe",
+      ]);
+    },
+    TIMEOUT,
+  );
+
+  test(
+    "/setoptions with an empty or whitespace-only argument list is a no-op: the option set stays untouched",
+    async () => {
+      // fresh room on purpose: a buggy /setoptions wipes the options and the
+      // room persists them, so this test must not reuse an older room
+      const { roomID, owner } = await newRoom("emptysetopts-owner");
+      const initialNames = owner.response.room.defaultOptions.map((o) =>
+        o.name
+      );
+
+      postChat(owner.client, roomID, owner.userID, "/setoptions");
+      postChat(owner.client, roomID, owner.userID, "/setoptions   ");
+      postChat(
+        owner.client,
+        roomID,
+        owner.userID,
+        "sentinel after empty setoptions",
+      );
+      await waitForChatEndingWith(
+        owner.client,
+        "sentinel after empty setoptions",
+      );
+
+      // a real addoption confirms the option set was left untouched
+      postChat(owner.client, roomID, owner.userID, "/addoption probe");
+      const update = await owner.client.waitFor(
+        (m) =>
+          m.type === OutgoingMessageType.ROOM_UPDATE
+          && m.defaultOptions.some((o) => o.name === "probe"),
+      );
+      expect(update.defaultOptions.map((o) => o.name)).toEqual([
+        ...initialNames,
+        "probe",
+      ]);
+    },
+    TIMEOUT,
+  );
+
+  test(
+    "/transfer to a viewer makes the viewer owner while keeping the viewer role: owner powers granted, voting still silently refused",
+    async () => {
+      const { roomID, owner } = await newRoom("tfviewer-owner");
+      const viewer = track(
+        await connectToRoom({
+          roomID,
+          username: "tf-viewer-target",
+          role: "viewer",
+        }),
+      );
+
+      postChat(
+        owner.client,
+        roomID,
+        owner.userID,
+        "/transfer tf-viewer-target",
+      );
+      const change = await owner.client.waitFor(
+        OutgoingMessageType.OWNER_UPDATE,
+      );
+      expect(change.ownerName).toBe("tf-viewer-target");
+      expect(change.ownerPublicID).toBe(viewer.publicUserID);
+      expect(change.ownerRole).toBe("viewer");
+      // broadcast to everyone
+      const viewerChange = await viewer.client.waitFor(
+        (m) =>
+          m.type === OutgoingMessageType.OWNER_UPDATE
+          && m.ownerPublicID === viewer.publicUserID,
+      );
+      expect(viewerChange.ownerName).toBe("tf-viewer-target");
+
+      // the viewer-owner can perform owner actions despite their role
+      const createMid = viewer.client.send({
+        type: IncomingMessageType.CREATE_NEW_ROUND,
+        roomID,
+        userID: viewer.userID,
+      });
+      await viewer.client.expectAck(createMid);
+      const createUpdate = await owner.client.waitFor(
+        (m) =>
+          m.type === OutgoingMessageType.ROOM_UPDATE && m.rounds.length === 2,
+      );
+
+      // the previous owner lost the power
+      const deniedMid = owner.client.send({
+        type: IncomingMessageType.CREATE_NEW_ROUND,
+        roomID,
+        userID: owner.userID,
+      });
+      const err = await owner.client.expectError(deniedMid);
+      expect(err.code).toBe(401);
+
+      // the viewer-owner still cannot vote — silently: no error, and the
+      // (current, still in-progress) round gets no results
+      const voteMid = viewer.client.send({
+        type: IncomingMessageType.ADD_ROUND_VOTE,
+        roomID,
+        userID: viewer.userID,
+        roundID: createUpdate.rounds.at(-1)!.id,
+        optionRef: viewer.response.room.defaultOptions[0]!.id,
+      });
+      let voteRejected = false;
+      try {
+        await viewer.client.expectError(voteMid, 1000);
+        voteRejected = true;
+      } catch {
+        // expected: silent no-op
+      }
+      expect(voteRejected).toBe(false);
+      let voteBroadcast = false;
+      try {
+        await owner.client.waitFor(
+          (m) =>
+            m.type === OutgoingMessageType.ROUND_UPDATE
+            && m.results.length > 0,
+          1000,
+        );
+        voteBroadcast = true;
+      } catch {
+        // expected: the viewer's vote never lands
+      }
+      expect(voteBroadcast).toBe(false);
+    },
+    TIMEOUT,
+  );
+
   // NOTE: this test destroys its room, so it must run LAST in this file.
   test(
     "/close by the owner destroys the room and notifies every participant",

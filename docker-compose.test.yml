@@ -36,8 +36,13 @@ services:
       LOGLEVEL: ""
       SITEMAP_URL: https://pointingpoker.work
       REQ_THRESHOLD: "1000"
-      REQ_LIMIT: "40000"
+      # low enough that the global-limit test can exhaust it, high enough that
+      # the rest of the suite stays under it within any LIMIT_TIMEFRAME window
+      REQ_LIMIT: "5000"
       LIMIT_TIMEFRAME: "120000"
+      # low enough that the WS-cap test can hit it; must exceed every suite's
+      # peak concurrent socket count (~10) plus the cap suite's own 30 sockets
+      WS_MAX_CONNECTIONS: "30"
       SENTRY_DSN: https://testkey@o000000.ingest.sentry.io/0000000
       SENTRY_ORG: my-company-rb
       SENTRY_PROJECT: ppoker
