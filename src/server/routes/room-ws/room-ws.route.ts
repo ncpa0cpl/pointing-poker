@@ -41,31 +41,22 @@ const parseMessage = createWsMsgParser(
 );
 
 class RoomWsHandler {
-  /**
-   * Only sockets that have NOT joined a room count against the cap: the cap
-   * guards the upgrade path against floods of idle sockets, and a socket
-   * whose room:connect succeeded releases its slot to the room it joined.
-   * Counting room-affiliated sockets too would refuse legitimate
-   * participants whenever enough rooms are live, regardless of the cap's
-   * actual purpose.
-   */
-  private static idleConnectionCount = 0;
+  private static connectionCount = 0;
 
   public static beforeUpgrade() {
-    if (RoomWsHandler.idleConnectionCount >= MAX_WS_CONNECTIONS) {
+    if (RoomWsHandler.connectionCount >= MAX_WS_CONNECTIONS) {
       logger.info("too many connections, refusing WebSocket with 503");
       return createResponse(503, "Server is busy");
     }
   }
 
   public static open(ws: ServerWebSocket<unknown>) {
-    RoomWsHandler.idleConnectionCount++;
+    RoomWsHandler.connectionCount++;
     return new RoomWsHandler();
   }
 
   private intervalTimer;
   private onclosecb: (() => void) | undefined = undefined;
-  private joinedRoom = false;
   private readonly msgsReceived = new Map<string, number>();
 
   public constructor() {
@@ -81,9 +72,7 @@ class RoomWsHandler {
   }
 
   public close(ws: ServerWebSocket<unknown>) {
-    if (!this.joinedRoom) {
-      RoomWsHandler.idleConnectionCount--;
-    }
+    RoomWsHandler.connectionCount--;
     this.onclosecb?.();
     clearInterval(this.intervalTimer);
     usage.logEnd("CONNECTION_OPENED");
@@ -147,12 +136,6 @@ class RoomWsHandler {
         case IncomingMessageType.ROOM_CONNECT: {
           const removeWs = this.handleRoomConnect(ws, data);
           this.onclosecb = removeWs;
-          // a successful room:connect hands the socket over to the room —
-          // release its slot so live participants never trip the idle cap
-          if (removeWs !== undefined && !this.joinedRoom) {
-            this.joinedRoom = true;
-            RoomWsHandler.idleConnectionCount--;
-          }
           break;
         }
         case IncomingMessageType.ADD_ROUND_VOTE:
@@ -467,12 +450,6 @@ class RoomWsHandler {
 
     room.closeUserConnection(data.userID);
     this.onclosecb?.();
-    // the socket itself stays open after room:disconnect — it occupies an
-    // idle slot again until it closes
-    if (this.joinedRoom) {
-      this.joinedRoom = false;
-      RoomWsHandler.idleConnectionCount++;
-    }
   }
 }
 

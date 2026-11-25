@@ -41,8 +41,8 @@ services:
       REQ_LIMIT: "5000"
       LIMIT_TIMEFRAME: "120000"
       # low enough that the WS-cap test can hit it; must exceed every suite's
-      # peak concurrent socket count (~10) plus the cap suite's own 30 sockets
-      WS_MAX_CONNECTIONS: "30"
+      # peak concurrent socket count, including the cap suite's own 60 sockets
+      WS_MAX_CONNECTIONS: "60"
       SENTRY_DSN: https://testkey@o000000.ingest.sentry.io/0000000
       SENTRY_ORG: my-company-rb
       SENTRY_PROJECT: ppoker
