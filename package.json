@@ -22,7 +22,7 @@
     "test:server": "NODE_EXTRA_CA_CERTS=$PWD/tests/nginx/certs/ca.crt bun test ./tests/live",
     "test:smoke": "playwright test",
     "test:run": "bun run test:server && bun run test:smoke",
-    "test": "bun run test:docker:up && bun run test:run ; bun run test:docker:down",
+    "test": "bun run test:docker:up && bun run test:run; code=$?; bun run test:docker:down; exit $code",
     "start": "bun ./src/server/start.ts",
     "start:dev": "NODE_ENV=development node ./scripts/build.mjs --watch --serve --dev",
     "watch": "NODE_ENV=development node ./scripts/build.mjs --watch",
