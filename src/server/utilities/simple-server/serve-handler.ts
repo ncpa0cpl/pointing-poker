@@ -319,6 +319,10 @@ export class ServeHandler {
       }
     }
 
+    if (response && (response.status >= 400 || response.status < 200)) {
+      response.headers.set("Cache-Control", "no-store");
+    }
+
     return this.addCorsHeaders(request, response);
   }
 }
