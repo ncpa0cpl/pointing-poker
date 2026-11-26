@@ -60,5 +60,6 @@ describe("sanity", () => {
       body: JSON.stringify({}),
     });
     expect(res.status).toBe(400);
+    expect(res.headers.get("cache-control")).toBe("no-store");
   });
 });

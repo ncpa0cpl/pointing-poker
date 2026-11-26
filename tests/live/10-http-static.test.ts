@@ -117,9 +117,9 @@ describe("http static surface", () => {
       expect(res.headers.get("cache-control")).toBe("no-store");
     });
 
-    test("404 responses use the default max-age=1800", async () => {
+    test("404 responses have cache-control override to no-store", async () => {
       const res = await api("/nope-nope");
-      expect(res.headers.get("cache-control")).toBe("public, max-age=1800");
+      expect(res.headers.get("cache-control")).toBe("no-store");
     });
 
     test("/api/stats is no-store", async () => {
@@ -251,6 +251,7 @@ describe("http static surface", () => {
         body: JSON.stringify({}),
       });
       expect(res.status).toBe(403);
+      expect(res.headers.get("cache-control")).toBe("no-store");
     });
 
     test("non-GET without any Origin -> 403", async () => {
