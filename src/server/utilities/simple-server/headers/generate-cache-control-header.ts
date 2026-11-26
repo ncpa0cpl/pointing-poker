@@ -1,3 +1,5 @@
+import { RouterResponse } from "../router-response";
+
 export type CacheConfig = {
   /**
    * The max-age=N response directive indicates that the response
@@ -40,7 +42,14 @@ export type CacheConfig = {
   minFresh?: number;
 };
 
-export function generateCacheControlHeader(config: CacheConfig) {
+export function generateCacheControlHeader(
+  config: CacheConfig,
+  resp: RouterResponse,
+) {
+  if (resp.status < 200 || resp.status >= 300) {
+    return "no-store";
+  }
+
   if (config.noStore) {
     return "no-store";
   }

@@ -15,7 +15,7 @@ const addCacheHeadersFactory =
     if (resp.headers.get("Cache-Control") != null) {
       return resp;
     }
-    resp.headers.set("Cache-Control", generateCacheControlHeader(config));
+    resp.headers.set("Cache-Control", generateCacheControlHeader(config, resp));
     return resp;
   };
 
