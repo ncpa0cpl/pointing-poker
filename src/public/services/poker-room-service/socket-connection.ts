@@ -14,6 +14,7 @@ import {
 } from "../../../shared/index";
 import { createWsMsgParser } from "../../../shared/websockets-messages/parse-ws-message";
 import type { FindInUnion } from "../../type-utils/find-in-union";
+import { ping } from "../../utilities/ping";
 import { SentryService } from "../sentry-service/sentry-service";
 
 type ConnectionParams = {
@@ -65,9 +66,7 @@ class WsMessage {
     }
   }
 
-  public send(
-    prevTimeout: keyof typeof RECONNECT_BACKOFFS = 200,
-  ): Promise<void> {
+  public send(prevTimeout: keyof typeof RECONNECT_BACKOFFS = 0): Promise<void> {
     if (this.sentSuccessfully) return Promise.resolve();
 
     const socket = this.getCurrentSocket();
@@ -117,14 +116,24 @@ export class WsConnection {
 
   private reportConnectionFailures() {
     this.#consecutiveFailures++;
-    // report once, at the 2nd failure, and stay silent until a connection succeeds
-    if (this.#consecutiveFailures !== 2) {
+    // report once, at the 4th failure, and stay silent until a connection succeeds
+    if (this.#consecutiveFailures === 4) {
+      (async () => {
+        const isInternetReachable = ping("https://1.1.1.1");
+        const isServerReachable = ping(
+          `${location.protocol}//${location.host}`,
+        );
+
+        SentryService.error(
+          new Error("WebSocket connection keeps failing"),
+          {
+            isInternetReachable: await isInternetReachable,
+            isServerReachable: await isServerReachable,
+          },
+        );
+      })();
       return;
     }
-    SentryService.error(
-      new Error("WebSocket connection keeps failing"),
-      { failures: this.#consecutiveFailures },
-    );
   }
 
   private setOpened(opened: boolean) {
@@ -205,7 +214,7 @@ export class WsConnection {
   private tryReconnect() {
     if (this.incomingRetry) return;
 
-    const retry = (backoff: number) => {
+    const retry = (backoff: keyof typeof RECONNECT_BACKOFFS) => {
       if (this.#isOpened) return;
 
       const retryEntry = [Date.now(), backoff, true] as Exclude<
@@ -243,7 +252,7 @@ export class WsConnection {
         retry(nextBackoff);
       }
     } else {
-      retry(RECONNECT_BACKOFFS[0]);
+      retry(0);
     }
   }
 
