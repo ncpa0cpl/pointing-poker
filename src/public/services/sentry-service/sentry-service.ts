@@ -5,6 +5,13 @@ export class SentryService {
     dsn: SENTRY_DSN,
     release: RLS_VERSION,
     environment: ENVIRONMENT,
+    // Prevents the SDK from attaching the user's IP address to events;
+    // storage-side prevention is configured separately in the Sentry dashboard.
+    initialScope: {
+      user: {
+        ip_address: null,
+      },
+    },
     integrations: [
       Sentry.browserTracingIntegration(),
     ],

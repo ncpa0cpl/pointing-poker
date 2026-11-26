@@ -35,6 +35,10 @@
 
         & ul li:not(:first-child) {
             margin-top: 1.2em;
+
+            & ul li {
+                margin-top: .4em;
+            }
         }
     }
 }

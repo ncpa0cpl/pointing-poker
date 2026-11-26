@@ -1,9 +1,9 @@
 import { Button, Card, Typography } from "adwavecss";
-import "./styles.css";
 import { Link } from "../../components/link/link";
 import { PageLayout } from "../../components/page-layout/page-layout";
 import { UserService } from "../../services/user-service/user-service";
 import { Router } from "../routes";
+import "./styles.css";
 
 export const PrivacyPage = () => {
   return (
@@ -19,40 +19,79 @@ export const PrivacyPage = () => {
         </Link>
         <div class="column privacy-contents">
           <h1 class={[Typography.header, "privacy-header"]}>
-            Privact Policy
+            Privacy Policy
           </h1>
           <ul>
             <li>
               <p>
-                We do not collect any personally identifiable information from
-                you.
+                We do not collect any personally identifiable information.
               </p>
             </li>
             <li>
               <p>
-                The only information you provide us is the username you choose,
-                which is only stored on our servers while you are playing the
-                game. Once the room you joined/created expires or gets closed
-                this information is ereased.
+                The only information you provide us is the username you choose.
+                This username is stored on our servers solely for the duration
+                of your session and is permanently erased once the room you
+                created or joined expires or is closed.
               </p>
             </li>
             <li>
               <p>
-                We collect some informations on your interactions with this web
-                app (like visit count, visiting the referal links, etc.),
-                however these informations are only stored locally in your
-                browser and never leave your device.
+                Messages sent in a room's chat are stored on our servers for as
+                long as the room remains active. If the room is persistent, chat
+                history is retained indefinitely until the room is closed by its
+                owner or the chat history is deleted by a user.
               </p>
             </li>
             <li>
               <p>
-                We are using an application monitoring service (
-                <a class="blue-link" href="https://sentry.io/" target="_blank">
+                We collect limited information about your interactions with this
+                web application (such as visit counts and referral link usage).
+                This information is stored exclusively in your browser and never
+                leaves your device.
+              </p>
+            </li>
+            <li>
+              <p>
+                We use an application monitoring service (
+                <a
+                  class="blue-link"
+                  href="https://sentry.io/"
+                  target="_blank"
+                >
                   Sentry
                 </a>
-                ) for collecting data on potential issues and problems with our
-                services. This service may collect some information about your
-                device and browser.
+                ) to collect data on potential issues and errors in our
+                services. Depending on the event, this may include:
+              </p>
+              <ul>
+                <li>
+                  <p>
+                    your browser type and version, operating system, and device
+                    type,
+                  </p>
+                </li>
+                <li>
+                  <p>your screen resolution,</p>
+                </li>
+                <li>
+                  <p>the URL of the page where the issue occurred,</p>
+                </li>
+                <li>
+                  <p>
+                    error details, such as error messages and stack traces, and
+                  </p>
+                </li>
+                <li>
+                  <p>
+                    performance data about page loads and user interactions.
+                  </p>
+                </li>
+              </ul>
+              <p>
+                Your IP address is not stored with these events. All of this
+                information is processed by Sentry on our behalf and under our
+                instructions.
               </p>
             </li>
           </ul>
