@@ -64,7 +64,7 @@ async function main() {
         loader: {
           ".webp": "file",
         },
-        publicPath: "/public",
+        publicPath: "/public/esm",
         plugins: [svgPlugin()],
       },
       compileVendors: ["@sentry/browser"],

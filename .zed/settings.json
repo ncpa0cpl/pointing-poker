@@ -5,6 +5,12 @@
       "code_actions_on_format": {
         "source.organizeImports": true
       },
+      "formatter": {
+        "external": {
+          "command": "dprint",
+          "arguments": ["fmt", "--stdin", "{buffer_path}"]
+        }
+      }
     },
     "TypeScript": {
       "language_servers": ["typescript-ls"],
